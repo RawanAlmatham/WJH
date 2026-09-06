@@ -83,6 +83,13 @@ export async function getUserByOpenId(openId: string) {
   return result[0];
 }
 
+export async function isUserTeamMember(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const member = await db.select({ id: teamMembers.id }).from(teamMembers).where(eq(teamMembers.userId, userId)).limit(1);
+  return Boolean(member[0]);
+}
+
 function initialsFor(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").slice(0, 4) || "عضو";
 }

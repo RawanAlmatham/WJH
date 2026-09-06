@@ -82,6 +82,7 @@ export default function Home() {
   const [inviteDrawer, setInviteDrawer] = useState(() => requestedDrawer === "invite");
 
   const goPeriod = (next: Period) => { setPeriod(next); setPage(next === "year" ? "plan" : "time"); };
+  const requireMember = (action: () => void) => { if (!user) { toast.message("سجّل الدخول لإدارة أعمال القسم"); startLogin(); return; } action(); };
   const requireManager = (action: () => void) => { if (!user) { toast.message("سجّل الدخول لإدارة أعمال القسم"); startLogin(); return; } if (user.role !== "admin") { toast.error("هذه العملية متاحة لمدير القسم فقط"); return; } action(); };
   const completeTask = (id: number) => { if (!user) { toast.message("سجّل الدخول لتحديث حالة المهمة"); startLogin(); return; } updateTask.mutate({ id, status: "complete" }); };
 
@@ -89,7 +90,7 @@ export default function Home() {
   if (isLoading) return <LoadingShell />;
   if (error || !data) return <div dir="rtl" className="flex min-h-screen items-center justify-center bg-[#F7F9FC] p-8 text-center"><div><AlertTriangle className="mx-auto mb-3 size-7 text-amber-600" /><h1 className="font-semibold">تعذر تحميل لوحة القسم</h1><p className="mt-2 text-sm text-slate-500">يرجى تحديث الصفحة أو المحاولة لاحقًا.</p></div></div>;
 
-  const shared = { data, user, setPage, setProjectId, setMemberId, period, goPeriod, completeTask, openTask: () => requireManager(() => setTaskDrawer(true)), openProject: () => requireManager(() => setProjectDrawer(true)), openInvite: () => requireManager(() => setInviteDrawer(true)) };
+  const shared = { data, user, setPage, setProjectId, setMemberId, period, goPeriod, completeTask, openTask: () => requireMember(() => setTaskDrawer(true)), openProject: () => requireManager(() => setProjectDrawer(true)), openInvite: () => requireManager(() => setInviteDrawer(true)) };
   return <div dir="rtl" className="min-h-screen bg-[#F7F9FC] text-[#26364A]">
     <Sidebar page={page} onNavigate={(next) => { setPage(next); setShowNav(false); }} open={showNav} close={() => setShowNav(false)} />
     <main className="min-h-screen px-4 py-5 lg:mr-[272px] lg:px-9 lg:py-8">

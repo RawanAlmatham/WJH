@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { deliverableComments, teamInvitations, teamMembers, users } from "../drizzle/schema";
+import { deliverableComments, tasks, teamInvitations, teamMembers, users } from "../drizzle/schema";
 import { addDeliverableComment, createTeamInvitation, getDb, getInvitationByToken, getWorkspaceData, upsertUser } from "./db";
+import { appRouter } from "./routers";
 
 const marker = `invite-test-${Date.now()}`;
 const invitationEmail = `${marker}@example.test`;
@@ -20,6 +21,7 @@ describe("persistent invitation journey", () => {
     const db = await getDb();
     if (!db) return;
     const member = await db.select({ id: teamMembers.id }).from(teamMembers).where(eq(teamMembers.email, invitationEmail)).limit(1);
+    await db.delete(tasks).where(eq(tasks.title, marker));
     await db.delete(teamInvitations).where(eq(teamInvitations.email, invitationEmail));
     await db.delete(deliverableComments).where(eq(deliverableComments.body, marker));
     if (member[0]) await db.delete(teamMembers).where(eq(teamMembers.id, member[0].id));
@@ -51,5 +53,17 @@ describe("persistent invitation journey", () => {
     const db = await getDb();
     const comment = await db!.select().from(deliverableComments).where(eq(deliverableComments.body, marker)).limit(1);
     expect(comment[0]).toMatchObject({ deliverableId: deliverable!.id, authorUserId: managerId, body: marker });
+  });
+
+  it("allows an accepted team member to create a task", async () => {
+    const caller = appRouter.createCaller({
+      user: { id: acceptedUserId, openId: `${marker}-employee`, email: invitationEmail, name: "موظف اختبار", loginMethod: "test", role: "user", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+      req: { protocol: "https", headers: {} } as any,
+      res: {} as any,
+    });
+    await expect(caller.workspace.createTask({ title: marker, priority: "medium", status: "not_started" })).resolves.toMatchObject({ showLoadWarning: false });
+    const db = await getDb();
+    const created = await db!.select({ id: tasks.id }).from(tasks).where(eq(tasks.title, marker)).limit(1);
+    expect(created).toHaveLength(1);
   });
 });

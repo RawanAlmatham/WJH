@@ -12,6 +12,10 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "هذه العملية متاحة لمدير القسم فقط" });
   return next();
 });
+const teamMemberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user.role === "admin" || await db.isUserTeamMember(ctx.user.id)) return next();
+  throw new TRPCError({ code: "FORBIDDEN", message: "يلزم أن تكون عضوًا في فريق القسم لإضافة مهمة" });
+});
 
 export const appRouter = router({
   system: systemRouter,
@@ -33,7 +37,7 @@ export const appRouter = router({
       title: z.string().min(2).max(240), summary: z.string().max(1500).optional(), annualGoalId: z.number().int().nullable().optional(),
       ownerMemberId: z.number().int(), startDate: z.date(), endDate: z.date(), status: projectStatus,
     })).mutation(({ input }) => db.createProject(input)),
-    createTask: managerProcedure.input(z.object({
+    createTask: teamMemberProcedure.input(z.object({
       title: z.string().min(2).max(240), projectId: z.number().int().nullable().optional(), assigneeMemberId: z.number().int().nullable().optional(),
       startDate: z.date().nullable().optional(), dueDate: z.date().nullable().optional(), priority: z.enum(["urgent", "high", "medium", "low"]), status: taskStatus, parentTaskId: z.number().int().nullable().optional(),
     })).mutation(({ input }) => db.createTask(input)),
