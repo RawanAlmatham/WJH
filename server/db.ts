@@ -2,10 +2,12 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   annualGoals,
+  boardMemberships,
   calendarEvents,
   deliverableComments,
   deliverables,
   InsertUser,
+  managementBoards,
   projectMembers,
   projects,
   taskParticipants,
@@ -88,6 +90,59 @@ export async function isUserTeamMember(userId: number) {
   if (!db) return false;
   const member = await db.select({ id: teamMembers.id }).from(teamMembers).where(eq(teamMembers.userId, userId)).limit(1);
   return Boolean(member[0]);
+}
+
+async function ensureTeamMemberForUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const existing = await db.select({ id: teamMembers.id }).from(teamMembers).where(eq(teamMembers.userId, userId)).limit(1);
+  if (existing[0]) return existing[0].id;
+  const account = await db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+  const name = account[0]?.name || "عضو فريق";
+  const result = await db.insert(teamMembers).values({ userId, name, email: account[0]?.email ?? null, role: "عضو فريق", avatarInitials: initialsFor(name) });
+  return Number(result[0].insertId);
+}
+
+export async function listUserBoards(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  return db.select({ id: managementBoards.id, name: managementBoards.name, ownerUserId: managementBoards.ownerUserId, joinCode: managementBoards.joinCode, inviteToken: managementBoards.inviteToken, membershipRole: boardMemberships.role, joinedAt: boardMemberships.joinedAt }).from(boardMemberships).innerJoin(managementBoards, eq(boardMemberships.boardId, managementBoards.id)).where(eq(boardMemberships.userId, userId));
+}
+
+export async function createManagementBoard(name: string, ownerUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const joinCode = nanoid(8).toUpperCase();
+  const inviteToken = nanoid(32);
+  const result = await db.insert(managementBoards).values({ name, ownerUserId, joinCode, inviteToken });
+  const boardId = Number(result[0].insertId);
+  await db.insert(boardMemberships).values({ boardId, userId: ownerUserId, role: "owner" });
+  await ensureTeamMemberForUser(ownerUserId);
+  return { id: boardId, name, joinCode, inviteToken, membershipRole: "owner" as const };
+}
+
+export async function getBoardByJoinCode(joinCode: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const rows = await db.select().from(managementBoards).where(eq(managementBoards.joinCode, joinCode.toUpperCase())).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getBoardByInviteToken(inviteToken: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const rows = await db.select().from(managementBoards).where(eq(managementBoards.inviteToken, inviteToken)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function joinManagementBoard(boardId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const membership = await db.select().from(boardMemberships).where(eq(boardMemberships.boardId, boardId));
+  const existing = membership.find((item) => item.userId === userId);
+  if (!existing) await db.insert(boardMemberships).values({ boardId, userId, role: "member" });
+  await ensureTeamMemberForUser(userId);
+  return { boardId, membershipRole: existing?.role ?? "member" };
 }
 
 function initialsFor(name: string) {
@@ -214,15 +269,17 @@ export async function getWorkspaceData() {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
   await ensureDemoData();
-  const [goals, members, projectRows, deliverableRows, taskRows, eventRows, commentRows] = await Promise.all([
+  const [goals, members, projectRows, deliverableRows, taskRows, eventRows, commentRows, userRows] = await Promise.all([
     db.select().from(annualGoals), db.select().from(teamMembers), db.select().from(projects),
     db.select().from(deliverables), db.select().from(tasks), db.select().from(calendarEvents),
     db.select().from(deliverableComments),
+    db.select({ id: users.id, name: users.name }).from(users),
   ]);
   const enrichedMembers = members.map((member) => {
     return { ...member, ...calculateWorkload(taskRows, member.id) };
   });
-  return { goals, members: enrichedMembers, projects: projectRows, deliverables: deliverableRows, tasks: taskRows, events: eventRows, deliverableComments: commentRows };
+  const enrichedComments = commentRows.map((comment) => ({ ...comment, authorName: userRows.find((user) => user.id === comment.authorUserId)?.name ?? "عضو الفريق" }));
+  return { goals, members: enrichedMembers, projects: projectRows, deliverables: deliverableRows, tasks: taskRows, events: eventRows, deliverableComments: enrichedComments };
 }
 
 export async function getTeamWorkload() {
@@ -260,6 +317,12 @@ export async function updateTaskStatus(id: number, status: "not_started" | "in_p
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
   await db.update(tasks).set({ status }).where(eq(tasks.id, id));
+}
+
+export async function assignTask(id: number, assigneeMemberId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  await db.update(tasks).set({ assigneeMemberId }).where(eq(tasks.id, id));
 }
 
 export async function updateProjectStatus(id: number, status: "planned" | "in_progress" | "in_review" | "complete" | "blocked") {

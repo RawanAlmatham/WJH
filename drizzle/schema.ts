@@ -1,4 +1,4 @@
-import { boolean, foreignKey, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, foreignKey, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -11,6 +11,26 @@ export const users = mysqlTable("users", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
+
+export const managementBoards = mysqlTable("managementBoards", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 180 }).notNull(),
+  ownerUserId: int("ownerUserId").references(() => users.id).notNull(),
+  joinCode: varchar("joinCode", { length: 12 }).notNull().unique(),
+  inviteToken: varchar("inviteToken", { length: 64 }).notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const boardMemberships = mysqlTable("boardMemberships", {
+  id: int("id").autoincrement().primaryKey(),
+  boardId: int("boardId").references(() => managementBoards.id).notNull(),
+  userId: int("userId").references(() => users.id).notNull(),
+  role: mysqlEnum("role", ["owner", "member"]).default("member").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("boardMemberships_board_user_unique").on(table.boardId, table.userId),
+]);
 
 export const teamMembers = mysqlTable("teamMembers", {
   id: int("id").autoincrement().primaryKey(),

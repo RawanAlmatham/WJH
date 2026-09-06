@@ -23,8 +23,9 @@
 [data-slot="sheet-content"] form { padding-inline: 1rem; }
 
 * { border-color: var(--border); }
-html { direction: rtl; }
-body { margin: 0; min-width: 320px; background: #F7F9FC; color: #26364A; font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
+html { direction: rtl; max-width: 100%; overflow-x: hidden; }
+body { margin: 0; width: 100%; max-width: 100%; min-width: 320px; overflow-x: hidden; background: #F7F9FC; color: #26364A; font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
+#root { width: 100%; max-width: 100%; overflow-x: hidden; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:active { transform: scale(.98); }
