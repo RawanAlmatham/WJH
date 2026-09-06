@@ -268,7 +268,6 @@ async function ensureDemoData() {
 export async function getWorkspaceData() {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
-  await ensureDemoData();
   const [goals, members, projectRows, deliverableRows, taskRows, eventRows, commentRows, userRows] = await Promise.all([
     db.select().from(annualGoals), db.select().from(teamMembers), db.select().from(projects),
     db.select().from(deliverables), db.select().from(tasks), db.select().from(calendarEvents),

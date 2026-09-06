@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { boardMemberships, deliverableComments, managementBoards, projects, tasks, teamInvitations, teamMembers, users } from "../drizzle/schema";
+import { boardMemberships, deliverableComments, deliverables, managementBoards, projects, tasks, teamInvitations, teamMembers, users } from "../drizzle/schema";
 import { addDeliverableComment, createTeamInvitation, getDb, getInvitationByToken, getWorkspaceData, upsertUser } from "./db";
 import { appRouter } from "./routers";
 
@@ -12,6 +12,8 @@ let managerId = 0;
 let acceptedUserId = 0;
 let invitedMemberId = 0;
 let linkJoinerId = 0;
+let baseProjectId = 0;
+let baseDeliverableId = 0;
 
 describe("persistent invitation journey", () => {
   beforeAll(async () => {
@@ -19,6 +21,12 @@ describe("persistent invitation journey", () => {
     if (!db) throw new Error("Database connection is required for invitation integration test");
     const result = await db.insert(users).values({ openId: `${marker}-manager`, email: managerEmail, name: "مدير اختبار", loginMethod: "test", role: "admin", lastSignedIn: new Date() });
     managerId = Number(result[0].insertId);
+    const memberResult = await db.insert(teamMembers).values({ userId: managerId, name: "مدير اختبار", role: "مدير", email: managerEmail, avatarInitials: "ما" });
+    const managerMemberId = Number(memberResult[0].insertId);
+    const projectResult = await db.insert(projects).values({ title: `${marker}-base`, ownerMemberId: managerMemberId, startDate: new Date("2026-09-01T00:00:00Z"), endDate: new Date("2026-10-01T00:00:00Z"), progress: 0, status: "planned" });
+    baseProjectId = Number(projectResult[0].insertId);
+    const deliverableResult = await db.insert(deliverables).values({ projectId: baseProjectId, title: `${marker}-deliverable`, progress: 0, status: "not_started" });
+    baseDeliverableId = Number(deliverableResult[0].insertId);
   });
 
   afterAll(async () => {
@@ -32,6 +40,8 @@ describe("persistent invitation journey", () => {
     await db.delete(projects).where(eq(projects.title, marker));
     await db.delete(teamInvitations).where(eq(teamInvitations.email, invitationEmail));
     await db.delete(deliverableComments).where(eq(deliverableComments.body, marker));
+    if (baseDeliverableId) await db.delete(deliverables).where(eq(deliverables.id, baseDeliverableId));
+    if (baseProjectId) await db.delete(projects).where(eq(projects.id, baseProjectId));
     for (const board of boards) await db.delete(boardMemberships).where(eq(boardMemberships.boardId, board.id));
     await db.delete(managementBoards).where(eq(managementBoards.name, marker));
     if (member[0]) await db.delete(teamMembers).where(eq(teamMembers.id, member[0].id));
@@ -61,7 +71,7 @@ describe("persistent invitation journey", () => {
 
   it("persists a manager comment against a deliverable", async () => {
     const workspace = await getWorkspaceData();
-    const deliverable = workspace.deliverables[0];
+    const deliverable = workspace.deliverables.find((item) => item.id === baseDeliverableId);
     expect(deliverable).toBeDefined();
     await addDeliverableComment({ deliverableId: deliverable!.id, authorUserId: managerId, body: marker });
     const db = await getDb();
@@ -91,7 +101,7 @@ describe("persistent invitation journey", () => {
     const workspace = await getWorkspaceData();
     const createdTask = workspace.tasks.find((task) => task.title === marker)!;
     const createdProject = workspace.projects.find((project) => project.title === marker)!;
-    const deliverable = workspace.deliverables[0]!;
+    const deliverable = workspace.deliverables.find((item) => item.id === baseDeliverableId)!;
     await expect(caller.workspace.assignTask({ id: createdTask.id, assigneeMemberId: invitedMemberId })).resolves.toBeUndefined();
     await expect(caller.workspace.updateProjectStatus({ id: createdProject.id, status: "in_progress" })).resolves.toBeUndefined();
     await expect(caller.workspace.addDeliverableComment({ deliverableId: deliverable.id, body: marker })).resolves.toBeUndefined();
