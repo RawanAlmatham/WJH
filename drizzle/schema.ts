@@ -14,6 +14,7 @@ export const users = mysqlTable("users", {
 
 export const teamMembers = mysqlTable("teamMembers", {
   id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id),
   name: varchar("name", { length: 160 }).notNull(),
   role: varchar("role", { length: 160 }).notNull(),
   email: varchar("email", { length: 320 }),
@@ -21,6 +22,17 @@ export const teamMembers = mysqlTable("teamMembers", {
   avatarInitials: varchar("avatarInitials", { length: 8 }).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const teamInvitations = mysqlTable("teamInvitations", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").references(() => teamMembers.id).notNull(),
+  invitedByUserId: int("invitedByUserId").references(() => users.id).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "accepted", "cancelled"]).default("pending").notNull(),
+  acceptedAt: timestamp("acceptedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export const annualGoals = mysqlTable("annualGoals", {
@@ -65,6 +77,14 @@ export const deliverables = mysqlTable("deliverables", {
   status: mysqlEnum("status", ["not_started", "in_progress", "in_review", "complete"]).default("not_started").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const deliverableComments = mysqlTable("deliverableComments", {
+  id: int("id").autoincrement().primaryKey(),
+  deliverableId: int("deliverableId").references(() => deliverables.id).notNull(),
+  authorUserId: int("authorUserId").references(() => users.id).notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export const tasks = mysqlTable("tasks", {

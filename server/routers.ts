@@ -24,6 +24,9 @@ export const appRouter = router({
   }),
   workspace: router({
     overview: publicProcedure.query(() => db.getWorkspaceData()),
+    invitationByToken: publicProcedure.input(z.object({ token: z.string().min(12).max(64) })).query(({ input }) => db.getInvitationByToken(input.token)),
+    invitations: managerProcedure.query(() => db.listTeamInvitations()),
+    inviteMember: managerProcedure.input(z.object({ name: z.string().min(2).max(160), teamRole: z.string().min(2).max(160), email: z.string().email() })).mutation(({ input, ctx }) => db.createTeamInvitation(input, ctx.user.id)),
     teamWorkload: publicProcedure.query(() => db.getTeamWorkload()),
     reportSummary: publicProcedure.query(() => db.getReportSummary()),
     createProject: managerProcedure.input(z.object({
@@ -36,6 +39,7 @@ export const appRouter = router({
     })).mutation(({ input }) => db.createTask(input)),
     updateTaskStatus: protectedProcedure.input(z.object({ id: z.number().int(), status: taskStatus })).mutation(({ input }) => db.updateTaskStatus(input.id, input.status)),
     addTaskComment: protectedProcedure.input(z.object({ taskId: z.number().int(), authorMemberId: z.number().int(), body: z.string().min(1).max(3000) })).mutation(({ input }) => db.addTaskComment(input)),
+    addDeliverableComment: managerProcedure.input(z.object({ deliverableId: z.number().int(), body: z.string().min(1).max(3000) })).mutation(({ input, ctx }) => db.addDeliverableComment({ ...input, authorUserId: ctx.user.id })),
     updateProjectStatus: managerProcedure.input(z.object({ id: z.number().int(), status: projectStatus })).mutation(({ input }) => db.updateProjectStatus(input.id, input.status)),
   }),
 });

@@ -3,15 +3,18 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   annualGoals,
   calendarEvents,
+  deliverableComments,
   deliverables,
   InsertUser,
   projectMembers,
   projects,
   taskParticipants,
   tasks,
+  teamInvitations,
   teamMembers,
   users,
 } from "../drizzle/schema";
+import { nanoid } from "nanoid";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -61,6 +64,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   values.role = user.role ?? (user.openId === ENV.ownerOpenId ? "admin" : "user");
   updateSet.role = values.role;
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  if (values.email) {
+    const account = await db.select({ id: users.id }).from(users).where(eq(users.openId, values.openId)).limit(1);
+    if (account[0]) {
+      const invitations = await db.select().from(teamInvitations).where(eq(teamInvitations.email, values.email));
+      for (const invitation of invitations.filter((item) => item.status === "pending")) {
+        await db.update(teamMembers).set({ userId: account[0].id }).where(eq(teamMembers.id, invitation.memberId));
+        await db.update(teamInvitations).set({ status: "accepted", acceptedAt: new Date() }).where(eq(teamInvitations.id, invitation.id));
+      }
+    }
+  }
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -68,6 +81,45 @@ export async function getUserByOpenId(openId: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
+}
+
+function initialsFor(name: string) {
+  return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").slice(0, 4) || "عضو";
+}
+
+export async function createTeamInvitation(input: { name: string; teamRole: string; email: string }, invitedByUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const existing = await db.select().from(teamMembers).where(eq(teamMembers.email, input.email)).limit(1);
+  let memberId = existing[0]?.id;
+  if (!memberId) {
+    const result = await db.insert(teamMembers).values({ name: input.name, role: input.teamRole, email: input.email, avatarInitials: initialsFor(input.name) });
+    memberId = Number(result[0].insertId);
+  }
+  const token = nanoid(32);
+  await db.insert(teamInvitations).values({ memberId, invitedByUserId, email: input.email, token, status: "pending" });
+  return { token, memberId, invitePath: `/invite/${token}` };
+}
+
+export async function listTeamInvitations() {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  return db.select().from(teamInvitations);
+}
+
+export async function getInvitationByToken(token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const invitation = await db.select().from(teamInvitations).where(eq(teamInvitations.token, token)).limit(1);
+  if (!invitation[0]) return null;
+  const member = await db.select().from(teamMembers).where(eq(teamMembers.id, invitation[0].memberId)).limit(1);
+  return { invitation: invitation[0], member: member[0] ?? null };
+}
+
+export async function addDeliverableComment(input: { deliverableId: number; authorUserId: number; body: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  await db.insert(deliverableComments).values(input);
 }
 
 const d = (value: string) => new Date(`${value}T09:00:00.000Z`);
@@ -155,14 +207,15 @@ export async function getWorkspaceData() {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
   await ensureDemoData();
-  const [goals, members, projectRows, deliverableRows, taskRows, eventRows] = await Promise.all([
+  const [goals, members, projectRows, deliverableRows, taskRows, eventRows, commentRows] = await Promise.all([
     db.select().from(annualGoals), db.select().from(teamMembers), db.select().from(projects),
     db.select().from(deliverables), db.select().from(tasks), db.select().from(calendarEvents),
+    db.select().from(deliverableComments),
   ]);
   const enrichedMembers = members.map((member) => {
     return { ...member, ...calculateWorkload(taskRows, member.id) };
   });
-  return { goals, members: enrichedMembers, projects: projectRows, deliverables: deliverableRows, tasks: taskRows, events: eventRows };
+  return { goals, members: enrichedMembers, projects: projectRows, deliverables: deliverableRows, tasks: taskRows, events: eventRows, deliverableComments: commentRows };
 }
 
 export async function getTeamWorkload() {

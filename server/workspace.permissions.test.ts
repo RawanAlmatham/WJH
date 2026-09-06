@@ -31,4 +31,14 @@ describe("workspace permissions", () => {
       status: "planned",
     })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("prevents a team member from inviting another employee", async () => {
+    const caller = appRouter.createCaller(memberContext());
+    await expect(caller.workspace.inviteMember({ name: "موظف جديد", teamRole: "أخصائي عمليات", email: "new.member@example.com" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("prevents a team member from adding a manager comment to a deliverable", async () => {
+    const caller = appRouter.createCaller(memberContext());
+    await expect(caller.workspace.addDeliverableComment({ deliverableId: 1, body: "يرجى تحديث المسودة." })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

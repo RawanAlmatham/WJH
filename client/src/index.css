@@ -19,6 +19,9 @@
   --radius: 0.75rem;
 }
 
+[data-slot="sheet-content"] { background: #FFFFFF !important; }
+[data-slot="sheet-content"] form { padding-inline: 1rem; }
+
 * { border-color: var(--border); }
 html { direction: rtl; }
 body { margin: 0; min-width: 320px; background: #F7F9FC; color: #26364A; font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
@@ -32,3 +35,24 @@ button:active { transform: scale(.98); }
 .entry { animation: fade-in .24s cubic-bezier(.23,1,.32,1) both; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .entry { animation: none; } }
+
+@media (max-width: 639px) {
+  body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+  input, select, textarea { font-size: 16px; }
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+  .overflow-x-auto table { min-width: 0 !important; }
+  .overflow-x-auto table thead { display: none; }
+  .overflow-x-auto table, .overflow-x-auto tbody, .overflow-x-auto tr, .overflow-x-auto td { display: block; width: 100%; }
+  .overflow-x-auto table tr { position: relative; padding: .6rem 1rem; }
+  .overflow-x-auto table td { border: 0 !important; padding: .22rem 0 !important; }
+  .overflow-x-auto table td:first-child:has(button) { position: absolute; inset-inline-end: 1rem; top: 1.2rem; width: auto; }
+  .overflow-x-auto table td:nth-child(2) { padding-inline-start: 2rem !important; font-weight: 600; }
+  .overflow-x-auto table td:nth-child(n+3) { display: inline-flex; width: auto; margin-inline-end: .75rem; align-items: center; }
+  .overflow-x-auto table td:last-child { position: absolute; inset-inline-start: 1rem; top: 1.25rem; width: auto; }
+  .grid.grid-cols-7 > div { min-height: 4.5rem; padding: .35rem; }
+  .grid.grid-cols-7 > div > div { max-height: 3.1rem; overflow: hidden; }
+  .grid.grid-cols-7 > div button { padding: .16rem .28rem; font-size: 9px; }
+  div[class*="xl:grid-cols-[1fr_265px]"] > section { display: none; }
+  div[class*="xl:grid-cols-[1fr_265px]"] > aside { min-height: 22rem; }
+  [data-slot="sheet-content"] { width: 100% !important; max-width: none !important; }
+}
