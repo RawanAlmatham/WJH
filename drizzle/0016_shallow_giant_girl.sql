@@ -1,0 +1,1 @@
+ALTER TABLE `managementBoards` ADD `presentationSections` json;

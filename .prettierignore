@@ -6,6 +6,13 @@ node_modules/
 dist/
 build/
 *.dist
+work/
+outputs/
+
+# Native projects use platform-specific formatters
+android/
+ios/
+assets/
 
 # Generated files
 *.tsbuildinfo

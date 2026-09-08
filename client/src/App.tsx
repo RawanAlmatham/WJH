@@ -7,6 +7,11 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import InviteAccess from "./pages/InviteAccess";
 import BoardJoin from "./pages/BoardJoin";
+import Login from "./pages/Login";
+import ManagerInviteAccess from "./pages/ManagerInviteAccess";
+import BoardOnboarding from "./pages/BoardOnboarding";
+import AdminDashboard from "./pages/AdminDashboard";
+import { Privacy, Support } from "./pages/PublicInfo";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -15,6 +20,12 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/invite/:token"} component={InviteAccess} />
       <Route path={"/join/:token"} component={BoardJoin} />
+      <Route path={"/login"} component={Login} />
+      <Route path={"/manager-invite/:token"} component={ManagerInviteAccess} />
+      <Route path={"/boards/new"}>{() => <BoardOnboarding />}</Route>
+      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/privacy"} component={Privacy} />
+      <Route path={"/support"} component={Support} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

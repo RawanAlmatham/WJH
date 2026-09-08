@@ -1,0 +1,1 @@
+ALTER TABLE `projects` MODIFY COLUMN `endDate` timestamp;

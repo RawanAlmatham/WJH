@@ -7,8 +7,17 @@ dist/
 build/
 *.dist
 
+# Local packaging and verification workspaces
+/work/
+/outputs/
+/android/work/
+
+# Superseded generated icon set (active sources live in assets/ and client/public/icons/)
+/icons/
+
 # Environment variables
 .env
+.env.production
 .env.local
 .env.development.local
 .env.test.local
@@ -20,6 +29,11 @@ build/
 *.swp
 *.swo
 *~
+
+# Native IDE caches
+**/.gradle/
+**/DerivedData/
+**/xcuserdata/
 
 # OS generated files
 .DS_Store
@@ -106,9 +120,4 @@ temp/
 *.sqlite
 *.sqlite3
 
-# Webdev artifacts (checkpoint zips, migrations, etc.)
-.webdev/
-
-# Manus version file (auto-generated, not part of source)
-client/public/__manus__/version.json
 .project-config.json

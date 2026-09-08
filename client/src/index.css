@@ -19,41 +19,316 @@
   --radius: 0.75rem;
 }
 
-[data-slot="sheet-content"] { background: #FFFFFF !important; }
-[data-slot="sheet-content"] form { padding-inline: 1rem; }
+[data-slot="sheet-content"] {
+  background: #ffffff !important;
+}
+[data-slot="sheet-content"] form {
+  padding-inline: 1rem;
+}
 
-* { border-color: var(--border); }
-html { direction: rtl; max-width: 100%; overflow-x: hidden; }
-body { margin: 0; width: 100%; max-width: 100%; min-width: 320px; overflow-x: hidden; background: #F7F9FC; color: #26364A; font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif; }
-#root { width: 100%; max-width: 100%; overflow-x: hidden; }
-button, input, select, textarea { font: inherit; }
-button { cursor: pointer; }
-button:active { transform: scale(.98); }
-::selection { background: #DCE9F5; color: #26364A; }
-.soft-grid { background-image: linear-gradient(to bottom, rgba(108, 143, 184, .035) 1px, transparent 1px); background-size: 100% 64px; }
-.thin-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-.thin-scroll::-webkit-scrollbar-thumb { background: #D7E0E9; border-radius: 8px; }
-.entry { animation: fade-in .24s cubic-bezier(.23,1,.32,1) both; }
-@keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .entry { animation: none; } }
+* {
+  border-color: var(--border);
+}
+html {
+  direction: rtl;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+body {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  background: #f7f9fc;
+  color: #26364a;
+  font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+}
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+.app-main,
+.app-main > *,
+.entry {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-main :where(.grid) > * {
+  min-width: 0;
+}
+.app-main :where(p, a, h1, h2, h3, td, th),
+[data-slot="sheet-content"] :where(p, a, h1, h2, h3, label),
+[data-slot="dialog-content"] :where(p, a, h1, h2, h3, label),
+[data-slot="alert-dialog-content"] :where(p, a, h1, h2, h3, label) {
+  overflow-wrap: anywhere;
+}
+img,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+.min-h-screen {
+  min-height: 100dvh;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:active {
+  transform: scale(0.98);
+}
+::selection {
+  background: #dce9f5;
+  color: #26364a;
+}
+.soft-grid {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(108, 143, 184, 0.035) 1px,
+    transparent 1px
+  );
+  background-size: 100% 64px;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #d7e0e9;
+  border-radius: 8px;
+}
+.entry {
+  animation: fade-in 0.24s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry {
+    animation: none;
+  }
+}
+
+/*
+ * Data-heavy views use cards before the phone breakpoint. Keeping the table
+ * layout on tablets made the first/last columns look missing inside the RTL
+ * horizontal scroller.
+ */
+@media (max-width: 1023px) {
+  .responsive-data-table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .responsive-data-table thead {
+    display: none;
+  }
+  .responsive-data-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .responsive-data-table tr {
+    display: block;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #eef2f6;
+  }
+  .responsive-data-table td {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: 0.75rem;
+    border: 0 !important;
+    padding: 0.42rem 0 !important;
+    text-align: start;
+  }
+  .responsive-data-table td::before {
+    content: attr(data-label);
+    color: #7c8a9a;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .responsive-data-table td[data-mobile-primary] {
+    display: block;
+    padding-bottom: 0.75rem !important;
+  }
+  .responsive-data-table td[data-mobile-primary]::before,
+  .responsive-data-table td[data-mobile-empty]::before {
+    display: none;
+  }
+  .responsive-data-table td[data-mobile-actions] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding-top: 0.7rem !important;
+  }
+  .responsive-data-table td[data-mobile-actions]::before {
+    margin-inline-end: auto;
+  }
+  .responsive-data-table td[data-mobile-empty] {
+    display: block;
+    padding: 2rem 0.5rem !important;
+    text-align: center;
+  }
+  .responsive-data-table td select {
+    width: 100%;
+    max-width: none;
+  }
+  .responsive-data-table td [class*="max-w-"] {
+    max-width: none;
+  }
+}
+
+/* The team administration table has more columns than the other lists. */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .responsive-data-table-wide {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .responsive-data-table-wide thead {
+    display: none;
+  }
+  .responsive-data-table-wide tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .responsive-data-table-wide tr {
+    display: block;
+    min-width: 0;
+    padding: 1rem;
+    border-bottom: 1px solid #eef2f6;
+  }
+  .responsive-data-table-wide tr:nth-child(odd) {
+    border-inline-end: 1px solid #eef2f6;
+  }
+  .responsive-data-table-wide td {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: 0.75rem;
+    border: 0 !important;
+    padding: 0.42rem 0 !important;
+    text-align: start;
+  }
+  .responsive-data-table-wide td::before {
+    content: attr(data-label);
+    color: #7c8a9a;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .responsive-data-table-wide td[data-mobile-primary] {
+    display: block;
+    padding-bottom: 0.75rem !important;
+  }
+  .responsive-data-table-wide td[data-mobile-primary]::before,
+  .responsive-data-table-wide td[data-mobile-empty]::before {
+    display: none;
+  }
+  .responsive-data-table-wide td[data-mobile-actions] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding-top: 0.7rem !important;
+  }
+  .responsive-data-table-wide td[data-mobile-actions]::before {
+    margin-inline-end: auto;
+  }
+  .responsive-data-table-wide td[data-mobile-empty] {
+    display: block;
+    padding: 2rem 0.5rem !important;
+    text-align: center;
+  }
+  .responsive-data-table-wide td select {
+    width: 100%;
+    max-width: none;
+  }
+  .responsive-data-table-wide td [class*="max-w-"] {
+    max-width: none;
+  }
+}
 
 @media (max-width: 639px) {
-  body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
-  input, select, textarea { font-size: 16px; }
-  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
-  .overflow-x-auto table { min-width: 0 !important; }
-  .overflow-x-auto table thead { display: none; }
-  .overflow-x-auto table, .overflow-x-auto tbody, .overflow-x-auto tr, .overflow-x-auto td { display: block; width: 100%; }
-  .overflow-x-auto table tr { position: relative; padding: .6rem 1rem; }
-  .overflow-x-auto table td { border: 0 !important; padding: .22rem 0 !important; }
-  .overflow-x-auto table td:first-child:has(button) { position: absolute; inset-inline-end: 1rem; top: 1.2rem; width: auto; }
-  .overflow-x-auto table td:nth-child(2) { padding-inline-start: 2rem !important; font-weight: 600; }
-  .overflow-x-auto table td:nth-child(n+3) { display: inline-flex; width: auto; margin-inline-end: .75rem; align-items: center; }
-  .overflow-x-auto table td:last-child { position: absolute; inset-inline-start: 1rem; top: 1.25rem; width: auto; }
-  .grid.grid-cols-7 > div { min-height: 4.5rem; padding: .35rem; }
-  .grid.grid-cols-7 > div > div { max-height: 3.1rem; overflow: hidden; }
-  .grid.grid-cols-7 > div button { padding: .16rem .28rem; font-size: 9px; }
-  div[class*="xl:grid-cols-[1fr_265px]"] > section { display: none; }
-  div[class*="xl:grid-cols-[1fr_265px]"] > aside { min-height: 22rem; }
-  [data-slot="sheet-content"] { width: 100% !important; max-width: none !important; }
+  body {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  .responsive-data-table td,
+  .responsive-data-table-wide td {
+    grid-template-columns: minmax(5.5rem, 0.7fr) minmax(0, 1.3fr);
+  }
+  .grid.grid-cols-7 > div {
+    min-height: 4.5rem;
+    padding: 0.35rem;
+  }
+  .grid.grid-cols-7 > div > div {
+    max-height: 3.1rem;
+    overflow: hidden;
+  }
+  .grid.grid-cols-7 > div button {
+    padding: 0.16rem 0.28rem;
+    font-size: 9px;
+  }
+  div[class*="xl:grid-cols-[1fr_265px]"] > section {
+    display: none;
+  }
+  div[class*="xl:grid-cols-[1fr_265px]"] > aside {
+    min-height: 22rem;
+  }
+  [data-slot="sheet-content"] {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  [data-slot="sheet-content"] {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .app-main {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+  .app-sidebar {
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .app-topbar {
+    padding-top: env(safe-area-inset-top);
+  }
+  .public-shell {
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .presentation-shell {
+    padding-top: max(5rem, calc(env(safe-area-inset-top) + 4rem));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .presentation-controls {
+    top: max(1rem, env(safe-area-inset-top));
+    left: max(1rem, env(safe-area-inset-left));
+  }
 }

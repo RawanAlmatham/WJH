@@ -1,0 +1,2 @@
+ALTER TABLE `teamInvitations` ADD `boardId` int;--> statement-breakpoint
+ALTER TABLE `teamInvitations` ADD CONSTRAINT `teamInvitations_boardId_managementBoards_id_fk` FOREIGN KEY (`boardId`) REFERENCES `managementBoards`(`id`) ON DELETE no action ON UPDATE no action;

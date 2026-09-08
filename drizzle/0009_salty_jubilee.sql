@@ -1,0 +1,1 @@
+ALTER TABLE `teamMembers` ADD `isActive` boolean DEFAULT true NOT NULL;

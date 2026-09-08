@@ -36,6 +36,111 @@
       "when": 1788710016286,
       "tag": "0004_nifty_dakota_north",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1788724499173,
+      "tag": "0005_tiny_mockingbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1788725326022,
+      "tag": "0006_narrow_barracuda",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1788726778704,
+      "tag": "0007_curvy_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1788773784617,
+      "tag": "0008_worried_master_chief",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1788775350445,
+      "tag": "0009_salty_jubilee",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1788777728562,
+      "tag": "0010_woozy_barracuda",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1788778290499,
+      "tag": "0011_dry_nuke",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1788780009702,
+      "tag": "0012_premium_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1788803890879,
+      "tag": "0013_milky_darkstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1788809942236,
+      "tag": "0014_cooing_ink",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1788845002422,
+      "tag": "0015_nappy_old_lace",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1788848905088,
+      "tag": "0016_shallow_giant_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1788859627778,
+      "tag": "0017_thin_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1788879141288,
+      "tag": "0018_burly_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1788881811725,
+      "tag": "0019_known_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

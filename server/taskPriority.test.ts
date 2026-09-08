@@ -1,0 +1,82 @@
+import { describe, expect, it } from "vitest";
+import { sortTasksByPriority } from "../shared/taskPriority";
+
+describe("automatic task priority ordering", () => {
+  const now = new Date("2026-09-07T12:00:00Z");
+
+  it("orders overdue work before priority and due date", () => {
+    const tasks = [
+      {
+        id: 1,
+        status: "in_progress",
+        priority: "urgent",
+        dueDate: "2026-09-09",
+        createdAt: "2026-09-01",
+      },
+      {
+        id: 2,
+        status: "in_progress",
+        priority: "low",
+        dueDate: "2026-09-06",
+        createdAt: "2026-09-02",
+      },
+      {
+        id: 3,
+        status: "overdue",
+        priority: "medium",
+        dueDate: "2026-09-10",
+        createdAt: "2026-09-03",
+      },
+    ];
+
+    expect(sortTasksByPriority(tasks, now).map(task => task.id)).toEqual([
+      3, 2, 1,
+    ]);
+  });
+
+  it("uses priority, nearest due date, then oldest creation date", () => {
+    const tasks = [
+      {
+        id: 1,
+        status: "in_progress",
+        priority: "high",
+        dueDate: "2026-09-10",
+        createdAt: "2026-09-03",
+      },
+      {
+        id: 2,
+        status: "in_progress",
+        priority: "urgent",
+        dueDate: "2026-09-12",
+        createdAt: "2026-09-02",
+      },
+      {
+        id: 3,
+        status: "in_progress",
+        priority: "high",
+        dueDate: "2026-09-09",
+        createdAt: "2026-09-04",
+      },
+      {
+        id: 4,
+        status: "in_progress",
+        priority: "high",
+        dueDate: "2026-09-09",
+        createdAt: "2026-09-01",
+      },
+    ];
+
+    expect(sortTasksByPriority(tasks, now).map(task => task.id)).toEqual([
+      2, 4, 3, 1,
+    ]);
+  });
+
+  it("does not mutate the input array", () => {
+    const tasks = [
+      { id: 1, status: "in_progress", priority: "low" },
+      { id: 2, status: "in_progress", priority: "urgent" },
+    ];
+    sortTasksByPriority(tasks, now);
+    expect(tasks.map(task => task.id)).toEqual([1, 2]);
+  });
+});

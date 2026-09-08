@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { calculateWorkload, shouldWarnAssignee, summarizeTasks } from "./db";
+import {
+  calculateGoalProgress,
+  calculateProjectProgress,
+  calculateWorkload,
+  shouldWarnAssignee,
+  summarizeTasks,
+} from "./db";
 
 describe("workspace operating logic", () => {
   const tasks = [
@@ -10,8 +16,16 @@ describe("workspace operating logic", () => {
   ];
 
   it("classifies a high workload and identifies overdue work", () => {
-    expect(calculateWorkload(tasks, 1)).toMatchObject({ activeTaskCount: 3, overdueCount: 1, load: 9, loadStatus: "loaded" });
-    expect(calculateWorkload(tasks, 2)).toMatchObject({ activeTaskCount: 0, loadStatus: "available" });
+    expect(calculateWorkload(tasks, 1)).toMatchObject({
+      activeTaskCount: 3,
+      overdueCount: 1,
+      load: 9,
+      loadStatus: "loaded",
+    });
+    expect(calculateWorkload(tasks, 2)).toMatchObject({
+      activeTaskCount: 0,
+      loadStatus: "available",
+    });
   });
 
   it("warns before assignment when an assignee already has four active tasks", () => {
@@ -20,6 +34,54 @@ describe("workspace operating logic", () => {
   });
 
   it("returns a concise report summary for operational reporting", () => {
-    expect(summarizeTasks([{ status: "complete" }, { status: "overdue" }, { status: "in_progress" }, { status: "complete" }])).toEqual({ achievement: 50, overdue: 1, completed: 2, taskCount: 4 });
+    expect(
+      summarizeTasks([
+        { status: "complete" },
+        { status: "overdue" },
+        { status: "in_progress" },
+        { status: "complete" },
+      ])
+    ).toEqual({ achievement: 50, overdue: 1, completed: 2, taskCount: 4 });
+  });
+});
+
+describe("automatic project progress", () => {
+  it("weights tasks at 70% and deliverables at 30%", () => {
+    expect(
+      calculateProjectProgress(
+        [{ status: "complete" }, { status: "in_progress" }],
+        [{ status: "complete" }]
+      )
+    ).toBe(65);
+  });
+
+  it("uses tasks alone when the project has no deliverables", () => {
+    expect(
+      calculateProjectProgress(
+        [
+          { status: "complete" },
+          { status: "complete" },
+          { status: "in_progress" },
+          { status: "not_started" },
+        ],
+        []
+      )
+    ).toBe(50);
+  });
+});
+
+describe("automatic annual goal progress", () => {
+  it("uses the average progress of linked projects", () => {
+    expect(
+      calculateGoalProgress([
+        { progress: 80 },
+        { progress: 40 },
+        { progress: 30 },
+      ])
+    ).toBe(50);
+  });
+
+  it("starts at zero before projects are linked", () => {
+    expect(calculateGoalProgress([])).toBe(0);
   });
 });

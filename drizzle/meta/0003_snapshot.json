@@ -82,12 +82,8 @@
           "name": "annualGoals_ownerMemberId_teamMembers_id_fk",
           "tableFrom": "annualGoals",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "ownerMemberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ownerMemberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -95,9 +91,7 @@
       "compositePrimaryKeys": {
         "annualGoals_id": {
           "name": "annualGoals_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -156,12 +150,8 @@
           "name": "calendarEvents_projectId_projects_id_fk",
           "tableFrom": "calendarEvents",
           "tableTo": "projects",
-          "columnsFrom": [
-            "projectId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["projectId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -169,9 +159,7 @@
       "compositePrimaryKeys": {
         "calendarEvents_id": {
           "name": "calendarEvents_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -223,12 +211,8 @@
           "name": "deliverableComments_deliverableId_deliverables_id_fk",
           "tableFrom": "deliverableComments",
           "tableTo": "deliverables",
-          "columnsFrom": [
-            "deliverableId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["deliverableId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -236,12 +220,8 @@
           "name": "deliverableComments_authorUserId_users_id_fk",
           "tableFrom": "deliverableComments",
           "tableTo": "users",
-          "columnsFrom": [
-            "authorUserId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["authorUserId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -249,9 +229,7 @@
       "compositePrimaryKeys": {
         "deliverableComments_id": {
           "name": "deliverableComments_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -328,12 +306,8 @@
           "name": "deliverables_projectId_projects_id_fk",
           "tableFrom": "deliverables",
           "tableTo": "projects",
-          "columnsFrom": [
-            "projectId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["projectId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -341,9 +315,7 @@
       "compositePrimaryKeys": {
         "deliverables_id": {
           "name": "deliverables_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -380,12 +352,8 @@
           "name": "projectMembers_projectId_projects_id_fk",
           "tableFrom": "projectMembers",
           "tableTo": "projects",
-          "columnsFrom": [
-            "projectId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["projectId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -393,12 +361,8 @@
           "name": "projectMembers_memberId_teamMembers_id_fk",
           "tableFrom": "projectMembers",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "memberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["memberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -406,9 +370,7 @@
       "compositePrimaryKeys": {
         "projectMembers_id": {
           "name": "projectMembers_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -514,12 +476,8 @@
           "name": "projects_annualGoalId_annualGoals_id_fk",
           "tableFrom": "projects",
           "tableTo": "annualGoals",
-          "columnsFrom": [
-            "annualGoalId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["annualGoalId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -527,12 +485,8 @@
           "name": "projects_ownerMemberId_teamMembers_id_fk",
           "tableFrom": "projects",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "ownerMemberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ownerMemberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -540,9 +494,7 @@
       "compositePrimaryKeys": {
         "projects_id": {
           "name": "projects_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -615,12 +567,8 @@
           "name": "taskAttachments_taskId_tasks_id_fk",
           "tableFrom": "taskAttachments",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "taskId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["taskId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -628,12 +576,8 @@
           "name": "taskAttachments_uploadedByMemberId_teamMembers_id_fk",
           "tableFrom": "taskAttachments",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "uploadedByMemberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploadedByMemberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -641,9 +585,7 @@
       "compositePrimaryKeys": {
         "taskAttachments_id": {
           "name": "taskAttachments_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -695,12 +637,8 @@
           "name": "taskComments_taskId_tasks_id_fk",
           "tableFrom": "taskComments",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "taskId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["taskId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -708,12 +646,8 @@
           "name": "taskComments_authorMemberId_teamMembers_id_fk",
           "tableFrom": "taskComments",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "authorMemberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["authorMemberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -721,9 +655,7 @@
       "compositePrimaryKeys": {
         "taskComments_id": {
           "name": "taskComments_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -760,12 +692,8 @@
           "name": "taskParticipants_taskId_tasks_id_fk",
           "tableFrom": "taskParticipants",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "taskId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["taskId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -773,12 +701,8 @@
           "name": "taskParticipants_memberId_teamMembers_id_fk",
           "tableFrom": "taskParticipants",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "memberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["memberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -786,9 +710,7 @@
       "compositePrimaryKeys": {
         "taskParticipants_id": {
           "name": "taskParticipants_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -908,12 +830,8 @@
           "name": "tasks_projectId_projects_id_fk",
           "tableFrom": "tasks",
           "tableTo": "projects",
-          "columnsFrom": [
-            "projectId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["projectId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -921,12 +839,8 @@
           "name": "tasks_deliverableId_deliverables_id_fk",
           "tableFrom": "tasks",
           "tableTo": "deliverables",
-          "columnsFrom": [
-            "deliverableId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["deliverableId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -934,12 +848,8 @@
           "name": "tasks_assigneeMemberId_teamMembers_id_fk",
           "tableFrom": "tasks",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "assigneeMemberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["assigneeMemberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -947,12 +857,8 @@
           "name": "tasks_parentTaskId_tasks_id_fk",
           "tableFrom": "tasks",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "parentTaskId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parentTaskId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -960,9 +866,7 @@
       "compositePrimaryKeys": {
         "tasks_id": {
           "name": "tasks_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1036,12 +940,8 @@
           "name": "teamInvitations_memberId_teamMembers_id_fk",
           "tableFrom": "teamInvitations",
           "tableTo": "teamMembers",
-          "columnsFrom": [
-            "memberId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["memberId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1049,12 +949,8 @@
           "name": "teamInvitations_invitedByUserId_users_id_fk",
           "tableFrom": "teamInvitations",
           "tableTo": "users",
-          "columnsFrom": [
-            "invitedByUserId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invitedByUserId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1062,17 +958,13 @@
       "compositePrimaryKeys": {
         "teamInvitations_id": {
           "name": "teamInvitations_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "teamInvitations_token_unique": {
           "name": "teamInvitations_token_unique",
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "checkConstraint": {}
@@ -1154,12 +1046,8 @@
           "name": "teamMembers_userId_users_id_fk",
           "tableFrom": "teamMembers",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1167,9 +1055,7 @@
       "compositePrimaryKeys": {
         "teamMembers_id": {
           "name": "teamMembers_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1252,17 +1138,13 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_openId_unique": {
           "name": "users_openId_unique",
-          "columns": [
-            "openId"
-          ]
+          "columns": ["openId"]
         }
       },
       "checkConstraint": {}

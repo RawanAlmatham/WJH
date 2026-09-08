@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+!.env.production.example
+node_modules
+dist
+work
+outputs
+android
+ios
+assets
+*.log
+.DS_Store
