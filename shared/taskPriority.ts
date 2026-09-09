@@ -6,6 +6,12 @@ export type PrioritizableTask = {
   createdAt?: Date | string | null;
 };
 
+export type AttentionReason = "due_soon" | "overdue" | "needs_support";
+
+export type AttentionTask = Pick<PrioritizableTask, "status" | "dueDate"> & {
+  needsSupport?: boolean | null;
+};
+
 export type TaskDueFilter =
   | "all"
   | "overdue"
@@ -41,6 +47,32 @@ function taskDate(value: Date | string | null | undefined) {
       )
     : new Date(value);
   return Number.isNaN(result.getTime()) ? null : result;
+}
+
+/**
+ * Returns why an open task needs attention. Blocked work is intentionally
+ * handled in its own home-page section instead of the attention list.
+ */
+export function getTaskAttentionReason(
+  task: AttentionTask,
+  now = new Date(),
+  dueSoonDays = 3
+): AttentionReason | null {
+  if (task.status === "complete" || task.status === "blocked") return null;
+
+  const dueDate = taskDate(task.dueDate);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  if (task.status === "overdue" || (dueDate && dueDate < today)) {
+    return "overdue";
+  }
+  if (task.needsSupport) return "needs_support";
+  if (!dueDate) return null;
+
+  const endOfDueSoonWindow = new Date(today);
+  endOfDueSoonWindow.setDate(endOfDueSoonWindow.getDate() + dueSoonDays + 1);
+  return dueDate >= today && dueDate < endOfDueSoonWindow ? "due_soon" : null;
 }
 
 export function matchesTaskDueFilter(

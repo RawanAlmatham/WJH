@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getTaskAttentionReason,
   matchesTaskDueFilter,
   sortTasksByPriority,
 } from "../shared/taskPriority";
@@ -81,6 +82,55 @@ describe("automatic task priority ordering", () => {
     ];
     sortTasksByPriority(tasks, now);
     expect(tasks.map(task => task.id)).toEqual([1, 2]);
+  });
+});
+
+describe("home attention reasons", () => {
+  const now = new Date(2026, 8, 9, 12);
+
+  it("classifies overdue, support, and due-soon tasks", () => {
+    expect(
+      getTaskAttentionReason(
+        { status: "in_progress", dueDate: "2026-09-08" },
+        now
+      )
+    ).toBe("overdue");
+    expect(
+      getTaskAttentionReason(
+        { status: "in_progress", dueDate: null, needsSupport: true },
+        now
+      )
+    ).toBe("needs_support");
+    expect(
+      getTaskAttentionReason(
+        { status: "in_progress", dueDate: "2026-09-12" },
+        now
+      )
+    ).toBe("due_soon");
+  });
+
+  it("keeps blocked and completed tasks out of attention", () => {
+    expect(
+      getTaskAttentionReason(
+        { status: "blocked", dueDate: "2026-09-08", needsSupport: true },
+        now
+      )
+    ).toBeNull();
+    expect(
+      getTaskAttentionReason({ status: "complete", dueDate: "2026-09-08" }, now)
+    ).toBeNull();
+  });
+
+  it("does not flag distant or undated work without support", () => {
+    expect(
+      getTaskAttentionReason(
+        { status: "in_progress", dueDate: "2026-09-13" },
+        now
+      )
+    ).toBeNull();
+    expect(
+      getTaskAttentionReason({ status: "in_progress", dueDate: null }, now)
+    ).toBeNull();
   });
 });
 

@@ -28,6 +28,7 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import {
+  getTaskAttentionReason,
   matchesTaskDueFilter,
   sortTasksByPriority,
   type TaskDueFilter,
@@ -1298,7 +1299,6 @@ function OverviewPage({
   data,
   user,
   setPage,
-  setProjectId,
   openTaskDetail,
   period,
   openTask,
@@ -1326,40 +1326,29 @@ function OverviewPage({
     if (!b.dueDate) return -1;
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
   });
-  const attention = [
-    ...data.tasks
-      .filter(
-        (task: any) =>
-          task.status === "overdue" ||
-          task.isApprovalPending ||
-          task.needsSupport
-      )
-      .map((task: any) => ({
-        type: "task",
-        title: task.title,
-        id: task.id,
-        due: task.dueDate,
-        status: task.status,
-        needsSupport: task.needsSupport,
-        supportRequest: task.supportRequest,
-        assignee: data.members.find(
-          (member: any) => member.id === task.assigneeMemberId
-        ),
-      })),
-    ...data.projects
-      .filter((project: any) => project.status === "blocked")
-      .map((project: any) => ({
-        type: "project",
-        title: project.title,
-        id: project.id,
-        due: project.endDate,
-        status: project.status,
-        assigneeLabel:
-          projectResponsibles(project, data.members)
-            .map((member: any) => member.name)
-            .join("، ") || "غير مسند",
-      })),
-  ].slice(0, 4);
+  const attentionReasonLabel = {
+    due_soon: "اقترب الموعد النهائي",
+    overdue: "متأخر",
+    needs_support: "يحتاج دعم",
+  } as const;
+  const attention = sortTasksByPriority(
+    data.tasks.filter((task: any) => getTaskAttentionReason(task))
+  )
+    .map((task: any) => ({
+      ...task,
+      reason: getTaskAttentionReason(task),
+      assignee: data.members.find(
+        (member: any) => member.id === task.assigneeMemberId
+      ),
+      project: data.projects.find(
+        (project: any) => project.id === task.projectId
+      ),
+    }))
+    .slice(0, 5);
+  const allBlockedTasks = sortTasksByPriority(
+    data.tasks.filter((task: any) => task.status === "blocked")
+  );
+  const blockedTasks = allBlockedTasks.slice(0, 5);
   const priorities = sortTasksByPriority(
     data.tasks.filter((task: any) => task.status !== "complete")
   ).slice(0, 5);
@@ -1591,43 +1580,46 @@ function OverviewPage({
             {attention.length ? (
               attention.map((item: any) => (
                 <button
-                  key={`${item.type}-${item.id}`}
-                  onClick={() => {
-                    if (item.type === "project") {
-                      setProjectId(item.id);
-                      setPage("project");
-                    } else openTaskDetail(item.id);
-                  }}
+                  key={item.id}
+                  onClick={() => openTaskDetail(item.id)}
                   className="flex w-full items-center gap-3 py-3 text-right transition hover:bg-slate-50"
                 >
                   <span
                     className={cn(
                       "size-2 rounded-full",
-                      item.status === "overdue" || item.status === "blocked"
+                      item.reason === "overdue"
                         ? "bg-rose-500"
-                        : item.needsSupport
+                        : item.reason === "needs_support"
                           ? "bg-violet-500"
                           : "bg-amber-500"
                     )}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.title}</p>
-                    <p className="mt-1 text-xs text-[#7C8A9A]">
-                      {item.assigneeLabel ?? item.assignee?.name ?? "غير مسند"}{" "}
-                      ·{" "}
-                      {item.status === "overdue"
-                        ? "متأخر"
-                        : item.status === "blocked"
-                          ? "متعثر"
-                          : item.needsSupport
-                            ? item.supportRequest || "يحتاج دعم"
-                            : "بانتظار اعتماد"}
-                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#7C8A9A]">
+                      <span>{item.assignee?.name ?? "غير مسند"}</span>
+                      <span>·</span>
+                      <span>{item.project?.title ?? "بدون مشروع"}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 font-medium",
+                          item.reason === "overdue"
+                            ? "bg-rose-50 text-rose-700"
+                            : item.reason === "needs_support"
+                              ? "bg-violet-50 text-violet-700"
+                              : "bg-amber-50 text-amber-700"
+                        )}
+                      >
+                        {
+                          attentionReasonLabel[
+                            item.reason as keyof typeof attentionReasonLabel
+                          ]
+                        }
+                      </span>
+                    </div>
                   </div>
                   <span className="text-xs text-[#7C8A9A]">
-                    {item.type === "project" && !item.due
-                      ? "مستمر"
-                      : dateText(item.due)}
+                    {item.dueDate ? dateText(item.dueDate) : "بدون موعد"}
                   </span>
                 </button>
               ))
@@ -1696,6 +1688,64 @@ function OverviewPage({
           </div>
         </section>
       </div>
+      <section className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white p-5">
+        <SectionTitle
+          action={
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[#7C8A9A]">
+                {allBlockedTasks.length} مهام
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage("tasks")}
+                className="text-xs font-medium text-[#52769F]"
+              >
+                عرض كل المهام
+              </button>
+            </div>
+          }
+        >
+          المهام المتوقفة
+        </SectionTitle>
+        {blockedTasks.length ? (
+          <div className="divide-y divide-slate-100">
+            {blockedTasks.map((task: any) => {
+              const assignee = data.members.find(
+                (member: any) => member.id === task.assigneeMemberId
+              );
+              const project = data.projects.find(
+                (item: any) => item.id === task.projectId
+              );
+              return (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => openTaskDetail(task.id)}
+                  className="flex w-full flex-col gap-3 py-3 text-right transition hover:bg-slate-50 sm:flex-row sm:items-center"
+                >
+                  <span className="size-2 shrink-0 rounded-full bg-rose-500" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{task.title}</p>
+                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                      {assignee?.name ?? "غير مسند"} ·{" "}
+                      {project?.title ?? "بدون مشروع"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <StatusPill status={task.status} />
+                    <span className="text-xs text-[#7C8A9A]">
+                      {task.dueDate ? dateText(task.dueDate) : "بدون موعد"}
+                    </span>
+                    <ChevronLeft className="size-4 text-slate-400" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState title="لا توجد مهام متوقفة حاليًا" />
+        )}
+      </section>
       <div className="mt-5 rounded-xl border border-[#E5ECF3] bg-[#FDFEFF] px-5 py-4">
         <div className="flex items-center gap-3">
           <Clock3 className="size-4 text-[#6C8FB8]" />
