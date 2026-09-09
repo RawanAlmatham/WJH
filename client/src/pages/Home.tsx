@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { sortTasksByPriority } from "@shared/taskPriority";
 import {
   calculatePeriodCompletion,
+  filterTasksByCompletionPeriod,
   type CompletionPeriod,
 } from "@shared/periodCompletion";
 import { DEFAULT_BOARD_MODULES, type BoardModule } from "@shared/boardModules";
@@ -272,6 +273,15 @@ function fullDateText(value: Date | string | null | undefined) {
     month: "long",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function headerDateText(value = new Date()) {
+  return new Intl.DateTimeFormat("ar-SA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(value);
 }
 
 function todayInputValue() {
@@ -914,9 +924,7 @@ export default function Home() {
             <p className="text-xs font-medium text-[#7C8A9A]">
               {workspaceName}
             </p>
-            <p className="mt-1 text-sm text-[#52657A]">
-              الأربعاء، ٢٦ أغسطس ٢٠٢٦
-            </p>
+            <p className="mt-1 text-sm text-[#52657A]">{headerDateText()}</p>
           </div>
           <div className="mr-auto flex items-center gap-2">
             {enabledModules.includes("plan") && (
@@ -1316,13 +1324,7 @@ function OverviewPage({
   const priorities = sortTasksByPriority(
     data.tasks.filter((task: any) => task.status !== "complete")
   ).slice(0, 5);
-  const completion = data.tasks.length
-    ? Math.round(
-        (data.tasks.filter((task: any) => task.status === "complete").length /
-          data.tasks.length) *
-          100
-      )
-    : 0;
+  const completion = calculatePeriodCompletion(data.tasks, period as Period);
   return (
     <div className="entry max-w-5xl">
       <PageHeading
@@ -1341,15 +1343,22 @@ function OverviewPage({
       />
       <div className="mb-9 max-w-xl rounded-xl border border-[#E8EEF5] bg-white px-5 py-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-semibold">إنجاز الأسبوع</span>
+          <span className="text-sm font-semibold">
+            إنجاز {periodLabels[period as Period]}
+          </span>
           <span className="text-sm font-bold text-[#52769F]">
-            {completion}%
+            {completion.total ? `${completion.percentage}%` : "—"}
           </span>
         </div>
         <Progress
-          value={completion}
+          value={completion.percentage}
           className="h-2 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
         />
+        <p className="mt-3 text-xs text-[#7C8A9A]">
+          {completion.total
+            ? `${completion.completed} من ${completion.total} مهمة مستحقة مكتملة خلال ${periodLabels[period as Period]}`
+            : `لا توجد مهام مستحقة خلال ${periodLabels[period as Period]}`}
+        </p>
       </div>
       <div className="grid gap-5 lg:grid-cols-[1fr_.92fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
@@ -1649,18 +1658,16 @@ function TemporalPage({
   setProjectId,
   completeTask,
 }: any) {
-  const upcoming = sortTasksByPriority(
-    data.tasks.filter((task: any) => task.status !== "complete")
+  const referenceDate = new Date();
+  const tasksInPeriod = filterTasksByCompletionPeriod<any>(
+    data.tasks,
+    period as Period,
+    referenceDate
   );
-  const taskRows =
-    period === "day"
-      ? upcoming
-          .filter(
-            (task: any) =>
-              dateText(task.dueDate) === dateText(new Date("2026-08-26"))
-          )
-          .slice(0, 5)
-      : upcoming.slice(0, 5);
+  const upcoming = sortTasksByPriority(
+    tasksInPeriod.filter((task: any) => task.status !== "complete")
+  );
+  const taskRows = upcoming.slice(0, 5);
   const heading =
     period === "quarter"
       ? "وش أهم شيء لازم ننجزه هذا الربع؟"
@@ -1671,15 +1678,13 @@ function TemporalPage({
           : "وش لازم يخلص هذا الأسبوع؟";
   const label =
     period === "day"
-      ? "اليوم — الأربعاء ٢٦ أغسطس"
+      ? `اليوم — ${fullDateText(referenceDate)}`
       : periodLabels[period as Period];
-  const completion = data.tasks.length
-    ? Math.round(
-        (data.tasks.filter((task: any) => task.status === "complete").length /
-          data.tasks.length) *
-          100
-      )
-    : 0;
+  const completion = calculatePeriodCompletion(
+    data.tasks,
+    period as Period,
+    referenceDate
+  );
   if (period === "month")
     return <MonthView data={data} period={period} goPeriod={goPeriod} />;
   return (
@@ -1704,12 +1709,19 @@ function TemporalPage({
                 ? "اليوم"
                 : "الأسبوع"}
           </span>
-          <strong className="text-[#52769F]">{completion}%</strong>
+          <strong className="text-[#52769F]">
+            {completion.total ? `${completion.percentage}%` : "—"}
+          </strong>
         </div>
         <Progress
-          value={completion}
+          value={completion.percentage}
           className="h-2 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
         />
+        <p className="mt-3 text-xs text-[#7C8A9A]">
+          {completion.total
+            ? `${completion.completed} من ${completion.total} مهمة مستحقة مكتملة`
+            : `لا توجد مهام مستحقة خلال ${periodLabels[period as Period]}`}
+        </p>
       </section>
       <div className="grid gap-5 lg:grid-cols-[1fr_.65fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
@@ -4793,14 +4805,18 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
 }
 
 function ReportsPage({ data, period, goPeriod }: any) {
-  const completed = data.tasks.filter(
+  const tasksInPeriod = filterTasksByCompletionPeriod<any>(
+    data.tasks,
+    period as Period
+  );
+  const completed = tasksInPeriod.filter(
     (task: any) => task.status === "complete"
   ).length;
-  const overdue = data.tasks.filter(
+  const overdue = tasksInPeriod.filter(
     (task: any) => task.status === "overdue"
   ).length;
-  const achievement = data.tasks.length
-    ? Math.round((completed / data.tasks.length) * 100)
+  const achievement = tasksInPeriod.length
+    ? Math.round((completed / tasksInPeriod.length) * 100)
     : 0;
   const chart = [
     { name: "الأسبوع ١", value: 0 },
@@ -4819,7 +4835,7 @@ function ReportsPage({ data, period, goPeriod }: any) {
         {[
           {
             label: "الإنجاز",
-            value: `${achievement}%`,
+            value: tasksInPeriod.length ? `${achievement}%` : "—",
             tone: "text-[#52769F]",
           },
           { label: "المتأخر", value: overdue, tone: "text-rose-700" },

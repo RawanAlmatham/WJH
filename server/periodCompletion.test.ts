@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculatePeriodCompletion,
+  filterTasksByCompletionPeriod,
   getCompletionPeriodRange,
 } from "../shared/periodCompletion";
 
@@ -45,6 +46,20 @@ describe("period completion", () => {
     );
 
     expect(result).toMatchObject({ completed: 0, total: 0, percentage: 0 });
+  });
+
+  it("returns the actual tasks inside the selected period", () => {
+    const tasks = [
+      { id: 1, status: "complete", dueDate: "2026-09-09" },
+      { id: 2, status: "not_started", dueDate: "2026-09-30" },
+      { id: 3, status: "not_started", dueDate: null },
+    ];
+
+    expect(
+      filterTasksByCompletionPeriod(tasks, "week", referenceDate).map(
+        task => task.id
+      )
+    ).toEqual([1]);
   });
 
   it.each([

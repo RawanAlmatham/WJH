@@ -68,11 +68,13 @@ export function calculatePeriodCompletion(
   period: CompletionPeriod,
   referenceDate = new Date()
 ): PeriodCompletionSummary {
+  const tasksInPeriod = filterTasksByCompletionPeriod(
+    tasks,
+    period,
+    referenceDate
+  );
   const { start, end } = getCompletionPeriodRange(period, referenceDate);
-  const tasksInPeriod = tasks.filter(task => {
-    const dueDate = parseTaskDate(task.dueDate);
-    return dueDate && dueDate >= start && dueDate < end;
-  });
+
   const completed = tasksInPeriod.filter(
     task => task.status === "complete"
   ).length;
@@ -85,4 +87,16 @@ export function calculatePeriodCompletion(
     start,
     end,
   };
+}
+
+export function filterTasksByCompletionPeriod<T extends PeriodCompletionTask>(
+  tasks: T[],
+  period: CompletionPeriod,
+  referenceDate = new Date()
+): T[] {
+  const { start, end } = getCompletionPeriodRange(period, referenceDate);
+  return tasks.filter(task => {
+    const dueDate = parseTaskDate(task.dueDate);
+    return dueDate && dueDate >= start && dueDate < end;
+  });
 }
