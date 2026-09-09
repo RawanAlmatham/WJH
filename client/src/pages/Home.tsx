@@ -3165,30 +3165,35 @@ function TaskDetailPage({
                 <p className="mt-2 text-[11px] text-[#7C8A9A]">
                   {comment.authorName} · {fullDateText(comment.createdAt)}
                 </p>
-                {canEditWork && editingComment?.id !== comment.id && (
-                  <div className="mt-2 flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setReplyingTo(comment)}
-                      className="text-[11px] font-semibold text-[#52769F]"
-                    >
-                      رد
-                    </button>
-                    {(comment.authorUserId === user?.id ||
-                      canModerateComments) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingComment(comment);
-                          setEditingCommentBody(comment.body);
-                        }}
-                        className="text-[11px] font-semibold text-[#52769F]"
-                      >
-                        تعديل
-                      </button>
-                    )}
-                  </div>
-                )}
+                {editingComment?.id !== comment.id &&
+                  (canEditWork ||
+                    comment.authorUserId === user?.id ||
+                    canModerateComments) && (
+                    <div className="mt-2 flex gap-3">
+                      {canEditWork && (
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo(comment)}
+                          className="text-[11px] font-semibold text-[#52769F]"
+                        >
+                          رد
+                        </button>
+                      )}
+                      {(comment.authorUserId === user?.id ||
+                        canModerateComments) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingComment(comment);
+                            setEditingCommentBody(comment.body);
+                          }}
+                          className="text-[11px] font-semibold text-[#52769F]"
+                        >
+                          تعديل
+                        </button>
+                      )}
+                    </div>
+                  )}
               </article>
             ))
           ) : (

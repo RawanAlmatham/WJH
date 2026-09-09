@@ -1081,7 +1081,7 @@ export const appRouter = router({
         );
         return result;
       }),
-    updateTaskComment: teamMemberProcedure
+    updateTaskComment: boardProcedure
       .input(
         z.object({
           id: z.number().int().positive(),

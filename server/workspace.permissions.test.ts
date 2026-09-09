@@ -185,6 +185,7 @@ describe("workspace permissions", () => {
   });
 
   it("lets an author edit a task comment in the active board", async () => {
+    vi.mocked(db.hasBoardRole).mockResolvedValueOnce(false);
     const caller = appRouter.createCaller(memberContext());
     await expect(
       caller.workspace.updateTaskComment({ id: 88, body: "النص المعدّل" })
