@@ -2,7 +2,6 @@ export const presentationSections = [
   "completion",
   "priorities",
   "attention",
-  "blocked",
   "upcoming",
   "projects",
   "goals",
@@ -18,6 +17,5 @@ export const DEFAULT_PRESENTATION_SECTIONS: PresentationSection[] = [
   "completion",
   "priorities",
   "attention",
-  "blocked",
   "upcoming",
 ];

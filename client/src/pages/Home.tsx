@@ -155,15 +155,9 @@ const presentationSectionOptions: {
     icon: AlertTriangle,
   },
   {
-    id: "blocked",
-    label: "المهام المتوقفة",
-    description: "المهام المتوقفة المعروضة في بطاقة مستقلة.",
-    icon: CircleHelp,
-  },
-  {
     id: "upcoming",
-    label: "المواعيد القادمة",
-    description: "الاجتماعات والتسليمات القريبة.",
+    label: "الإطلاقات القادمة",
+    description: "أقرب مواعيد إطلاق المشاريع.",
     icon: CalendarDays,
   },
   {
@@ -203,6 +197,19 @@ const presentationSectionOptions: {
     icon: Rss,
   },
 ];
+
+function supportedPresentationSections(
+  sections: unknown
+): PresentationSection[] {
+  if (!Array.isArray(sections)) return DEFAULT_PRESENTATION_SECTIONS;
+  const supported = new Set(
+    presentationSectionOptions.map(option => option.id)
+  );
+  const filtered = sections.filter((section): section is PresentationSection =>
+    supported.has(section as PresentationSection)
+  );
+  return filtered.length ? filtered : DEFAULT_PRESENTATION_SECTIONS;
+}
 
 const pageModule: Partial<Record<Page, BoardModule>> = {
   plan: "plan",
@@ -6004,12 +6011,12 @@ function SettingsPage({
   );
   const [selectedPresentationSections, setSelectedPresentationSections] =
     useState<PresentationSection[]>(
-      board?.presentationSections ?? DEFAULT_PRESENTATION_SECTIONS
+      supportedPresentationSections(board?.presentationSections)
     );
   useEffect(() => {
     setSelectedModules(board?.enabledModules ?? DEFAULT_BOARD_MODULES);
     setSelectedPresentationSections(
-      board?.presentationSections ?? DEFAULT_PRESENTATION_SECTIONS
+      supportedPresentationSections(board?.presentationSections)
     );
   }, [board?.id, board?.enabledModules, board?.presentationSections]);
   const updateModules = trpc.workspace.updateBoardModules.useMutation({
@@ -6309,16 +6316,19 @@ function PresentationMode({
   close,
 }: any) {
   const utils = trpc.useUtils();
-  const [visibleSections, setVisibleSections] =
-    useState<PresentationSection[]>(sections);
-  const [draftSections, setDraftSections] =
-    useState<PresentationSection[]>(sections);
+  const [visibleSections, setVisibleSections] = useState<PresentationSection[]>(
+    supportedPresentationSections(sections)
+  );
+  const [draftSections, setDraftSections] = useState<PresentationSection[]>(
+    supportedPresentationSections(sections)
+  );
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [completionPeriod, setCompletionPeriod] = useState<Period>("week");
   const [completionReferenceDate] = useState(() => new Date());
   useEffect(() => {
-    setVisibleSections(sections);
-    setDraftSections(sections);
+    const supportedSections = supportedPresentationSections(sections);
+    setVisibleSections(supportedSections);
+    setDraftSections(supportedSections);
   }, [sections]);
   const updatePresentationSections =
     trpc.workspace.updateBoardPresentationSections.useMutation({
@@ -6376,9 +6386,19 @@ function PresentationMode({
       reason: getTaskAttentionReason(task),
     }))
     .slice(0, 5);
-  const blockedTasks = sortTasksByPriority(
-    data.tasks.filter((task: any) => task.status === "blocked")
-  ).slice(0, 5);
+  const presentationToday = new Date();
+  presentationToday.setHours(0, 0, 0, 0);
+  const upcomingLaunches = [...data.events]
+    .filter(
+      (event: any) =>
+        event.type === "launch" &&
+        new Date(event.eventDate) >= presentationToday
+    )
+    .sort(
+      (a: any, b: any) =>
+        new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+    )
+    .slice(0, 5);
   const ongoingProjects = [...data.projects]
     .filter((project: any) => project.status !== "complete")
     .sort((a: any, b: any) => a.progress - b.progress)
@@ -6481,31 +6501,26 @@ function PresentationMode({
             : empty("لا توجد عناصر تحتاج انتباه")}
         </section>
       );
-    if (section === "blocked")
+    if (section === "upcoming")
       return (
         <section key={section} className={cardClass}>
-          <h2 className="mb-5 text-lg font-semibold">المهام المتوقفة</h2>
-          {blockedTasks.length
-            ? blockedTasks.map((task: any) => {
-                const assignee = data.members.find(
-                  (member: any) => member.id === task.assigneeMemberId
-                );
+          <h2 className="mb-5 text-lg font-semibold">الإطلاقات القادمة</h2>
+          {upcomingLaunches.length
+            ? upcomingLaunches.map((event: any) => {
                 const project = data.projects.find(
-                  (item: any) => item.id === task.projectId
+                  (item: any) => item.id === event.projectId
                 );
                 return (
                   <div
-                    key={task.id}
+                    key={event.id}
                     className="border-b border-slate-100 py-3 last:border-0"
                   >
                     <div className="flex items-start gap-2">
-                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-rose-500" />
+                      <Rocket className="mt-0.5 size-4 shrink-0 text-[#52769F]" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-[#26364A]">
-                          {task.title}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
-                          {assignee?.name ?? "غير مسند"} ·{" "}
+                        <p className="text-sm font-medium">{event.title}</p>
+                        <p className="mt-1 text-xs text-[#7C8A9A]">
+                          {dateText(event.eventDate)} ·{" "}
                           {project?.title ?? "بدون مشروع"}
                         </p>
                       </div>
@@ -6513,26 +6528,7 @@ function PresentationMode({
                   </div>
                 );
               })
-            : empty("لا توجد مهام متوقفة")}
-        </section>
-      );
-    if (section === "upcoming")
-      return (
-        <section key={section} className={cardClass}>
-          <h2 className="mb-5 text-lg font-semibold">المواعيد القادمة</h2>
-          {data.events.length
-            ? data.events.slice(0, 5).map((event: any) => (
-                <div
-                  key={event.id}
-                  className="border-b border-slate-100 py-3 last:border-0"
-                >
-                  <p className="text-sm font-medium">{event.title}</p>
-                  <p className="mt-1 text-xs text-[#7C8A9A]">
-                    {dateText(event.eventDate)}
-                  </p>
-                </div>
-              ))
-            : empty("لا توجد مواعيد قادمة")}
+            : empty("لا توجد إطلاقات قادمة")}
         </section>
       );
     if (section === "projects")
