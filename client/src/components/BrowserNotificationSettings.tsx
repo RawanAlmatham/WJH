@@ -57,7 +57,7 @@ export function BrowserNotificationSettings() {
     const saved = config.data.subscriptions.find(
       item => item.endpoint === subscription.endpoint
     );
-    if (saved?.enabledTypes?.length) setEnabledTypes(saved.enabledTypes);
+    if (saved) setEnabledTypes(saved.enabledTypes ?? []);
   }, [config.data, subscription]);
 
   const activeForAccount = useMemo(
