@@ -104,6 +104,7 @@ type Page =
   | "feeds"
   | "lessons"
   | "reports"
+  | "mcp"
   | "settings";
 type Period = CompletionPeriod;
 type TaskStatus =
@@ -712,6 +713,7 @@ export default function Home() {
     "feeds",
     "lessons",
     "reports",
+    "mcp",
     "settings",
   ];
   const [page, setPage] = useState<Page>(() =>
@@ -945,6 +947,7 @@ export default function Home() {
         {page === "feeds" && <ResearchFeedsPage {...shared} />}
         {page === "lessons" && <LessonsLearnedPage {...shared} />}
         {page === "reports" && <ReportsPage {...shared} />}
+        {page === "mcp" && <McpPage />}
         {page === "settings" && (
           <SettingsPage board={activeBoard} accountRole={user.role} />
         )}
@@ -1183,16 +1186,18 @@ function Sidebar({
             compact
             className="mb-2 h-10 w-full justify-start px-3 text-xs"
           />
-          <Button
-            asChild
-            variant="outline"
-            className="mb-2 h-10 w-full justify-start gap-2 border-[#BFD3E7] bg-white px-3 text-xs text-[#45698F]"
+          <button
+            onClick={() => onNavigate("mcp")}
+            className={cn(
+              "mb-2 flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-right text-xs transition-colors",
+              page === "mcp"
+                ? "border-[#BFD3E7] bg-[#EDF4FA] font-semibold text-[#52769F]"
+                : "border-[#BFD3E7] bg-white text-[#45698F] hover:bg-slate-50"
+            )}
           >
-            <a href="/mcp">
-              <Link2 className="size-4" />
-              ربط المساعد الذكي (MCP)
-            </a>
-          </Button>
+            <Link2 className="size-4" />
+            ربط المساعد الذكي (MCP)
+          </button>
           {user.role === "admin" && (
             <button
               onClick={() => window.location.assign("/admin")}
@@ -4881,6 +4886,178 @@ function ReportsPage({ data, period, goPeriod }: any) {
   );
 }
 
+function McpPage() {
+  const utils = trpc.useUtils();
+  const endpoint = `${window.location.origin}/mcp`;
+  const mcpConnections = trpc.auth.mcpConnections.useQuery(undefined, {
+    retry: false,
+  });
+  const revokeMcpConnections = trpc.auth.revokeMcpConnections.useMutation({
+    onSuccess: async () => {
+      await utils.auth.mcpConnections.invalidate();
+      toast.success("تم فصل المساعدات الذكية عن حساب أثر");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const copyEndpoint = async () => {
+    await navigator.clipboard.writeText(endpoint);
+    toast.success("تم نسخ رابط MCP");
+  };
+  const connectorOptions = [
+    {
+      name: "Claude",
+      description:
+        "أضف الرابط من Settings ثم Connectors واختر إضافة موصل مخصص.",
+      href: "https://claude.ai/settings/connectors",
+      action: "فتح موصلات Claude",
+    },
+    {
+      name: "ChatGPT",
+      description:
+        "أنشئ تطبيقًا مخصصًا باسم أثر، ثم استخدم الرابط نفسه كخادم MCP.",
+      href: "https://chatgpt.com/plugins",
+      action: "فتح تطبيقات ChatGPT",
+    },
+  ];
+
+  return (
+    <div className="entry max-w-5xl">
+      <PageHeading
+        title="ربط المساعد الذكي"
+        description="اربط أثر بالمساعد الذي تستخدمه، وأدر أعمالك بالمحادثة دون مغادرة حسابك."
+      />
+
+      <section className="rounded-xl border border-[#DCE7F2] bg-[#FBFDFF] p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E9F2FA] text-[#52769F]">
+              <Link2 className="size-5" />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-semibold text-[#26364A]">
+                  رابط أثر الموحّد
+                </h2>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  جاهز للربط
+                </span>
+              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7C8A9A]">
+                يعمل الرابط مع Claude وChatGPT وأي مساعد يدعم Remote MCP وOAuth.
+                بعد إضافته، سجّل الدخول إلى أثر ووافق على الصلاحيات المطلوبة.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5">
+          <SettingsCopyField
+            label="رابط MCP الخاص بأثر"
+            value={endpoint}
+            onCopy={copyEndpoint}
+          />
+        </div>
+        <p className="mt-3 text-xs leading-5 text-[#7C8A9A]">
+          يلتزم المساعد بدورك داخل أثر؛ لا يمكنه الوصول إلى لوحة أو مشروع غير
+          متاح لك، وتعمل الإضافة والتعديل والحذف ضمن صلاحيات حسابك.
+        </p>
+      </section>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {connectorOptions.map(option => (
+          <section
+            key={option.name}
+            className="flex flex-col rounded-xl border border-slate-200 bg-white p-5"
+          >
+            <h2 className="text-lg font-semibold">{option.name}</h2>
+            <p className="mt-2 flex-1 text-sm leading-6 text-[#7C8A9A]">
+              {option.description}
+            </p>
+            <Button
+              asChild
+              variant="outline"
+              className="mt-5 w-fit gap-2 border-[#BFD3E7] text-[#45698F]"
+            >
+              <a href={option.href} target="_blank" rel="noreferrer">
+                {option.action}
+                <ExternalLink className="size-4" />
+              </a>
+            </Button>
+          </section>
+        ))}
+      </div>
+
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+        <SectionTitle>الاتصالات الحالية</SectionTitle>
+        <div className="mt-4 rounded-lg border border-slate-100 bg-[#FCFDFE] px-4">
+          {mcpConnections.isLoading ? (
+            <p className="py-5 text-sm text-[#7C8A9A]">
+              جارٍ التحقق من الاتصالات…
+            </p>
+          ) : (mcpConnections.data?.length ?? 0) > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {mcpConnections.data?.map(connection => (
+                <div
+                  key={connection.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-4"
+                >
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {connection.clientName}
+                    </p>
+                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                      آخر استخدام: {fullDateText(connection.lastUsedAt)}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    متصل
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-5 text-sm text-[#7C8A9A]">
+              لا يوجد مساعد ذكي مرتبط بهذا الحساب حاليًا.
+            </p>
+          )}
+        </div>
+        {(mcpConnections.data?.length ?? 0) > 0 && (
+          <div className="mt-4 flex justify-end">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-9 border-rose-200 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                >
+                  فصل جميع الاتصالات
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>فصل المساعدات الذكية؟</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    ستتوقف جميع اتصالات المساعدات بهذا الحساب، ويمكن إعادة الربط
+                    لاحقًا.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => revokeMcpConnections.mutate()}
+                    className="bg-rose-600 hover:bg-rose-700"
+                  >
+                    فصل الاتصالات
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 function SettingsPage({
   board,
   accountRole,
@@ -4897,16 +5074,6 @@ function SettingsPage({
   accountRole?: string | null;
 }) {
   const utils = trpc.useUtils();
-  const mcpConnections = trpc.auth.mcpConnections.useQuery(undefined, {
-    retry: false,
-  });
-  const revokeMcpConnections = trpc.auth.revokeMcpConnections.useMutation({
-    onSuccess: async () => {
-      await utils.auth.mcpConnections.invalidate();
-      toast.success("تم فصل المساعدات الذكية عن حساب أثر");
-    },
-    onError: issue => toast.error(issue.message),
-  });
   const canManage =
     board?.membershipRole === "manager" || accountRole === "admin";
   const [selectedModules, setSelectedModules] = useState<BoardModule[]>(
@@ -5154,95 +5321,6 @@ function SettingsPage({
           </div>
         </div>
       )}
-      <section className="mb-5 rounded-xl border border-[#DCE7F2] bg-[#FBFDFF] p-5">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#E9F2FA] text-[#52769F]">
-            <Link2 className="size-[18px]" />
-          </span>
-          <div>
-            <SectionTitle>ربط ChatGPT وClaude</SectionTitle>
-            <p className="mt-1 text-sm leading-6 text-[#7C8A9A]">
-              اربط حسابك لتدير المشاريع والمهام والدروس المستفادة بالمحادثة.
-              يلتزم المساعد بنفس دورك والمشاريع المتاحة لك في أثر.
-            </p>
-          </div>
-        </div>
-        <div className="mt-5">
-          <SettingsCopyField
-            label="رابط MCP الخاص بأثر"
-            value={`${window.location.origin}/mcp`}
-            onCopy={() => copy(`${window.location.origin}/mcp`, "رابط MCP")}
-          />
-        </div>
-        <div className="mt-4 rounded-lg border border-slate-100 bg-white px-4">
-          {mcpConnections.isLoading ? (
-            <p className="py-4 text-sm text-[#7C8A9A]">
-              جارٍ التحقق من الاتصالات…
-            </p>
-          ) : (mcpConnections.data?.length ?? 0) > 0 ? (
-            <div className="divide-y divide-slate-100">
-              {mcpConnections.data?.map(connection => (
-                <div
-                  key={connection.id}
-                  className="flex items-center justify-between gap-3 py-3"
-                >
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {connection.clientName}
-                    </p>
-                    <p className="mt-1 text-xs text-[#7C8A9A]">
-                      آخر استخدام: {fullDateText(connection.lastUsedAt)}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                    متصل
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="py-4 text-sm text-[#7C8A9A]">
-              لا يوجد مساعد ذكي مرتبط بهذا الحساب حاليًا.
-            </p>
-          )}
-        </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs leading-5 text-[#7C8A9A]">
-            عند إضافة الرابط في المساعد سيفتح أثر لتسجيل الدخول والموافقة على
-            الربط.
-          </p>
-          {(mcpConnections.data?.length ?? 0) > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-9 border-rose-200 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
-                >
-                  فصل جميع الاتصالات
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent dir="rtl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>فصل المساعدات الذكية؟</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    ستتوقف جميع اتصالات ChatGPT وClaude بهذا الحساب، ويمكنك
-                    إعادة الربط لاحقًا.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => revokeMcpConnections.mutate()}
-                    className="bg-rose-600 hover:bg-rose-700"
-                  >
-                    فصل الاتصالات
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      </section>
       <div className="rounded-xl border border-slate-200 bg-white p-5">
         <SectionTitle>الصلاحيات</SectionTitle>
         <div className="divide-y divide-slate-100">
