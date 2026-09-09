@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload the release
         run: |
-          rsync -az --delete \
+          rsync -rlz --delete \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.env' \
