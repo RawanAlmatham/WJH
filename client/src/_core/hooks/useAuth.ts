@@ -29,7 +29,19 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      await logoutMutation.mutateAsync();
+      let pushEndpoint: string | undefined;
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const registration = await navigator.serviceWorker.ready.catch(
+          () => null
+        );
+        const subscription = await registration?.pushManager
+          .getSubscription()
+          .catch(() => null);
+        pushEndpoint = subscription?.endpoint;
+      }
+      await logoutMutation.mutateAsync(
+        pushEndpoint ? { pushEndpoint } : undefined
+      );
     } catch (error: unknown) {
       if (
         error instanceof TRPCClientError &&

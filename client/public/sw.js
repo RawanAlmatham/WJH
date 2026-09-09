@@ -1,4 +1,4 @@
-const CACHE_NAME = "athr-app-v2";
+const CACHE_NAME = "athr-app-v3";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -68,5 +68,48 @@ self.addEventListener("fetch", event => {
           return response;
         })
     )
+  );
+});
+
+self.addEventListener("push", event => {
+  let payload = {};
+  try {
+    payload = event.data?.json() ?? {};
+  } catch {
+    payload = { title: "تحديث جديد في أثر", body: event.data?.text() ?? "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title || "تحديث جديد في أثر", {
+      body: payload.body || "لديك تحديث جديد يخص أعمالك.",
+      icon: "/icons/athr-192.png",
+      badge: "/icons/athr-192.png",
+      dir: "rtl",
+      lang: "ar",
+      tag: payload.id ? `athr-notification-${payload.id}` : "athr-notification",
+      renotify: false,
+      data: { url: payload.url || "/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const targetUrl = new URL(
+    event.notification.data?.url || "/",
+    self.location.origin
+  ).href;
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(clients => {
+        const existing = clients.find(client =>
+          client.url.startsWith(self.location.origin)
+        );
+        if (existing) {
+          existing.navigate(targetUrl);
+          return existing.focus();
+        }
+        return self.clients.openWindow(targetUrl);
+      })
   );
 });

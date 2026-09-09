@@ -15,6 +15,8 @@ import { ENV } from "./_core/env";
 import { hashPassword, verifyPassword } from "./_core/password";
 import { boardModules } from "@shared/boardModules";
 import { presentationSections } from "@shared/presentationSections";
+import { notificationTypes } from "@shared/notificationTypes";
+import * as notificationService from "./notifications";
 import {
   listOAuthConnections,
   revokeAllOAuthTokensForUser,
@@ -224,13 +226,24 @@ export const appRouter = router({
         });
         return user;
       }),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      ctx.res.clearCookie(COOKIE_NAME, {
-        ...getSessionCookieOptions(ctx.req),
-        maxAge: -1,
-      });
-      return { success: true } as const;
-    }),
+    logout: publicProcedure
+      .input(
+        z
+          .object({ pushEndpoint: z.string().url().max(512).optional() })
+          .optional()
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user && input?.pushEndpoint)
+          await notificationService.removeBrowserPushSubscription(
+            ctx.user.id,
+            input.pushEndpoint
+          );
+        ctx.res.clearCookie(COOKIE_NAME, {
+          ...getSessionCookieOptions(ctx.req),
+          maxAge: -1,
+        });
+        return { success: true } as const;
+      }),
     mcpConnections: protectedProcedure.query(({ ctx }) =>
       listOAuthConnections(ctx.user.id)
     ),
@@ -338,6 +351,75 @@ export const appRouter = router({
     overview: boardProcedure.query(({ ctx }) =>
       db.getWorkspaceData(ctx.activeBoardId, ctx.user.id)
     ),
+    notifications: boardProcedure
+      .input(z.object({ unreadOnly: z.boolean().default(false) }))
+      .query(({ input, ctx }) =>
+        notificationService.listNotifications(
+          ctx.user.id,
+          ctx.activeBoardId,
+          input.unreadOnly
+        )
+      ),
+    markNotificationRead: boardProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        notificationService.markNotificationRead(
+          input.id,
+          ctx.user.id,
+          ctx.activeBoardId
+        )
+      ),
+    markAllNotificationsRead: boardProcedure.mutation(({ ctx }) =>
+      notificationService.markAllNotificationsRead(
+        ctx.user.id,
+        ctx.activeBoardId
+      )
+    ),
+    browserPushConfig: protectedProcedure.query(({ ctx }) =>
+      notificationService.getBrowserPushConfig(ctx.user.id)
+    ),
+    saveBrowserPushSubscription: protectedProcedure
+      .input(
+        z.object({
+          endpoint: z.string().url().max(512),
+          p256dh: z.string().min(20).max(255),
+          auth: z.string().min(8).max(255),
+          expirationTime: z.number().nullable().optional(),
+          enabledTypes: z
+            .array(z.enum(notificationTypes))
+            .max(notificationTypes.length),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        notificationService.saveBrowserPushSubscription({
+          ...input,
+          userId: ctx.user.id,
+        })
+      ),
+    updateBrowserPushTypes: protectedProcedure
+      .input(
+        z.object({
+          endpoint: z.string().url().max(512),
+          enabledTypes: z
+            .array(z.enum(notificationTypes))
+            .max(notificationTypes.length),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        notificationService.updateBrowserPushTypes(
+          ctx.user.id,
+          input.endpoint,
+          input.enabledTypes
+        )
+      ),
+    removeBrowserPushSubscription: protectedProcedure
+      .input(z.object({ endpoint: z.string().url().max(512) }))
+      .mutation(({ input, ctx }) =>
+        notificationService.removeBrowserPushSubscription(
+          ctx.user.id,
+          input.endpoint
+        )
+      ),
     invitationByToken: publicProcedure
       .input(z.object({ token: z.string().min(12).max(64) }))
       .query(({ input }) => db.getInvitationByToken(input.token)),
@@ -740,10 +822,15 @@ export const appRouter = router({
           ctx.activeBoardId,
           input.projectId
         );
-        return db.updateCalendarEvent({
+        const result = await db.updateCalendarEvent({
           ...input,
           boardId: ctx.activeBoardId,
         });
+        await notificationService.clearLaunchReminderNotifications(
+          input.id,
+          ctx.activeBoardId
+        );
+        return result;
       }),
     deleteCalendarEvent: teamMemberProcedure
       .input(z.object({ id: z.number().int().positive() }))
@@ -792,7 +879,16 @@ export const appRouter = router({
             ctx.activeBoardId,
             input.parentTaskId
           );
-        return db.createTask({ ...input, boardId: ctx.activeBoardId });
+        const result = await db.createTask({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+        await notificationService.notifyTaskCreated(
+          result.id,
+          ctx.activeBoardId,
+          ctx.user.id
+        );
+        return result;
       }),
     updateTask: teamMemberProcedure
       .input(
@@ -826,7 +922,21 @@ export const appRouter = router({
           ctx.activeBoardId,
           input.projectId
         );
-        return db.updateTask({ ...input, boardId: ctx.activeBoardId });
+        const before = await notificationService.getTaskNotificationSnapshot(
+          input.id,
+          ctx.activeBoardId
+        );
+        const result = await db.updateTask({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+        if (before)
+          await notificationService.notifyTaskUpdated(
+            before,
+            ctx.activeBoardId,
+            ctx.user.id
+          );
+        return result;
       }),
     deleteTask: teamMemberProcedure
       .input(z.object({ id: z.number().int().positive() }))
@@ -843,17 +953,38 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.id);
-        return db.assignTask(
+        const before = await notificationService.getTaskNotificationSnapshot(
+          input.id,
+          ctx.activeBoardId
+        );
+        const result = await db.assignTask(
           input.id,
           input.assigneeMemberId,
           ctx.activeBoardId
         );
+        if (before)
+          await notificationService.notifyTaskUpdated(
+            before,
+            ctx.activeBoardId,
+            ctx.user.id
+          );
+        return result;
       }),
     updateTaskStatus: teamMemberProcedure
       .input(z.object({ id: z.number().int(), status: taskStatus }))
       .mutation(async ({ input, ctx }) => {
         await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.id);
-        return db.updateTaskStatus(input.id, input.status, ctx.activeBoardId);
+        const result = await db.updateTaskStatus(
+          input.id,
+          input.status,
+          ctx.activeBoardId
+        );
+        if (input.status === "complete")
+          await notificationService.clearTaskReminderNotifications(
+            input.id,
+            ctx.activeBoardId
+          );
+        return result;
       }),
     updateTaskSupport: teamMemberProcedure
       .input(
@@ -874,25 +1005,42 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.id);
-        return db.updateTaskSupport({
+        const result = await db.updateTaskSupport({
           ...input,
           boardId: ctx.activeBoardId,
         });
+        if (input.needsSupport)
+          await notificationService.notifySupportRequested(
+            input.id,
+            ctx.activeBoardId,
+            ctx.user.id
+          );
+        return result;
       }),
     addTaskComment: teamMemberProcedure
       .input(
         z.object({
           taskId: z.number().int(),
           body: z.string().trim().min(1).max(3000),
+          replyToCommentId: z.number().int().positive().nullable().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
         await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
-        return db.addTaskComment({
+        const result = await db.addTaskComment({
           ...input,
           authorUserId: ctx.user.id,
           boardId: ctx.activeBoardId,
         });
+        await notificationService.notifyTaskComment(
+          result.id,
+          input.taskId,
+          ctx.activeBoardId,
+          ctx.user.id,
+          input.body,
+          input.replyToCommentId
+        );
+        return result;
       }),
     addDeliverableComment: teamMemberProcedure
       .input(

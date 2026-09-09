@@ -68,6 +68,35 @@ vi.mock("./db", () => ({
     ids: input.translations.map((item: { id: number }) => item.id),
   })),
 }));
+vi.mock("./notifications", () => ({
+  getTaskNotificationSnapshot: vi.fn(async () => ({
+    id: 12,
+    title: "مهمة اختبار",
+    projectId: 8,
+    assigneeMemberId: 2,
+    assigneeUserId: 2,
+    dueDate: null,
+    priority: "medium",
+    status: "not_started",
+  })),
+  notifyTaskCreated: vi.fn(async () => undefined),
+  notifyTaskUpdated: vi.fn(async () => undefined),
+  notifySupportRequested: vi.fn(async () => undefined),
+  notifyTaskComment: vi.fn(async () => undefined),
+  listNotifications: vi.fn(async () => ({ items: [], unreadCount: 0 })),
+  markNotificationRead: vi.fn(async () => ({ success: true })),
+  markAllNotificationsRead: vi.fn(async () => ({ success: true })),
+  getBrowserPushConfig: vi.fn(async () => ({
+    publicKey: "test-public-key",
+    subscriptions: [],
+    defaultEnabledTypes: [],
+  })),
+  saveBrowserPushSubscription: vi.fn(async () => ({ success: true })),
+  updateBrowserPushTypes: vi.fn(async () => ({ success: true })),
+  removeBrowserPushSubscription: vi.fn(async () => ({ success: true })),
+  clearTaskReminderNotifications: vi.fn(async () => undefined),
+  clearLaunchReminderNotifications: vi.fn(async () => undefined),
+}));
 import * as db from "./db";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";

@@ -1,6 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { BrowserNotificationSettings } from "@/components/BrowserNotificationSettings";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -728,6 +730,15 @@ export default function Home() {
   const inviteMember = trpc.workspace.inviteMember.useMutation({
     onSuccess: () => toast.success("تم إنشاء رابط دعوة العضو"),
   });
+  const markOpenedNotification =
+    trpc.workspace.markNotificationRead.useMutation({
+      onSuccess: () => {
+        void utils.workspace.notifications.invalidate();
+        const url = new URL(window.location.href);
+        url.searchParams.delete("notificationId");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      },
+    });
   const requestedPage = new URLSearchParams(window.location.search).get(
     "view"
   ) as Page | null;
@@ -753,11 +764,38 @@ export default function Home() {
     requestedPage && validPages.includes(requestedPage) ? requestedPage : "home"
   );
   const [period, setPeriod] = useState<Period>("week");
-  const [projectId, setProjectId] = useState<number | null>(null);
-  const [taskId, setTaskId] = useState<number | null>(null);
+  const requestedProjectId = Number(
+    new URLSearchParams(window.location.search).get("projectId")
+  );
+  const requestedTaskId = Number(
+    new URLSearchParams(window.location.search).get("taskId")
+  );
+  const [projectId, setProjectId] = useState<number | null>(() =>
+    Number.isInteger(requestedProjectId) && requestedProjectId > 0
+      ? requestedProjectId
+      : null
+  );
+  const [taskId, setTaskId] = useState<number | null>(() =>
+    Number.isInteger(requestedTaskId) && requestedTaskId > 0
+      ? requestedTaskId
+      : null
+  );
   const [memberId, setMemberId] = useState<number | null>(null);
   const [showNav, setShowNav] = useState(false);
   const [presentation, setPresentation] = useState(false);
+  const openedNotificationId = Number(
+    new URLSearchParams(window.location.search).get("notificationId")
+  );
+  useEffect(() => {
+    if (
+      !activeBoard ||
+      !Number.isInteger(openedNotificationId) ||
+      openedNotificationId <= 0 ||
+      markOpenedNotification.isPending
+    )
+      return;
+    markOpenedNotification.mutate({ id: openedNotificationId });
+  }, [activeBoard?.id, openedNotificationId]);
   const requestedDrawer = new URLSearchParams(window.location.search).get(
     "drawer"
   );
@@ -950,6 +988,27 @@ export default function Home() {
             <p className="mt-1 text-sm text-[#52657A]">{headerDateText()}</p>
           </div>
           <div className="mr-auto flex items-center gap-2">
+            <NotificationCenter
+              onOpenLink={link => {
+                const target = new URL(link, window.location.origin);
+                const nextPage = target.searchParams.get("view") as Page | null;
+                const nextTaskId = Number(target.searchParams.get("taskId"));
+                const nextProjectId = Number(
+                  target.searchParams.get("projectId")
+                );
+                if (Number.isInteger(nextTaskId) && nextTaskId > 0)
+                  setTaskId(nextTaskId);
+                if (Number.isInteger(nextProjectId) && nextProjectId > 0)
+                  setProjectId(nextProjectId);
+                if (nextPage && validPages.includes(nextPage))
+                  setPage(nextPage);
+                window.history.replaceState(
+                  {},
+                  "",
+                  target.pathname + target.search
+                );
+              }}
+            />
             {enabledModules.includes("plan") && (
               <PeriodSelect value={period} onChange={goPeriod} />
             )}
@@ -1146,7 +1205,7 @@ function Sidebar({
       />
       <aside
         className={cn(
-          "app-sidebar fixed inset-y-0 right-0 z-50 flex w-[86vw] max-w-[272px] flex-col border-l border-slate-200 bg-white px-4 py-6 transition-transform duration-200 xl:w-[272px] xl:max-w-none xl:translate-x-0",
+          "app-sidebar fixed inset-y-0 right-0 z-50 flex w-[86vw] max-w-[272px] flex-col overflow-hidden border-l border-slate-200 bg-white px-4 py-6 transition-transform duration-200 xl:w-[272px] xl:max-w-none xl:translate-x-0",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -1198,75 +1257,77 @@ function Sidebar({
             </button>
           )}
         </div>
-        <nav className="space-y-1">
-          {visibleEntries.map(entry => {
-            const active =
-              page === entry.id || (entry.id === "plan" && page === "time");
-            return (
-              <button
-                key={entry.id}
-                onClick={() => onNavigate(entry.id)}
-                className={cn(
-                  "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-right text-sm transition-colors",
-                  active
-                    ? "bg-[#EDF4FA] font-semibold text-[#52769F]"
-                    : "text-[#647487] hover:bg-slate-50 hover:text-[#52657A]"
-                )}
-              >
-                <entry.icon className="size-[18px]" />
-                {entry.label}
-              </button>
-            );
-          })}
-        </nav>
-        <div className="mt-auto border-t border-slate-100 pt-4">
-          <PwaInstallButton
-            compact
-            comingSoon
-            className="mb-2 h-10 w-full justify-start px-3 text-xs"
-          />
-          <button
-            onClick={() => onNavigate("mcp")}
-            className={cn(
-              "mb-2 flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-right text-xs transition-colors",
-              page === "mcp"
-                ? "border-[#BFD3E7] bg-[#EDF4FA] font-semibold text-[#52769F]"
-                : "border-[#BFD3E7] bg-white text-[#45698F] hover:bg-slate-50"
-            )}
-          >
-            <Link2 className="size-4" />
-            ربط المساعد الذكي (MCP)
-          </button>
-          {user.role === "admin" && (
-            <button
-              onClick={() => window.location.assign("/admin")}
-              className="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[#647487] hover:bg-slate-50"
-            >
-              <ShieldCheck className="size-[18px]" />
-              إدارة المنصة
-            </button>
-          )}
-          <button
-            onClick={() => onNavigate("settings")}
-            className={cn(
-              "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm",
-              page === "settings"
-                ? "bg-[#EDF4FA] font-semibold text-[#52769F]"
-                : "text-[#647487] hover:bg-slate-50"
-            )}
-          >
-            <Settings className="size-[18px]" />
-            الإعدادات
-          </button>
-          <div className="mt-5 flex items-center gap-2 px-3">
-            <Avatar
-              initials={userInitials}
-              color="#52769F"
-              className="size-8"
+        <div className="app-sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-0.5 pb-2">
+          <nav className="space-y-1">
+            {visibleEntries.map(entry => {
+              const active =
+                page === entry.id || (entry.id === "plan" && page === "time");
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => onNavigate(entry.id)}
+                  className={cn(
+                    "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-right text-sm transition-colors",
+                    active
+                      ? "bg-[#EDF4FA] font-semibold text-[#52769F]"
+                      : "text-[#647487] hover:bg-slate-50 hover:text-[#52657A]"
+                  )}
+                >
+                  <entry.icon className="size-[18px]" />
+                  {entry.label}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <PwaInstallButton
+              compact
+              comingSoon
+              className="mb-2 h-10 w-full justify-start px-3 text-xs"
             />
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold">{userName}</p>
-              <p className="text-[10px] text-[#7C8A9A]">{roleLabel}</p>
+            <button
+              onClick={() => onNavigate("mcp")}
+              className={cn(
+                "mb-2 flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-right text-xs transition-colors",
+                page === "mcp"
+                  ? "border-[#BFD3E7] bg-[#EDF4FA] font-semibold text-[#52769F]"
+                  : "border-[#BFD3E7] bg-white text-[#45698F] hover:bg-slate-50"
+              )}
+            >
+              <Link2 className="size-4" />
+              ربط المساعد الذكي (MCP)
+            </button>
+            {user.role === "admin" && (
+              <button
+                onClick={() => window.location.assign("/admin")}
+                className="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[#647487] hover:bg-slate-50"
+              >
+                <ShieldCheck className="size-[18px]" />
+                إدارة المنصة
+              </button>
+            )}
+            <button
+              onClick={() => onNavigate("settings")}
+              className={cn(
+                "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm",
+                page === "settings"
+                  ? "bg-[#EDF4FA] font-semibold text-[#52769F]"
+                  : "text-[#647487] hover:bg-slate-50"
+              )}
+            >
+              <Settings className="size-[18px]" />
+              الإعدادات
+            </button>
+            <div className="mt-5 flex items-center gap-2 px-3">
+              <Avatar
+                initials={userInitials}
+                color="#52769F"
+                className="size-8"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold">{userName}</p>
+                <p className="text-[10px] text-[#7C8A9A]">{roleLabel}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -2774,6 +2835,7 @@ function TaskDetailPage({
   canEditWork,
 }: any) {
   const [body, setBody] = useState("");
+  const [replyingTo, setReplyingTo] = useState<any>(null);
   const task =
     data.tasks.find((item: any) => item.id === taskId) ?? data.tasks[0];
   const [supportEnabled, setSupportEnabled] = useState(
@@ -2787,6 +2849,7 @@ function TaskDetailPage({
     onSuccess: async () => {
       await utils.workspace.overview.invalidate();
       setBody("");
+      setReplyingTo(null);
       toast.success("تمت إضافة التعليق");
     },
     onError: issue => toast.error(issue.message),
@@ -2804,6 +2867,19 @@ function TaskDetailPage({
     setSupportEnabled(Boolean(task?.needsSupport));
     setSupportRequest(task?.supportRequest ?? "");
   }, [task?.id, task?.needsSupport, task?.supportRequest]);
+  const requestedCommentId = Number(
+    new URLSearchParams(window.location.search).get("commentId")
+  );
+  useEffect(() => {
+    if (!Number.isInteger(requestedCommentId) || requestedCommentId <= 0)
+      return;
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(`task-comment-${requestedCommentId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [requestedCommentId, task?.id]);
   if (!task)
     return (
       <div className="entry max-w-5xl">
@@ -3005,14 +3081,33 @@ function TaskDetailPage({
             comments.map((comment: any) => (
               <article
                 key={comment.id}
-                className="rounded-lg border border-slate-100 bg-[#F9FBFD] px-4 py-3"
+                id={`task-comment-${comment.id}`}
+                className={cn(
+                  "rounded-lg border border-slate-100 bg-[#F9FBFD] px-4 py-3 scroll-mt-6",
+                  requestedCommentId === comment.id &&
+                    "border-[#8EACCB] ring-2 ring-[#DCE8F3]"
+                )}
               >
+                {comment.replyToCommentId && (
+                  <p className="mb-2 text-[10px] font-semibold text-[#6C8FB8]">
+                    رد على تعليق سابق
+                  </p>
+                )}
                 <p className="whitespace-pre-wrap text-sm leading-7 text-[#40556D]">
                   {comment.body}
                 </p>
                 <p className="mt-2 text-[11px] text-[#7C8A9A]">
                   {comment.authorName} · {fullDateText(comment.createdAt)}
                 </p>
+                {canEditWork && (
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(comment)}
+                    className="mt-2 text-[11px] font-semibold text-[#52769F]"
+                  >
+                    رد
+                  </button>
+                )}
               </article>
             ))
           ) : (
@@ -3026,14 +3121,30 @@ function TaskDetailPage({
             onSubmit={event => {
               event.preventDefault();
               if (!body.trim()) return;
-              addComment.mutate({ taskId: task.id, body: body.trim() });
+              addComment.mutate({
+                taskId: task.id,
+                body: body.trim(),
+                replyToCommentId: replyingTo?.id ?? null,
+              });
             }}
             className="mt-4"
           >
+            {replyingTo && (
+              <div className="mb-2 flex items-center justify-between rounded-lg bg-[#EDF4FA] px-3 py-2 text-xs text-[#52657A]">
+                <span>رد على {replyingTo.authorName}</span>
+                <button
+                  type="button"
+                  onClick={() => setReplyingTo(null)}
+                  aria-label="إلغاء الرد"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
             <textarea
               value={body}
               onChange={event => setBody(event.target.value)}
-              placeholder="اكتب تعليقًا أو تحديثًا على المهمة..."
+              placeholder="اكتب تعليقًا، وللإشارة إلى عضو اكتب @ ثم اسمه الكامل أو بريده..."
               className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
             />
             <Button
@@ -4370,6 +4481,18 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
       (a: any, b: any) =>
         new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
     );
+  const requestedEventId = Number(
+    new URLSearchParams(window.location.search).get("eventId")
+  );
+  useEffect(() => {
+    if (!Number.isInteger(requestedEventId) || requestedEventId <= 0) return;
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(`launch-${requestedEventId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [requestedEventId]);
   const refresh = async () => utils.workspace.overview.invalidate();
   const createLaunch = trpc.workspace.createCalendarEvent.useMutation({
     onSuccess: async () => {
@@ -4468,7 +4591,12 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
                   return (
                     <tr
                       key={launch.id}
-                      className="border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]"
+                      id={`launch-${launch.id}`}
+                      className={cn(
+                        "scroll-mt-6 border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]",
+                        requestedEventId === launch.id &&
+                          "bg-[#F2F7FC] ring-2 ring-inset ring-[#BFD3E7]"
+                      )}
                     >
                       <td
                         data-mobile-primary
@@ -6226,6 +6354,7 @@ function SettingsPage({
           </div>
         </section>
       )}
+      <BrowserNotificationSettings />
       {SHOW_BOARD_JOIN_LINKS && board && canManage && (
         <div className="mb-5 rounded-xl border border-[#DCE7F2] bg-[#FBFDFF] p-5">
           <SectionTitle>مشاركة لوحة الإدارة</SectionTitle>

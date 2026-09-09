@@ -141,6 +141,13 @@
       "when": 1788881811725,
       "tag": "0019_known_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1788949353106,
+      "tag": "0020_notifications",
+      "breakpoints": true
     }
   ]
 }

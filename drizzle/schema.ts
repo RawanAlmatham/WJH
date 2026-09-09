@@ -1,6 +1,7 @@
 import {
   boolean,
   foreignKey,
+  index,
   int,
   json,
   mysqlEnum,
@@ -12,6 +13,7 @@ import {
 } from "drizzle-orm/mysql-core";
 import type { BoardModule } from "../shared/boardModules";
 import type { PresentationSection } from "../shared/presentationSections";
+import type { NotificationType } from "../shared/notificationTypes";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -429,17 +431,28 @@ export const taskParticipants = mysqlTable("taskParticipants", {
     .notNull(),
 });
 
-export const taskComments = mysqlTable("taskComments", {
-  id: int("id").autoincrement().primaryKey(),
-  taskId: int("taskId")
-    .references(() => tasks.id)
-    .notNull(),
-  authorMemberId: int("authorMemberId")
-    .references(() => teamMembers.id)
-    .notNull(),
-  body: text("body").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+export const taskComments = mysqlTable(
+  "taskComments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    taskId: int("taskId")
+      .references(() => tasks.id)
+      .notNull(),
+    authorMemberId: int("authorMemberId")
+      .references(() => teamMembers.id)
+      .notNull(),
+    replyToCommentId: int("replyToCommentId"),
+    body: text("body").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    foreignKey({
+      columns: [table.replyToCommentId],
+      foreignColumns: [table.id],
+      name: "taskComments_replyToCommentId_taskComments_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
 
 export const taskAttachments = mysqlTable("taskAttachments", {
   id: int("id").autoincrement().primaryKey(),
@@ -470,6 +483,81 @@ export const calendarEvents = mysqlTable("calendarEvents", {
     "review",
   ]).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const notifications = mysqlTable(
+  "notifications",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    type: varchar("type", { length: 48 }).$type<NotificationType>().notNull(),
+    title: varchar("title", { length: 240 }).notNull(),
+    message: text("message").notNull(),
+    actorUserId: int("actorUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    taskId: int("taskId").references(() => tasks.id, { onDelete: "cascade" }),
+    taskCommentId: int("taskCommentId").references(() => taskComments.id, {
+      onDelete: "set null",
+    }),
+    calendarEventId: int("calendarEventId").references(
+      () => calendarEvents.id,
+      { onDelete: "cascade" }
+    ),
+    projectId: int("projectId").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    link: varchar("link", { length: 512 }).notNull(),
+    dedupeKey: varchar("dedupeKey", { length: 191 }).notNull(),
+    occurrenceCount: int("occurrenceCount").default(1).notNull(),
+    readAt: timestamp("readAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("notifications_user_dedupe_unique").on(
+      table.userId,
+      table.dedupeKey
+    ),
+    index("notifications_user_board_read_idx").on(
+      table.userId,
+      table.boardId,
+      table.readAt
+    ),
+  ]
+);
+
+export const browserPushSubscriptions = mysqlTable(
+  "browserPushSubscriptions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    endpoint: varchar("endpoint", { length: 512 }).notNull(),
+    p256dh: varchar("p256dh", { length: 255 }).notNull(),
+    auth: varchar("auth", { length: 255 }).notNull(),
+    enabledTypes: json("enabledTypes").$type<NotificationType[]>().notNull(),
+    expirationTime: timestamp("expirationTime"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("browserPushSubscriptions_endpoint_unique").on(table.endpoint),
+    index("browserPushSubscriptions_user_idx").on(table.userId),
+  ]
+);
+
+export const applicationSettings = mysqlTable("applicationSettings", {
+  settingKey: varchar("settingKey", { length: 96 }).primaryKey(),
+  settingValue: text("settingValue").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;

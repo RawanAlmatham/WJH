@@ -2536,6 +2536,7 @@ export async function addTaskComment(input: {
   authorUserId: number;
   body: string;
   boardId: number;
+  replyToCommentId?: number | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
@@ -2559,11 +2560,26 @@ export async function addTaskComment(input: {
   ]);
   if (!allowedTask[0] || !allowedAuthor[0])
     throw new Error("لا يمكن إضافة التعليق خارج اللوحة الحالية");
-  await db.insert(taskComments).values({
+  if (input.replyToCommentId) {
+    const parent = await db
+      .select({ id: taskComments.id })
+      .from(taskComments)
+      .where(
+        and(
+          eq(taskComments.id, input.replyToCommentId),
+          eq(taskComments.taskId, input.taskId)
+        )
+      )
+      .limit(1);
+    if (!parent[0]) throw new Error("التعليق الذي ترد عليه غير موجود");
+  }
+  const created = await db.insert(taskComments).values({
     taskId: input.taskId,
     authorMemberId: allowedAuthor[0].id,
+    replyToCommentId: input.replyToCommentId ?? null,
     body: input.body,
   });
+  return { id: Number(created[0].insertId) };
 }
 
 export async function createAnnualGoal(input: {

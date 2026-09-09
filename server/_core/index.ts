@@ -7,6 +7,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { refreshDueResearchFeeds } from "../db";
+import { runNotificationReminderJob } from "../notifications";
 import { createOAuthRouter } from "../mcp/oauthRoutes";
 import {
   authenticateMcpRequest,
@@ -15,6 +16,7 @@ import {
 } from "../mcp/server";
 
 const RESEARCH_FEED_JOB_INTERVAL_MS = 30 * 60 * 1000;
+const NOTIFICATION_JOB_INTERVAL_MS = 15 * 60 * 1000;
 
 function startResearchFeedJob() {
   const run = () =>
@@ -23,6 +25,15 @@ function startResearchFeedJob() {
     );
   setTimeout(run, 10_000).unref();
   setInterval(run, RESEARCH_FEED_JOB_INTERVAL_MS).unref();
+}
+
+function startNotificationJob() {
+  const run = () =>
+    void runNotificationReminderJob().catch(error =>
+      console.warn("[Notifications] Scheduled reminders failed:", error)
+    );
+  setTimeout(run, 15_000).unref();
+  setInterval(run, NOTIFICATION_JOB_INTERVAL_MS).unref();
 }
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -86,6 +97,7 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
     startResearchFeedJob();
+    startNotificationJob();
   });
 }
 
