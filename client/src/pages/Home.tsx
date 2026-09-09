@@ -1287,6 +1287,7 @@ function OverviewPage({
   openTask,
   completeTask,
 }: any) {
+  const [completionDetailsOpen, setCompletionDetailsOpen] = useState(false);
   const attention = [
     ...data.tasks
       .filter(
@@ -1325,6 +1326,13 @@ function OverviewPage({
     data.tasks.filter((task: any) => task.status !== "complete")
   ).slice(0, 5);
   const completion = calculatePeriodCompletion(data.tasks, period as Period);
+  const completionTasks = filterTasksByCompletionPeriod<any>(
+    data.tasks,
+    period as Period
+  ).sort(
+    (a: any, b: any) =>
+      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+  );
   return (
     <div className="entry max-w-5xl">
       <PageHeading
@@ -1341,7 +1349,12 @@ function OverviewPage({
           </Button>
         }
       />
-      <div className="mb-9 max-w-xl rounded-xl border border-[#E8EEF5] bg-white px-5 py-4">
+      <button
+        type="button"
+        onClick={() => setCompletionDetailsOpen(true)}
+        aria-label={`عرض المهام المحسوبة في إنجاز ${periodLabels[period as Period]}`}
+        className="group mb-9 block w-full max-w-xl rounded-xl border border-[#E8EEF5] bg-white px-5 py-4 text-right transition hover:border-[#BFD3E7] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6C8FB8]/20"
+      >
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-semibold">
             إنجاز {periodLabels[period as Period]}
@@ -1359,7 +1372,94 @@ function OverviewPage({
             ? `${completion.completed} من ${completion.total} مهمة مستحقة مكتملة خلال ${periodLabels[period as Period]}`
             : `لا توجد مهام مستحقة خلال ${periodLabels[period as Period]}`}
         </p>
-      </div>
+        <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#52769F]">
+          عرض المهام المحسوبة
+          <ChevronLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
+        </span>
+      </button>
+      <Sheet
+        open={completionDetailsOpen}
+        onOpenChange={setCompletionDetailsOpen}
+      >
+        <SheetContent
+          side="left"
+          dir="rtl"
+          className="w-full overflow-y-auto sm:max-w-lg"
+        >
+          <SheetHeader className="border-b border-slate-100 text-right">
+            <SheetTitle>
+              مهام {periodLabels[period as Period]} المحسوبة
+            </SheetTitle>
+            <SheetDescription className="leading-6">
+              تشمل كل مهمة يقع تاريخ استحقاقها داخل الفترة. المكتملة تدخل في
+              البسط، وجميع المهام الظاهرة تدخل في إجمالي النسبة.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-6">
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-[#EDF4FA] px-4 py-3">
+                <p className="text-xs text-[#60758D]">إجمالي المهام</p>
+                <p className="mt-1 text-xl font-bold text-[#52769F]">
+                  {completion.total}
+                </p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 px-4 py-3">
+                <p className="text-xs text-emerald-700">المكتملة</p>
+                <p className="mt-1 text-xl font-bold text-emerald-700">
+                  {completion.completed}
+                </p>
+              </div>
+            </div>
+            {completionTasks.length ? (
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {completionTasks.map((task: any) => {
+                  const assignee = data.members.find(
+                    (member: any) => member.id === task.assigneeMemberId
+                  );
+                  const project = data.projects.find(
+                    (item: any) => item.id === task.projectId
+                  );
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => {
+                        setCompletionDetailsOpen(false);
+                        openTaskDetail(task.id);
+                      }}
+                      className="flex w-full items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 text-right transition last:border-0 hover:bg-[#F8FAFC]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-[#26364A]">
+                          {task.title}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
+                          {project?.title ?? "بدون مشروع"} ·{" "}
+                          {assignee?.name ?? "غير مسند"}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7C8A9A]">
+                          الاستحقاق: {fullDateText(task.dueDate)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <StatusPill status={task.status} />
+                        <ChevronLeft className="size-4 text-slate-400" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center">
+                <ListChecks className="mx-auto size-7 text-slate-300" />
+                <p className="mt-3 text-sm text-[#7C8A9A]">
+                  لا توجد مهام مستحقة خلال هذه الفترة.
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
       <div className="grid gap-5 lg:grid-cols-[1fr_.92fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle
