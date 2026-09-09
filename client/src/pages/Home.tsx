@@ -28,6 +28,10 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { sortTasksByPriority } from "@shared/taskPriority";
+import {
+  calculatePeriodCompletion,
+  type CompletionPeriod,
+} from "@shared/periodCompletion";
 import { DEFAULT_BOARD_MODULES, type BoardModule } from "@shared/boardModules";
 import {
   DEFAULT_PRESENTATION_SECTIONS,
@@ -101,7 +105,7 @@ type Page =
   | "lessons"
   | "reports"
   | "settings";
-type Period = "day" | "week" | "month" | "quarter" | "year";
+type Period = CompletionPeriod;
 type TaskStatus =
   | "not_started"
   | "in_progress"
@@ -202,9 +206,9 @@ const pageModule: Partial<Record<Page, BoardModule>> = {
 const periodLabels: Record<Period, string> = {
   day: "اليوم",
   week: "هذا الأسبوع",
-  month: "أغسطس 2026",
-  quarter: "الربع الثالث 2026",
-  year: "الخطة السنوية 2026",
+  month: "هذا الشهر",
+  quarter: "هذا الربع",
+  year: "هذه السنة",
 };
 const taskStatusLabel: Record<string, string> = {
   not_started: "لم تبدأ",
@@ -803,7 +807,6 @@ export default function Home() {
     return (
       <PresentationMode
         data={data}
-        period={period}
         workspaceName={workspaceName}
         canManage={user.role === "admin" || boardRole === "manager"}
         sections={
@@ -5299,7 +5302,6 @@ function SettingsCopyField({
 
 function PresentationMode({
   data,
-  period,
   workspaceName,
   sections = DEFAULT_PRESENTATION_SECTIONS,
   canManage = false,
@@ -5311,6 +5313,8 @@ function PresentationMode({
   const [draftSections, setDraftSections] =
     useState<PresentationSection[]>(sections);
   const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [completionPeriod, setCompletionPeriod] = useState<Period>("week");
+  const [completionReferenceDate] = useState(() => new Date());
   useEffect(() => {
     setVisibleSections(sections);
     setDraftSections(sections);
@@ -5346,13 +5350,15 @@ function PresentationMode({
     undefined,
     { enabled: visibleSections.includes("feeds"), staleTime: 60_000 }
   );
-  const completion = data.tasks.length
-    ? Math.round(
-        (data.tasks.filter((task: any) => task.status === "complete").length /
-          data.tasks.length) *
-          100
-      )
-    : 0;
+  const completion = useMemo(
+    () =>
+      calculatePeriodCompletion(
+        data.tasks,
+        completionPeriod,
+        completionReferenceDate
+      ),
+    [data.tasks, completionPeriod, completionReferenceDate]
+  );
   const priorities = sortTasksByPriority(
     data.tasks.filter((task: any) => task.status !== "complete")
   ).slice(0, 5);
@@ -5392,14 +5398,19 @@ function PresentationMode({
     if (section === "completion")
       return (
         <section key={section} className={cardClass}>
-          <p className="text-sm text-[#7C8A9A]">إنجاز الفترة</p>
+          <p className="text-sm text-[#7C8A9A]">إنجاز مهام الفترة</p>
           <p className="mt-4 text-6xl font-bold text-[#52769F]">
-            {completion}%
+            {completion.total ? `${completion.percentage}%` : "—"}
           </p>
           <Progress
-            value={completion}
+            value={completion.percentage}
             className="mt-6 h-2.5 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
           />
+          <p className="mt-4 text-sm leading-6 text-[#7C8A9A]">
+            {completion.total
+              ? `${completion.completed} من ${completion.total} مهمة مكتملة حسب تاريخ الاستحقاق`
+              : `لا توجد مهام مستحقة خلال ${periodLabels[completionPeriod]}`}
+          </p>
         </section>
       );
     if (section === "priorities")
@@ -5619,11 +5630,20 @@ function PresentationMode({
         </div>
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold text-[#6C8FB8]">
-            وضع العرض · {periodLabels[period as Period]}
+            وضع العرض · {periodLabels[completionPeriod]}
           </p>
           <h1 className="mt-3 break-words text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             لوحة {workspaceName}
           </h1>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-[#52657A]">
+              فترة قياس الإنجاز
+            </span>
+            <PeriodSelect
+              value={completionPeriod}
+              onChange={setCompletionPeriod}
+            />
+          </div>
           <div className="mt-8 grid gap-4 sm:mt-12 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
             {visibleSections.map(renderSection)}
           </div>
