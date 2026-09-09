@@ -79,7 +79,7 @@ import {
   SlidersHorizontal,
   Link2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Line,
   LineChart,
@@ -1948,6 +1948,70 @@ function MonthView({ data, period, goPeriod }: any) {
   );
 }
 
+function MobileTableFilters({
+  activeCount,
+  onClear,
+  children,
+}: {
+  activeCount: number;
+  onClear: () => void;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="h-9 shrink-0 gap-2 border-slate-200 bg-white px-3 text-[#52657A]"
+      >
+        <SlidersHorizontal className="size-4" />
+        <span className="hidden sm:inline">تصفية</span>
+        {activeCount > 0 && (
+          <span className="flex size-5 items-center justify-center rounded-full bg-[#52769F] text-[10px] text-white">
+            {activeCount}
+          </span>
+        )}
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent
+          side="bottom"
+          dir="rtl"
+          className="max-h-[85dvh] overflow-y-auto rounded-t-3xl border-slate-200 bg-[#F8FAFC] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        >
+          <SheetHeader className="px-0 text-right">
+            <SheetTitle>تصفية النتائج</SheetTitle>
+            <SheetDescription>
+              اختر القيم التي تريد ظهورها في القائمة.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid gap-3">{children}</div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClear}
+              disabled={activeCount === 0}
+              className="border-slate-200 bg-white"
+            >
+              مسح الفلاتر
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="bg-[#52769F] hover:bg-[#46698F]"
+            >
+              عرض النتائج
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
 function ProjectsPage({
   data,
   setPage,
@@ -1984,7 +2048,7 @@ function ProjectsPage({
           </Button>
         }
       />
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row">
+      <div className="mb-5 flex gap-2">
         <div className="relative w-full max-w-sm flex-1">
           <Search className="absolute right-3 top-2.5 size-4 text-slate-400" />
           <Input
@@ -1994,31 +2058,48 @@ function ProjectsPage({
             className="h-9 border-slate-200 bg-white pr-9"
           />
         </div>
-        <select
-          value={status}
-          onChange={e => setStatus(e.target.value)}
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-[#52657A] sm:w-auto"
-        >
-          <option value="all">كل الحالات</option>
-          {Object.entries(projectStatusLabel).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={responsible}
-          onChange={e => setResponsible(e.target.value)}
-          aria-label="تصفية المشاريع حسب المسؤول"
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-[#52657A] sm:w-auto"
-        >
-          <option value="all">كل المسؤولين</option>
-          {data.members.map((member: any) => (
-            <option key={member.id} value={member.id}>
-              {member.name}
-            </option>
-          ))}
-        </select>
+        <div className="lg:hidden">
+          <MobileTableFilters
+            activeCount={
+              Number(status !== "all") + Number(responsible !== "all")
+            }
+            onClear={() => {
+              setStatus("all");
+              setResponsible("all");
+            }}
+          >
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              الحالة
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل الحالات</option>
+                {Object.entries(projectStatusLabel).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              المسؤول
+              <select
+                value={responsible}
+                onChange={e => setResponsible(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل المسؤولين</option>
+                {data.members.map((member: any) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </MobileTableFilters>
+        </div>
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
@@ -2026,8 +2107,44 @@ function ProjectsPage({
             <thead className="border-b border-slate-100 bg-[#FCFDFE] text-[11px] font-medium text-[#7C8A9A]">
               <tr>
                 <th className="px-5 py-3.5">المشروع</th>
-                <th className="px-5 py-3.5">المسؤولون</th>
-                <th className="px-5 py-3.5">الحالة</th>
+                <th className="px-5 py-3.5">
+                  <div className="grid min-w-36 gap-1.5">
+                    <span>المسؤولون</span>
+                    <select
+                      value={responsible}
+                      onChange={e => setResponsible(e.target.value)}
+                      aria-label="تصفية المشاريع حسب المسؤول"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل المسؤولين</option>
+                      {data.members.map((member: any) => (
+                        <option key={member.id} value={member.id}>
+                          {member.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
+                <th className="px-5 py-3.5">
+                  <div className="grid min-w-32 gap-1.5">
+                    <span>الحالة</span>
+                    <select
+                      value={status}
+                      onChange={e => setStatus(e.target.value)}
+                      aria-label="تصفية المشاريع حسب الحالة"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل الحالات</option>
+                      {Object.entries(projectStatusLabel).map(
+                        ([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+                </th>
                 <th className="px-5 py-3.5">التقدم</th>
                 <th className="px-5 py-3.5">الموعد</th>
                 <th className="px-5 py-3.5">الإجراءات</th>
@@ -2943,7 +3060,7 @@ function TasksPage({
           </span>
         </button>
       </div>
-      <div className="mb-5 flex flex-wrap gap-3">
+      <div className="mb-5 flex gap-2">
         <div className="relative w-full min-w-0 flex-1 sm:min-w-52">
           <Search className="absolute right-3 top-2.5 size-4 text-slate-400" />
           <Input
@@ -2953,45 +3070,68 @@ function TasksPage({
             className="h-9 border-slate-200 bg-white pr-9"
           />
         </div>
-        <select
-          value={state}
-          onChange={e => setState(e.target.value)}
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm sm:w-auto"
-        >
-          <option value="all">كل الحالات</option>
-          {Object.entries(taskStatusLabel).map(([value, label]) => (
-            <option value={value} key={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={assignee}
-          onChange={e => setAssignee(e.target.value)}
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm sm:w-auto"
-        >
-          <option value="all">كل المسؤولين</option>
-          <option value="none">غير مسندة</option>
-          {data.members.map((member: any) => (
-            <option key={member.id} value={member.id}>
-              {member.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={project}
-          onChange={e => setProject(e.target.value)}
-          aria-label="تصفية المهام حسب المشروع"
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm sm:w-auto"
-        >
-          <option value="all">كل المشاريع</option>
-          <option value="none">بدون مشروع</option>
-          {data.projects.map((item: any) => (
-            <option key={item.id} value={item.id}>
-              {item.title}
-            </option>
-          ))}
-        </select>
+        <div className="lg:hidden">
+          <MobileTableFilters
+            activeCount={
+              Number(state !== "all") +
+              Number(assignee !== "all") +
+              Number(project !== "all")
+            }
+            onClear={() => {
+              setState("all");
+              setAssignee("all");
+              setProject("all");
+            }}
+          >
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              المسؤول
+              <select
+                value={assignee}
+                onChange={e => setAssignee(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل المسؤولين</option>
+                <option value="none">غير مسندة</option>
+                {data.members.map((member: any) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              المشروع
+              <select
+                value={project}
+                onChange={e => setProject(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل المشاريع</option>
+                <option value="none">بدون مشروع</option>
+                {data.projects.map((item: any) => (
+                  <option key={item.id} value={item.id}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              الحالة
+              <select
+                value={state}
+                onChange={e => setState(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل الحالات</option>
+                {Object.entries(taskStatusLabel).map(([value, label]) => (
+                  <option value={value} key={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </MobileTableFilters>
+        </div>
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
@@ -3000,11 +3140,64 @@ function TasksPage({
               <tr>
                 <th className="w-12 px-4 py-3" />
                 <th className="px-4 py-3">المهمة</th>
-                <th className="px-4 py-3">المسؤول</th>
-                <th className="px-4 py-3">المشروع</th>
+                <th className="px-4 py-3">
+                  <div className="grid min-w-32 gap-1.5">
+                    <span>المسؤول</span>
+                    <select
+                      value={assignee}
+                      onChange={e => setAssignee(e.target.value)}
+                      aria-label="تصفية المهام حسب المسؤول"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل المسؤولين</option>
+                      <option value="none">غير مسندة</option>
+                      {data.members.map((member: any) => (
+                        <option key={member.id} value={member.id}>
+                          {member.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
+                <th className="px-4 py-3">
+                  <div className="grid min-w-32 gap-1.5">
+                    <span>المشروع</span>
+                    <select
+                      value={project}
+                      onChange={e => setProject(e.target.value)}
+                      aria-label="تصفية المهام حسب المشروع"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل المشاريع</option>
+                      <option value="none">بدون مشروع</option>
+                      {data.projects.map((item: any) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
                 <th className="px-4 py-3">الأولوية</th>
                 <th className="px-4 py-3">الموعد</th>
-                <th className="px-4 py-3">الحالة</th>
+                <th className="px-4 py-3">
+                  <div className="grid min-w-28 gap-1.5">
+                    <span>الحالة</span>
+                    <select
+                      value={state}
+                      onChange={e => setState(e.target.value)}
+                      aria-label="تصفية المهام حسب الحالة"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل الحالات</option>
+                      {Object.entries(taskStatusLabel).map(([value, label]) => (
+                        <option value={value} key={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
                 <th className="px-4 py-3">الإجراءات</th>
               </tr>
             </thead>
