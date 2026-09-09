@@ -21,6 +21,7 @@ vi.mock("./db", () => ({
   updateLessonLearned: vi.fn(async () => ({ success: true })),
   deleteLessonLearned: vi.fn(async () => ({ success: true })),
   createCalendarEvent: vi.fn(async () => ({ id: 72 })),
+  updateCalendarEvent: vi.fn(async () => ({ success: true })),
   deleteCalendarEvent: vi.fn(async () => ({ success: true })),
   createAnnualGoal: vi.fn(async () => ({ id: 44 })),
   updateAnnualGoal: vi.fn(async () => ({ success: true })),
@@ -243,7 +244,7 @@ describe("workspace permissions", () => {
     expect(db.updateLessonLearned).not.toHaveBeenCalled();
   });
 
-  it("allows a member to add and delete a calendar event in their scope", async () => {
+  it("allows a member to add, update, and delete a calendar event in their scope", async () => {
     const caller = appRouter.createCaller(memberContext());
     const eventDate = new Date("2026-09-12T09:00:00Z");
     await expect(
@@ -255,6 +256,15 @@ describe("workspace permissions", () => {
       })
     ).resolves.toEqual({ id: 72 });
     await expect(
+      caller.workspace.updateCalendarEvent({
+        id: 72,
+        title: "إطلاق المشروع",
+        projectId: 8,
+        eventDate,
+        type: "launch",
+      })
+    ).resolves.toEqual({ success: true });
+    await expect(
       caller.workspace.deleteCalendarEvent({ id: 72 })
     ).resolves.toEqual({ success: true });
     expect(db.createCalendarEvent).toHaveBeenCalledWith({
@@ -262,6 +272,14 @@ describe("workspace permissions", () => {
       projectId: 8,
       eventDate,
       type: "review",
+      boardId: 23,
+    });
+    expect(db.updateCalendarEvent).toHaveBeenCalledWith({
+      id: 72,
+      title: "إطلاق المشروع",
+      projectId: 8,
+      eventDate,
+      type: "launch",
       boardId: 23,
     });
     expect(db.deleteCalendarEvent).toHaveBeenCalledWith(72, 23);

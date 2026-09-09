@@ -79,6 +79,7 @@ import {
   Trash2,
   Rss,
   RefreshCw,
+  Rocket,
   ExternalLink,
   SlidersHorizontal,
   Link2,
@@ -105,6 +106,7 @@ type Page =
   | "task"
   | "team"
   | "member"
+  | "launches"
   | "calendar"
   | "feeds"
   | "lessons"
@@ -112,6 +114,7 @@ type Page =
   | "mcp"
   | "settings";
 type Period = CompletionPeriod;
+type MyTasksPeriod = "day" | "week" | "month" | "all";
 type TaskStatus =
   | "not_started"
   | "in_progress"
@@ -203,6 +206,7 @@ const pageModule: Partial<Record<Page, BoardModule>> = {
   task: "tasks",
   team: "team",
   member: "team",
+  launches: "calendar",
   calendar: "calendar",
   feeds: "feeds",
   lessons: "lessons",
@@ -723,6 +727,7 @@ export default function Home() {
     "task",
     "team",
     "member",
+    "launches",
     "calendar",
     "feeds",
     "lessons",
@@ -955,6 +960,7 @@ export default function Home() {
         {page === "task" && <TaskDetailPage {...shared} taskId={taskId} />}
         {page === "team" && <TeamPageWithInvite {...shared} />}
         {page === "member" && <MemberDetail {...shared} memberId={memberId} />}
+        {page === "launches" && <LaunchesPage {...shared} />}
         {page === "calendar" && <CalendarPage {...shared} />}
         {page === "feeds" && <ResearchFeedsPage {...shared} />}
         {page === "lessons" && <LessonsLearnedPage {...shared} />}
@@ -1097,6 +1103,12 @@ function Sidebar({
       label: "الدروس المستفادة",
       icon: Lightbulb,
       module: "lessons",
+    },
+    {
+      id: "launches",
+      label: "الإطلاقات",
+      icon: Rocket,
+      module: "calendar",
     },
     {
       id: "calendar",
@@ -1284,6 +1296,7 @@ function PageHeading({
 
 function OverviewPage({
   data,
+  user,
   setPage,
   setProjectId,
   openTaskDetail,
@@ -1292,6 +1305,27 @@ function OverviewPage({
   completeTask,
 }: any) {
   const [completionDetailsOpen, setCompletionDetailsOpen] = useState(false);
+  const [myTasksPeriod, setMyTasksPeriod] = useState<MyTasksPeriod>("week");
+  const currentMember = data.members.find(
+    (member: any) => member.userId === user.id
+  );
+  const assignedToMe = currentMember
+    ? data.tasks.filter(
+        (task: any) => task.assigneeMemberId === currentMember.id
+      )
+    : [];
+  const myTasks = (
+    myTasksPeriod === "all"
+      ? assignedToMe
+      : filterTasksByCompletionPeriod<any>(
+          assignedToMe,
+          myTasksPeriod as CompletionPeriod
+        )
+  ).sort((a: any, b: any) => {
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+  });
   const attention = [
     ...data.tasks
       .filter(
@@ -1464,6 +1498,84 @@ function OverviewPage({
           </div>
         </SheetContent>
       </Sheet>
+      <section className="mb-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-[#26364A]">مهامي</h2>
+            <p className="mt-1 text-xs text-[#7C8A9A]">
+              المهام المسندة لك حسب تاريخ الاستحقاق.
+            </p>
+          </div>
+          <div className="grid grid-cols-4 rounded-lg bg-[#F1F5F9] p-1">
+            {(
+              [
+                ["day", "اليوم"],
+                ["week", "هذا الأسبوع"],
+                ["month", "هذا الشهر"],
+                ["all", "الكل"],
+              ] as [MyTasksPeriod, string][]
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMyTasksPeriod(value)}
+                className={cn(
+                  "whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px] transition sm:px-3",
+                  myTasksPeriod === value
+                    ? "bg-white font-semibold text-[#40556D] shadow-sm"
+                    : "text-[#7C8A9A]"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {myTasks.length ? (
+          <div className="divide-y divide-slate-100">
+            {myTasks.map((task: any) => {
+              const project = data.projects.find(
+                (item: any) => item.id === task.projectId
+              );
+              return (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => openTaskDetail(task.id)}
+                  className="flex w-full flex-col gap-3 px-5 py-4 text-right transition hover:bg-[#FBFCFE] sm:flex-row sm:items-center"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-[#26364A]">
+                      {task.title}
+                    </p>
+                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                      {project?.title ?? "بدون مشروع"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <StatusPill status={task.status} />
+                    <span className="text-xs text-[#7C8A9A]">
+                      {task.dueDate
+                        ? fullDateText(task.dueDate)
+                        : "بدون موعد استحقاق"}
+                    </span>
+                    <ChevronLeft className="size-4 text-slate-400" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="px-5 py-10 text-center">
+            <ListChecks className="mx-auto size-6 text-slate-300" />
+            <p className="mt-3 text-sm text-[#7C8A9A]">
+              {currentMember
+                ? "لا توجد مهام مسندة لك في هذه الفترة."
+                : "حسابك غير مرتبط بعضو في فريق هذه اللوحة."}
+            </p>
+          </div>
+        )}
+      </section>
       <div className="grid gap-5 lg:grid-cols-[1fr_.92fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle
@@ -4182,7 +4294,279 @@ function MemberDetail({ data, memberId, setPage }: any) {
   );
 }
 
-function CalendarPage({ data }: any) {
+function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
+  const utils = trpc.useUtils();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingLaunch, setEditingLaunch] = useState<any>(null);
+  const [title, setTitle] = useState("");
+  const [projectId, setLaunchProjectId] = useState("");
+  const [launchDate, setLaunchDate] = useState(todayInputValue);
+  const launches = [...data.events]
+    .filter((event: any) => event.type === "launch")
+    .sort(
+      (a: any, b: any) =>
+        new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+    );
+  const refresh = async () => utils.workspace.overview.invalidate();
+  const createLaunch = trpc.workspace.createCalendarEvent.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setEditorOpen(false);
+      toast.success("تمت إضافة الإطلاق إلى التقويم");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const updateLaunch = trpc.workspace.updateCalendarEvent.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setEditorOpen(false);
+      toast.success("تم تحديث الإطلاق وموعده في التقويم");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const deleteLaunch = trpc.workspace.deleteCalendarEvent.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      toast.success("تم حذف الإطلاق");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const openCreate = () => {
+    setEditingLaunch(null);
+    setTitle("");
+    setLaunchProjectId("");
+    setLaunchDate(todayInputValue());
+    setEditorOpen(true);
+  };
+  const openEdit = (launch: any) => {
+    setEditingLaunch(launch);
+    setTitle(launch.title);
+    setLaunchProjectId(launch.projectId ? String(launch.projectId) : "");
+    setLaunchDate(dateInputValue(launch.eventDate));
+    setEditorOpen(true);
+  };
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!title.trim() || !launchDate) {
+      toast.error("أكمل اسم الإطلاق وموعده");
+      return;
+    }
+    const input = {
+      title: title.trim(),
+      projectId: projectId ? Number(projectId) : null,
+      eventDate: new Date(`${launchDate}T12:00:00`),
+      type: "launch" as const,
+    };
+    if (editingLaunch) {
+      updateLaunch.mutate({ id: editingLaunch.id, ...input });
+    } else {
+      createLaunch.mutate(input);
+    }
+  };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return (
+    <div className="entry">
+      <PageHeading
+        eyebrow="مواعيد مرتبطة تلقائيًا بالتقويم"
+        title="الإطلاقات"
+        description="أدر مواعيد الإطلاق واربط كل إطلاق بالمشروع المناسب."
+        action={
+          canEditWork ? (
+            <Button
+              onClick={openCreate}
+              className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+            >
+              <Plus className="size-4" />
+              إطلاق جديد
+            </Button>
+          ) : undefined
+        }
+      />
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        {launches.length ? (
+          <div className="overflow-x-auto">
+            <table className="responsive-data-table w-full min-w-[680px] text-right">
+              <thead className="border-b border-slate-100 bg-[#FCFDFE] text-[11px] text-[#7C8A9A]">
+                <tr>
+                  <th className="px-5 py-3">الإطلاق</th>
+                  <th className="px-5 py-3">المشروع المرتبط</th>
+                  <th className="px-5 py-3">الموعد</th>
+                  <th className="px-5 py-3">الحالة</th>
+                  <th className="px-5 py-3">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {launches.map((launch: any) => {
+                  const project = data.projects.find(
+                    (item: any) => item.id === launch.projectId
+                  );
+                  const upcoming = new Date(launch.eventDate) >= today;
+                  return (
+                    <tr
+                      key={launch.id}
+                      className="border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]"
+                    >
+                      <td
+                        data-mobile-primary
+                        data-label="الإطلاق"
+                        className="px-5 py-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-700">
+                            <Rocket className="size-4" />
+                          </span>
+                          <span className="text-sm font-semibold">
+                            {launch.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td data-label="المشروع" className="px-5 py-4 text-sm">
+                        {project ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProjectId(project.id);
+                              setPage("project");
+                            }}
+                            className="text-[#52769F] hover:underline"
+                          >
+                            {project.title}
+                          </button>
+                        ) : (
+                          <span className="text-[#7C8A9A]">بدون مشروع</span>
+                        )}
+                      </td>
+                      <td data-label="الموعد" className="px-5 py-4 text-sm">
+                        {fullDateText(launch.eventDate)}
+                      </td>
+                      <td data-label="الحالة" className="px-5 py-4">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+                            upcoming
+                              ? "bg-violet-50 text-violet-700"
+                              : "bg-slate-100 text-slate-600"
+                          )}
+                        >
+                          {upcoming ? "قادم" : "انتهى"}
+                        </span>
+                      </td>
+                      <td
+                        data-mobile-actions
+                        data-label="الإجراءات"
+                        className="px-5 py-4"
+                      >
+                        {canEditWork && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(launch)}
+                              aria-label={`تعديل ${launch.title}`}
+                              className="rounded-md p-2 text-[#647487] hover:bg-[#EDF4FA] hover:text-[#52769F]"
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                            <DeleteWorkDialog
+                              kind="الإطلاق"
+                              title={launch.title}
+                              description="سيُحذف الإطلاق من القائمة والتقويم نهائيًا."
+                              onConfirm={() =>
+                                deleteLaunch.mutate({ id: launch.id })
+                              }
+                            />
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="px-6 py-16 text-center">
+            <Rocket className="mx-auto size-7 text-violet-300" />
+            <h2 className="mt-3 font-semibold">لا توجد إطلاقات بعد</h2>
+            <p className="mt-2 text-sm text-[#7C8A9A]">
+              أضف أول إطلاق وسيظهر موعده تلقائيًا في التقويم.
+            </p>
+            {canEditWork && (
+              <Button
+                onClick={openCreate}
+                className="mt-5 bg-[#52769F] hover:bg-[#46698F]"
+              >
+                إضافة أول إطلاق
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+      <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
+        <SheetContent
+          side="left"
+          dir="rtl"
+          className="w-full overflow-y-auto sm:max-w-md"
+        >
+          <SheetHeader className="text-right">
+            <SheetTitle>
+              {editingLaunch ? "تعديل الإطلاق" : "إطلاق جديد"}
+            </SheetTitle>
+            <SheetDescription>
+              الموعد محفوظ مرة واحدة هنا، وأي تغيير سيظهر مباشرة في التقويم.
+            </SheetDescription>
+          </SheetHeader>
+          <form onSubmit={submit} className="mt-7 space-y-5">
+            <Field label="اسم الإطلاق">
+              <Input
+                autoFocus
+                value={title}
+                onChange={event => setTitle(event.target.value)}
+                placeholder="مثال: إطلاق النسخة التجريبية"
+                required
+              />
+            </Field>
+            <Field label="المشروع المرتبط (اختياري)">
+              <select
+                value={projectId}
+                onChange={event => setLaunchProjectId(event.target.value)}
+                className="form-select"
+              >
+                <option value="">بدون مشروع</option>
+                {data.projects.map((project: any) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="موعد الإطلاق">
+              <Input
+                type="date"
+                value={launchDate}
+                onChange={event => setLaunchDate(event.target.value)}
+                required
+              />
+            </Field>
+            <Button
+              type="submit"
+              disabled={createLaunch.isPending || updateLaunch.isPending}
+              className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+            >
+              {createLaunch.isPending || updateLaunch.isPending
+                ? "جارٍ الحفظ..."
+                : editingLaunch
+                  ? "حفظ التعديلات"
+                  : "حفظ الإطلاق"}
+            </Button>
+          </form>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
+function CalendarPage({ data, setPage, openTaskDetail }: any) {
   const [calendarSystem, setCalendarSystem] = useState<"gregory" | "islamic">(
     "gregory"
   );
@@ -4197,7 +4581,26 @@ function CalendarPage({ data }: any) {
     const date = new Date(value);
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
   };
-  const eventsByDate = data.events.reduce(
+  const calendarItems = [
+    ...data.events.map((event: any) => ({
+      ...event,
+      calendarId: `event-${event.id}`,
+      calendarKind: event.type === "launch" ? "launch" : "event",
+    })),
+    ...data.tasks
+      .filter((task: any) => task.dueDate)
+      .map((task: any) => ({
+        id: task.id,
+        taskId: task.id,
+        title: task.title,
+        projectId: task.projectId,
+        eventDate: task.dueDate,
+        type: "task_due",
+        calendarId: `task-${task.id}`,
+        calendarKind: "task",
+      })),
+  ];
+  const eventsByDate = calendarItems.reduce(
     (acc: Record<string, any[]>, event: any) => {
       const key = dateKey(event.eventDate);
       (acc[key] ??= []).push(event);
@@ -4225,16 +4628,18 @@ function CalendarPage({ data }: any) {
   const hijriTitle =
     hijriStart === hijriEnd ? hijriStart : `${hijriStart} — ${hijriEnd}`;
   const todayKey = dateKey(new Date());
-  const upcomingEvents = [...data.events]
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const upcomingEvents = [...calendarItems]
     .sort(
       (a: any, b: any) =>
         new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
     )
-    .filter((event: any) => new Date(event.eventDate) >= monthCursor)
+    .filter((event: any) => new Date(event.eventDate) >= startOfToday)
     .slice(0, 5);
   const visibleUpcoming = upcomingEvents.length
     ? upcomingEvents
-    : [...data.events]
+    : [...calendarItems]
         .sort(
           (a: any, b: any) =>
             new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
@@ -4246,10 +4651,34 @@ function CalendarPage({ data }: any) {
     launch: "إطلاق",
     workshop: "ورشة",
     review: "مراجعة",
+    task_due: "موعد نهائي لمهمة",
+  };
+  const eventClass = (event: any) =>
+    event.calendarKind === "task"
+      ? "border-rose-500 bg-rose-50 text-rose-700"
+      : event.calendarKind === "launch"
+        ? "border-violet-500 bg-violet-50 text-violet-700"
+        : "border-[#6C8FB8] bg-[#EDF4FA] text-[#46698F]";
+  const openCalendarItem = (event: any) => {
+    if (event.calendarKind === "task") openTaskDetail(event.taskId);
+    if (event.calendarKind === "launch") setPage("launches");
   };
   return (
     <div className="entry">
-      <PageHeading title="التقويم" description="متى الأشياء المهمة؟" />
+      <PageHeading
+        title="التقويم"
+        description="المواعيد النهائية للمهام والإطلاقات في مكان واحد."
+        action={
+          <Button
+            variant="outline"
+            onClick={() => setPage("launches")}
+            className="h-10 gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
+          >
+            <Rocket className="size-4" />
+            إدارة الإطلاقات
+          </Button>
+        }
+      />
       <div className="grid gap-5 xl:grid-cols-[1fr_265px]">
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="flex flex-col justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center">
@@ -4306,78 +4735,127 @@ function CalendarPage({ data }: any) {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-7 border-b border-slate-100 text-center text-[11px] text-[#7C8A9A]">
-            {["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"].map(
-              day => (
-                <div key={day} className="py-3">
-                  {day}
-                </div>
-              )
-            )}
+          <div className="flex flex-wrap gap-4 border-b border-slate-100 px-5 py-3 text-[11px] text-[#647487]">
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-rose-500" />
+              موعد نهائي لمهمة
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-violet-500" />
+              موعد إطلاق
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-[#6C8FB8]" />
+              موعد آخر
+            </span>
           </div>
-          <div className="grid grid-cols-7">
-            {cells.map((date, index) => {
-              if (!date)
-                return (
-                  <div
-                    key={`blank-${index}`}
-                    className="min-h-24 border-b border-l border-slate-100 bg-[#FCFDFE]"
-                  />
-                );
-              const key = dateKey(date);
-              const gregorianDay = new Intl.NumberFormat("ar-SA").format(
-                date.getDate()
-              );
-              const hijriDay = new Intl.DateTimeFormat(
-                "ar-SA-u-ca-islamic-umalqura",
-                { day: "numeric" }
-              ).format(date);
-              const isToday = key === todayKey;
-              return (
-                <div
-                  key={key}
-                  className={cn(
-                    "min-h-24 border-b border-l border-slate-100 p-2",
-                    isToday && "bg-[#EDF4FA]/45"
-                  )}
-                >
-                  <div className="flex items-start justify-between">
-                    <span
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-7 border-b border-slate-100 text-center text-[11px] text-[#7C8A9A]">
+                {[
+                  "أحد",
+                  "اثنين",
+                  "ثلاثاء",
+                  "أربعاء",
+                  "خميس",
+                  "جمعة",
+                  "سبت",
+                ].map(day => (
+                  <div key={day} className="py-3">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {cells.map((date, index) => {
+                  if (!date)
+                    return (
+                      <div
+                        key={`blank-${index}`}
+                        className="min-h-24 border-b border-l border-slate-100 bg-[#FCFDFE]"
+                      />
+                    );
+                  const key = dateKey(date);
+                  const gregorianDay = new Intl.NumberFormat("ar-SA").format(
+                    date.getDate()
+                  );
+                  const hijriDay = new Intl.DateTimeFormat(
+                    "ar-SA-u-ca-islamic-umalqura",
+                    { day: "numeric" }
+                  ).format(date);
+                  const isToday = key === todayKey;
+                  return (
+                    <div
+                      key={key}
                       className={cn(
-                        "flex size-6 items-center justify-center rounded-full text-xs",
-                        isToday && "bg-[#6C8FB8] text-white"
+                        "min-h-24 border-b border-l border-slate-100 p-2",
+                        isToday && "bg-[#EDF4FA]/45"
                       )}
                     >
-                      {calendarSystem === "gregory" ? gregorianDay : hijriDay}
-                    </span>
-                    <span className="text-[9px] text-slate-400">
-                      {calendarSystem === "gregory"
-                        ? `${hijriDay} هـ`
-                        : `${gregorianDay} م`}
-                    </span>
-                  </div>
-                  <div className="mt-1 space-y-1">
-                    {(eventsByDate[key] ?? []).map((event: any) => (
-                      <button
-                        key={event.id}
-                        className="w-full truncate rounded border-r-2 border-[#6C8FB8] bg-[#EDF4FA] px-1.5 py-1 text-right text-[10px] text-[#46698F]"
-                      >
-                        {event.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                      <div className="flex items-start justify-between">
+                        <span
+                          className={cn(
+                            "flex size-6 items-center justify-center rounded-full text-xs",
+                            isToday && "bg-[#6C8FB8] text-white"
+                          )}
+                        >
+                          {calendarSystem === "gregory"
+                            ? gregorianDay
+                            : hijriDay}
+                        </span>
+                        <span className="text-[9px] text-slate-400">
+                          {calendarSystem === "gregory"
+                            ? `${hijriDay} هـ`
+                            : `${gregorianDay} م`}
+                        </span>
+                      </div>
+                      <div className="mt-1 space-y-1">
+                        {(eventsByDate[key] ?? []).map((event: any) => (
+                          <button
+                            key={event.calendarId}
+                            type="button"
+                            onClick={() => openCalendarItem(event)}
+                            className={cn(
+                              "w-full truncate rounded border-r-2 px-1.5 py-1 text-right text-[10px]",
+                              eventClass(event),
+                              event.calendarKind === "event" && "cursor-default"
+                            )}
+                          >
+                            {event.title}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </section>
         <aside className="rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle>القادم</SectionTitle>
           <div className="space-y-4">
             {visibleUpcoming.map((event: any) => (
-              <div key={event.id} className="flex gap-3">
+              <button
+                key={event.calendarId}
+                type="button"
+                onClick={() => openCalendarItem(event)}
+                className={cn(
+                  "flex w-full gap-3 rounded-lg p-1 text-right transition",
+                  event.calendarKind !== "event" && "hover:bg-slate-50"
+                )}
+              >
                 <div className="w-9 text-center">
-                  <p className="text-sm font-bold text-[#52769F]">
+                  <p
+                    className={cn(
+                      "text-sm font-bold",
+                      event.calendarKind === "task"
+                        ? "text-rose-600"
+                        : event.calendarKind === "launch"
+                          ? "text-violet-700"
+                          : "text-[#52769F]"
+                    )}
+                  >
                     {new Intl.NumberFormat("ar-SA").format(
                       new Date(event.eventDate).getDate()
                     )}
@@ -4389,13 +4867,16 @@ function CalendarPage({ data }: any) {
                   </p>
                 </div>
                 <div className="min-w-0 border-r border-slate-100 pr-3">
-                  <p className="text-sm font-medium">{event.title}</p>
+                  <p className="truncate text-sm font-medium">{event.title}</p>
                   <p className="mt-1 text-[11px] text-[#7C8A9A]">
                     {eventTypeLabel[event.type] ?? event.type}
                   </p>
                 </div>
-              </div>
+              </button>
             ))}
+            {!visibleUpcoming.length && (
+              <EmptyState title="لا توجد مواعيد مسجلة" />
+            )}
           </div>
         </aside>
       </div>
@@ -5522,8 +6003,8 @@ function SettingsPage({
     },
     {
       id: "calendar",
-      label: "التقويم",
-      description: "المواعيد والاجتماعات والتسليمات القادمة.",
+      label: "التقويم والإطلاقات",
+      description: "مواعيد المهام والإطلاقات والاجتماعات والتسليمات القادمة.",
       icon: CalendarDays,
     },
     {

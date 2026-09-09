@@ -719,6 +719,32 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         });
       }),
+    updateCalendarEvent: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          title: z.string().trim().min(2).max(240),
+          projectId: z.number().int().positive().nullable().optional(),
+          eventDate: z.date(),
+          type: z.enum(["meeting", "delivery", "launch", "workshop", "review"]),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireCalendarEventAccess(
+          ctx.user.id,
+          ctx.activeBoardId,
+          input.id
+        );
+        await requireProjectAccess(
+          ctx.user.id,
+          ctx.activeBoardId,
+          input.projectId
+        );
+        return db.updateCalendarEvent({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+      }),
     deleteCalendarEvent: teamMemberProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {

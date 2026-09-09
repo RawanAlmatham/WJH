@@ -2868,6 +2868,48 @@ export async function createCalendarEvent(input: {
   return { id: Number(created[0].insertId) };
 }
 
+export async function updateCalendarEvent(input: {
+  id: number;
+  title: string;
+  projectId?: number | null;
+  eventDate: Date;
+  type: "meeting" | "delivery" | "launch" | "workshop" | "review";
+  boardId: number;
+}) {
+  const database = await getDb();
+  if (!database) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  if (input.projectId) {
+    const project = await database
+      .select({ id: projects.id })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, input.projectId),
+          eq(projects.boardId, input.boardId)
+        )
+      )
+      .limit(1);
+    if (!project[0]) throw new Error("المشروع غير موجود في اللوحة الحالية");
+  }
+  const updated = await database
+    .update(calendarEvents)
+    .set({
+      title: input.title,
+      projectId: input.projectId ?? null,
+      eventDate: input.eventDate,
+      type: input.type,
+    })
+    .where(
+      and(
+        eq(calendarEvents.id, input.id),
+        eq(calendarEvents.boardId, input.boardId)
+      )
+    );
+  if (!updated[0].affectedRows)
+    throw new Error("الموعد غير موجود في اللوحة الحالية");
+  return { success: true as const };
+}
+
 export async function deleteCalendarEvent(id: number, boardId: number) {
   const database = await getDb();
   if (!database) throw new Error("قاعدة البيانات غير متاحة حاليًا");
