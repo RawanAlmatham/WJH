@@ -6054,11 +6054,20 @@ function McpPage() {
     await navigator.clipboard.writeText(endpoint);
     toast.success("تم نسخ رابط MCP");
   };
+  const copyConnectorConfig = async (name: string, config: string) => {
+    await navigator.clipboard.writeText(config);
+    toast.success(`تم نسخ إعداد ${name}`);
+  };
   const connectorOptions = [
     {
       name: "Claude",
       description:
         "أضف الرابط من Settings ثم Connectors واختر إضافة موصل مخصص.",
+      steps: [
+        "افتح Settings ثم Connectors.",
+        "اختر Add custom connector واكتب الاسم «أثر».",
+        "الصق رابط MCP، ثم سجّل الدخول إلى أثر ووافق على الصلاحيات.",
+      ],
       href: "https://claude.ai/settings/connectors",
       action: "فتح موصلات Claude",
     },
@@ -6066,8 +6075,71 @@ function McpPage() {
       name: "ChatGPT",
       description:
         "أنشئ تطبيقًا مخصصًا باسم أثر، ثم استخدم الرابط نفسه كخادم MCP.",
+      steps: [
+        "افتح إعدادات التطبيقات والموصلات في ChatGPT.",
+        "أنشئ تطبيقًا مخصصًا باسم «أثر» وأضف رابط MCP.",
+        "اختر OAuth وأكمل تسجيل الدخول والموافقة من صفحة أثر.",
+      ],
       href: "https://chatgpt.com/plugins",
       action: "فتح تطبيقات ChatGPT",
+    },
+    {
+      name: "Gemini",
+      description:
+        "الربط متاح عبر Gemini CLI أو Antigravity الداعم لـRemote MCP، وليس من محادثة Gemini العادية.",
+      steps: [
+        "افتح ملف ~/.gemini/settings.json.",
+        "أضف إعداد أثر الموضح أدناه ثم أعد تشغيل Gemini CLI.",
+        "نفّذ ‎/mcp auth athr‎ وأكمل تسجيل الدخول إلى أثر.",
+      ],
+      config: JSON.stringify(
+        { mcpServers: { athr: { httpUrl: endpoint } } },
+        null,
+        2
+      ),
+      href: "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md",
+      action: "فتح دليل Gemini MCP",
+    },
+    {
+      name: "Manus",
+      description:
+        "أضف أثر كموصل MCP مخصص ليتمكن Manus من استخدامه داخل المحادثات.",
+      steps: [
+        "افتح Settings ثم Connectors واضغط + Connect.",
+        "اختر إنشاء Custom MCP connector باسم «أثر».",
+        "الصق رابط MCP وأكمل تسجيل الدخول والموافقة في أثر.",
+      ],
+      href: "https://manus.im/docs/integrations/mcp-connectors",
+      action: "فتح دليل موصلات Manus",
+    },
+    {
+      name: "Lovable",
+      description:
+        "استخدم Personal connectors لإضافة أثر كخادم MCP مخصص داخل مساحة عمل Lovable.",
+      steps: [
+        "افتح Connectors ثم Personal connectors في Lovable.",
+        "اختر Add custom MCP server واكتب الاسم «أثر».",
+        "الصق رابط MCP ثم أكمل تسجيل الدخول والموافقة في أثر.",
+      ],
+      href: "https://docs.lovable.dev/integrations/lovable-mcp-server",
+      action: "فتح دليل Lovable MCP",
+    },
+    {
+      name: "Kimi",
+      description:
+        "الربط متاح عبر Kimi Code CLI الذي يدعم خوادم MCP البعيدة وOAuth.",
+      steps: [
+        "افتح ملف ~/.kimi-code/mcp.json.",
+        "أضف إعداد أثر الموضح أدناه، ثم ابدأ جلسة Kimi Code جديدة.",
+        "نفّذ ‎/mcp-config login athr‎ وأكمل تسجيل الدخول إلى أثر.",
+      ],
+      config: JSON.stringify(
+        { mcpServers: { athr: { url: endpoint } } },
+        null,
+        2
+      ),
+      href: "https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html",
+      action: "فتح دليل Kimi MCP",
     },
   ];
 
@@ -6095,8 +6167,9 @@ function McpPage() {
                 </span>
               </div>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7C8A9A]">
-                يعمل الرابط مع Claude وChatGPT وأي مساعد يدعم Remote MCP وOAuth.
-                بعد إضافته، سجّل الدخول إلى أثر ووافق على الصلاحيات المطلوبة.
+                يعمل الرابط مع Claude وChatGPT وGemini CLI وManus وLovable وKimi
+                Code وأي مساعد يدعم Remote MCP وOAuth. بعد إضافته، سجّل الدخول
+                إلى أثر ووافق على الصلاحيات المطلوبة.
               </p>
             </div>
           </div>
@@ -6114,16 +6187,46 @@ function McpPage() {
         </p>
       </section>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-900">
+        <span className="font-semibold">ملاحظة:</span> في Gemini استخدم Gemini
+        CLI أو Antigravity، وفي Kimi استخدم Kimi Code. صفحات المحادثة العادية قد
+        لا تعرض خيار إضافة خادم MCP مخصص.
+      </section>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
         {connectorOptions.map(option => (
           <section
             key={option.name}
             className="flex flex-col rounded-xl border border-slate-200 bg-white p-5"
           >
             <h2 className="text-lg font-semibold">{option.name}</h2>
-            <p className="mt-2 flex-1 text-sm leading-6 text-[#7C8A9A]">
+            <p className="mt-2 text-sm leading-6 text-[#7C8A9A]">
               {option.description}
             </p>
+            <ol className="mt-4 flex-1 space-y-2 pr-5 text-sm leading-6 text-[#52657A] [list-style:decimal]">
+              {option.steps.map(step => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            {option.config && (
+              <div
+                className="mt-4 rounded-lg border border-slate-200 bg-slate-950 p-3 text-left"
+                dir="ltr"
+              >
+                <pre className="overflow-x-auto whitespace-pre-wrap break-all text-xs leading-5 text-slate-100">
+                  {option.config}
+                </pre>
+                <button
+                  type="button"
+                  onClick={() =>
+                    copyConnectorConfig(option.name, option.config)
+                  }
+                  className="mt-3 text-xs font-semibold text-sky-300 hover:text-sky-200"
+                >
+                  نسخ الإعداد
+                </button>
+              </div>
+            )}
             <Button
               asChild
               variant="outline"

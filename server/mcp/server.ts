@@ -67,7 +67,7 @@ export function showMcpBrowserInfo(
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>أثر — ربط المساعدات الذكية</title>
     <style>
-      *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f5f8fc;color:#26364a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:32px 20px}.card{width:min(760px,100%);margin:auto;background:#fff;border:1px solid #dfe8f2;border-radius:20px;padding:30px;box-shadow:0 16px 50px rgba(38,54,74,.09)}.brand{color:#52769f;font-weight:800}h1{font-size:28px;margin:10px 0}.status{display:inline-flex;align-items:center;gap:8px;margin:8px 0 18px;padding:7px 12px;border-radius:999px;background:#edf9f2;color:#24734b;font-weight:700;font-size:14px}.dot{width:9px;height:9px;border-radius:50%;background:#2ca56c}.muted{color:#687b90;line-height:1.8}.endpoint{display:flex;gap:10px;align-items:stretch;margin:18px 0 24px}.url{direction:ltr;text-align:left;overflow-wrap:anywhere;flex:1;background:#f6f8fb;border:1px solid #e3eaf2;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.copy{border:0;border-radius:10px;background:#52769f;color:#fff;padding:0 17px;font:inherit;font-weight:700;cursor:pointer}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.platform{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #dfe8f2;border-radius:14px;padding:18px}.platform h2{font-size:19px;margin:0 0 6px}.platform p{margin:0;color:#687b90;line-height:1.7;font-size:14px}.action{display:inline-flex;margin-top:auto;padding-top:16px;color:#3e678f;text-decoration:none;font-weight:800}.generic{grid-column:1/-1;background:#f8fafc}.note{margin:22px 0 0;padding-top:18px;border-top:1px solid #e5ebf2;color:#687b90;font-size:13px;line-height:1.7}@media(max-width:620px){body{padding:16px 12px}.card{padding:22px;border-radius:16px}h1{font-size:24px}.endpoint{flex-direction:column}.copy{min-height:44px}.platforms{grid-template-columns:1fr}.generic{grid-column:auto}}
+      *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f5f8fc;color:#26364a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:32px 20px}.card{width:min(920px,100%);margin:auto;background:#fff;border:1px solid #dfe8f2;border-radius:20px;padding:30px;box-shadow:0 16px 50px rgba(38,54,74,.09)}.brand{color:#52769f;font-weight:800}h1{font-size:28px;margin:10px 0}.status{display:inline-flex;align-items:center;gap:8px;margin:8px 0 18px;padding:7px 12px;border-radius:999px;background:#edf9f2;color:#24734b;font-weight:700;font-size:14px}.dot{width:9px;height:9px;border-radius:50%;background:#2ca56c}.muted{color:#687b90;line-height:1.8}.endpoint{display:flex;gap:10px;align-items:stretch;margin:18px 0 24px}.url{direction:ltr;text-align:left;overflow-wrap:anywhere;flex:1;background:#f6f8fb;border:1px solid #e3eaf2;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.copy{border:0;border-radius:10px;background:#52769f;color:#fff;padding:0 17px;font:inherit;font-weight:700;cursor:pointer}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.platform{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #dfe8f2;border-radius:14px;padding:18px}.platform h2{font-size:19px;margin:0 0 6px}.platform p{margin:0;color:#687b90;line-height:1.7;font-size:14px}.platform ol{margin:12px 0 0;padding-right:20px;color:#52657a;font-size:13px;line-height:1.8}.platform pre{direction:ltr;text-align:left;width:100%;overflow:auto;margin:12px 0 0;padding:10px;border-radius:8px;background:#172033;color:#eef4fa;font-size:11px;line-height:1.6}.action{display:inline-flex;margin-top:auto;padding-top:16px;color:#3e678f;text-decoration:none;font-weight:800}.generic{grid-column:1/-1;background:#f8fafc}.notice{margin:0 0 18px;padding:11px 13px;border:1px solid #f0d48a;border-radius:10px;background:#fff9e8;color:#7a5810;font-size:13px;line-height:1.7}.note{margin:22px 0 0;padding-top:18px;border-top:1px solid #e5ebf2;color:#687b90;font-size:13px;line-height:1.7}@media(max-width:620px){body{padding:16px 12px}.card{padding:22px;border-radius:16px}h1{font-size:24px}.endpoint{flex-direction:column}.copy{min-height:44px}.platforms{grid-template-columns:1fr}.generic{grid-column:auto}}
     </style>
   </head>
   <body>
@@ -75,28 +75,55 @@ export function showMcpBrowserInfo(
       <div class="brand">أثر</div>
       <h1>ربط أثر بالمساعدات الذكية</h1>
       <div class="status"><span class="dot"></span>خادم MCP متصل ويستجيب</div>
-      <p class="muted">هذا رابط موحّد يعمل مع Claude وChatGPT وأي عميل يدعم Remote MCP وOAuth. أضفه داخل إعدادات الموصلات في المنصة التي تستخدمها، ثم سجّل الدخول إلى أثر لمنح الصلاحيات.</p>
+      <p class="muted">هذا رابط موحّد يعمل مع Claude وChatGPT وGemini CLI وManus وLovable وKimi Code وأي عميل يدعم Remote MCP وOAuth. أضفه داخل إعدادات الموصلات في المنصة التي تستخدمها، ثم سجّل الدخول إلى أثر لمنح الصلاحيات.</p>
       <div class="endpoint">
         <div class="url" id="mcp-url">${MCP_RESOURCE_URL}</div>
         <button class="copy" id="copy-url" type="button">نسخ الرابط</button>
       </div>
+      <p class="notice"><strong>تنبيه:</strong> في Gemini استخدم Gemini CLI أو Antigravity، وفي Kimi استخدم Kimi Code. صفحات المحادثة العادية قد لا تعرض خيار إضافة خادم MCP مخصص.</p>
       <section class="platforms" aria-label="خيارات الربط">
         <article class="platform">
           <h2>Claude</h2>
           <p>من Settings ← Connectors اختر Add custom connector، ثم أضف الاسم «أثر» والصق رابط MCP أعلاه.</p>
+          <ol><li>افتح Settings ثم Connectors.</li><li>اختر Add custom connector واكتب «أثر».</li><li>الصق الرابط وأكمل تسجيل الدخول والموافقة.</li></ol>
           <a class="action" href="https://claude.ai/settings/connectors" target="_blank" rel="noreferrer">فتح موصلات Claude ←</a>
         </article>
         <article class="platform">
           <h2>ChatGPT</h2>
           <p>من صفحة الإضافات أنشئ تطبيقًا مخصصًا باسم «أثر»، واختر OAuth ثم الصق رابط MCP أعلاه.</p>
+          <ol><li>افتح إعدادات التطبيقات والموصلات.</li><li>أنشئ تطبيقًا مخصصًا باسم «أثر».</li><li>أضف الرابط واختر OAuth ثم أكمل الموافقة.</li></ol>
           <a class="action" href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">فتح إضافات ChatGPT ←</a>
+        </article>
+        <article class="platform">
+          <h2>Gemini</h2>
+          <p>استخدم Gemini CLI أو Antigravity الداعم لـRemote MCP.</p>
+          <ol><li>افتح ~/.gemini/settings.json.</li><li>أضف الإعداد التالي وأعد تشغيل Gemini CLI.</li><li>نفّذ /mcp auth athr وأكمل الموافقة.</li></ol>
+          <pre>{"mcpServers":{"athr":{"httpUrl":"${MCP_RESOURCE_URL}"}}}</pre>
+          <a class="action" href="https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md" target="_blank" rel="noreferrer">فتح دليل Gemini MCP ←</a>
+        </article>
+        <article class="platform">
+          <h2>Manus</h2>
+          <p>من Settings ← Connectors اضغط + Connect، ثم أنشئ Custom MCP connector باسم «أثر» والصق الرابط وأكمل الموافقة.</p>
+          <a class="action" href="https://manus.im/docs/integrations/mcp-connectors" target="_blank" rel="noreferrer">فتح دليل Manus ←</a>
+        </article>
+        <article class="platform">
+          <h2>Lovable</h2>
+          <p>من Connectors ← Personal connectors اختر Add custom MCP server، ثم أضف الاسم «أثر» والصق الرابط وأكمل الموافقة.</p>
+          <a class="action" href="https://docs.lovable.dev/integrations/lovable-mcp-server" target="_blank" rel="noreferrer">فتح دليل Lovable MCP ←</a>
+        </article>
+        <article class="platform">
+          <h2>Kimi</h2>
+          <p>استخدم Kimi Code CLI الذي يدعم خوادم MCP البعيدة وOAuth.</p>
+          <ol><li>افتح ~/.kimi-code/mcp.json.</li><li>أضف الإعداد التالي وابدأ جلسة جديدة.</li><li>نفّذ /mcp-config login athr وأكمل الموافقة.</li></ol>
+          <pre>{"mcpServers":{"athr":{"url":"${MCP_RESOURCE_URL}"}}}</pre>
+          <a class="action" href="https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html" target="_blank" rel="noreferrer">فتح دليل Kimi MCP ←</a>
         </article>
         <article class="platform generic">
           <h2>أي عميل MCP متوافق</h2>
           <p>استخدم الرابط نفسه كعنوان خادم Streamable HTTP. سيكتشف العميل إعدادات OAuth تلقائيًا، وتبقى العمليات المتاحة محدودة بصلاحيات حسابك في أثر.</p>
         </article>
       </section>
-      <p class="note">فتح الرابط مباشرة في المتصفح يعرض هذه التعليمات فقط؛ يبدأ تسجيل الدخول والربط من داخل Claude أو ChatGPT أو عميل MCP الذي تختاره.</p>
+      <p class="note">فتح الرابط مباشرة في المتصفح يعرض هذه التعليمات فقط؛ يبدأ تسجيل الدخول والربط من داخل المساعد أو عميل MCP الذي تختاره.</p>
     </main>
     <script>
       document.getElementById("copy-url").addEventListener("click",async function(){
