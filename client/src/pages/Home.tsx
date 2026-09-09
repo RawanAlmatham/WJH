@@ -151,8 +151,14 @@ const presentationSectionOptions: {
   {
     id: "attention",
     label: "يحتاج انتباه",
-    description: "المهام المتأخرة أو المتوقفة.",
+    description: "المهام المتأخرة أو القريبة أو التي تحتاج دعمًا.",
     icon: AlertTriangle,
+  },
+  {
+    id: "blocked",
+    label: "المهام المتوقفة",
+    description: "المهام المتوقفة المعروضة في بطاقة مستقلة.",
+    icon: CircleHelp,
   },
   {
     id: "upcoming",
@@ -6357,10 +6363,21 @@ function PresentationMode({
   const priorities = sortTasksByPriority(
     data.tasks.filter((task: any) => task.status !== "complete")
   ).slice(0, 5);
+  const attentionReasonLabel = {
+    due_soon: "اقترب الموعد النهائي",
+    overdue: "متأخر",
+    needs_support: "يحتاج دعم",
+  } as const;
   const attention = sortTasksByPriority(
-    data.tasks.filter(
-      (task: any) => task.status === "overdue" || task.status === "blocked"
-    )
+    data.tasks.filter((task: any) => getTaskAttentionReason(task))
+  )
+    .map((task: any) => ({
+      ...task,
+      reason: getTaskAttentionReason(task),
+    }))
+    .slice(0, 5);
+  const blockedTasks = sortTasksByPriority(
+    data.tasks.filter((task: any) => task.status === "blocked")
   ).slice(0, 5);
   const ongoingProjects = [...data.projects]
     .filter((project: any) => project.status !== "complete")
@@ -6438,12 +6455,65 @@ function PresentationMode({
                   <p className="text-sm font-medium text-rose-700">
                     {task.title}
                   </p>
-                  <p className="mt-1 text-xs text-[#7C8A9A]">
-                    {taskStatusLabel[task.status as TaskStatus] ?? task.status}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                        task.reason === "overdue"
+                          ? "bg-rose-50 text-rose-700"
+                          : task.reason === "needs_support"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-sky-50 text-sky-700"
+                      )}
+                    >
+                      {
+                        attentionReasonLabel[
+                          task.reason as keyof typeof attentionReasonLabel
+                        ]
+                      }
+                    </span>
+                    <span className="text-xs text-[#7C8A9A]">
+                      {task.dueDate ? dateText(task.dueDate) : "بدون موعد"}
+                    </span>
+                  </div>
                 </div>
               ))
             : empty("لا توجد عناصر تحتاج انتباه")}
+        </section>
+      );
+    if (section === "blocked")
+      return (
+        <section key={section} className={cardClass}>
+          <h2 className="mb-5 text-lg font-semibold">المهام المتوقفة</h2>
+          {blockedTasks.length
+            ? blockedTasks.map((task: any) => {
+                const assignee = data.members.find(
+                  (member: any) => member.id === task.assigneeMemberId
+                );
+                const project = data.projects.find(
+                  (item: any) => item.id === task.projectId
+                );
+                return (
+                  <div
+                    key={task.id}
+                    className="border-b border-slate-100 py-3 last:border-0"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-rose-500" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-[#26364A]">
+                          {task.title}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
+                          {assignee?.name ?? "غير مسند"} ·{" "}
+                          {project?.title ?? "بدون مشروع"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            : empty("لا توجد مهام متوقفة")}
         </section>
       );
     if (section === "upcoming")
