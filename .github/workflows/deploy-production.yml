@@ -1,0 +1,90 @@
+name: Verify and deploy production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: athr-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.4.1 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check, test, and build
+        run: pnpm verify
+
+  deploy:
+    name: Deploy to athr.aidept.io
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Configure deployment SSH key
+        env:
+          ATHR_DEPLOY_SSH_KEY: ${{ secrets.ATHR_DEPLOY_SSH_KEY }}
+        run: |
+          test -n "$ATHR_DEPLOY_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$ATHR_DEPLOY_SSH_KEY" > ~/.ssh/athr_deploy
+          chmod 600 ~/.ssh/athr_deploy
+          cp .github/known_hosts ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload the release
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='.deployed-commit' \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            --exclude='work/' \
+            --exclude='outputs/' \
+            --exclude='android/' \
+            --exclude='ios/' \
+            --exclude='*.log' \
+            -e "ssh -i ~/.ssh/athr_deploy" \
+            ./ athrdeploy@148.230.107.106:/opt/athar/
+
+      - name: Build and restart production
+        env:
+          DEPLOYED_COMMIT: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/athr_deploy athrdeploy@148.230.107.106 \
+            "cd /opt/athar && docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --remove-orphans && printf '%s\\n' '$DEPLOYED_COMMIT' > .deployed-commit"
+
+      - name: Check production
+        run: |
+          curl --fail --show-error --silent \
+            --retry 12 --retry-delay 5 --retry-all-errors \
+            https://athr.aidept.io/ > /dev/null
