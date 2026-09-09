@@ -661,6 +661,7 @@ export default function Home() {
       if (result.showLoadWarning)
         toast.warning("هذا العضو لديه عبء عمل مرتفع حاليًا.");
     },
+    onError: issue => toast.error(issue.message),
   });
   const editTaskMutation = trpc.workspace.updateTask.useMutation({
     onSuccess: () => {
@@ -939,6 +940,7 @@ export default function Home() {
     deleteProject: (id: number) =>
       requireMember(() => deleteProjectMutation.mutate({ id })),
     canEditWork: boardRole !== "viewer",
+    canModerateComments: user.role === "admin" || boardRole === "manager",
     openGoal: () => requireManager(() => setGoalDrawer(true)),
     openLesson: () => requireMember(() => setLessonDrawer(true)),
     canManagePlan: user.role === "admin" || boardRole === "manager",
@@ -2826,6 +2828,7 @@ function ProjectDetailWithComments({
 
 function TaskDetailPage({
   data,
+  user,
   taskId,
   setPage,
   completeTask,
@@ -2833,9 +2836,12 @@ function TaskDetailPage({
   editTask,
   deleteTask,
   canEditWork,
+  canModerateComments,
 }: any) {
   const [body, setBody] = useState("");
   const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [editingComment, setEditingComment] = useState<any>(null);
+  const [editingCommentBody, setEditingCommentBody] = useState("");
   const task =
     data.tasks.find((item: any) => item.id === taskId) ?? data.tasks[0];
   const [supportEnabled, setSupportEnabled] = useState(
@@ -2851,6 +2857,15 @@ function TaskDetailPage({
       setBody("");
       setReplyingTo(null);
       toast.success("تمت إضافة التعليق");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const updateComment = trpc.workspace.updateTaskComment.useMutation({
+    onSuccess: async () => {
+      await utils.workspace.overview.invalidate();
+      setEditingComment(null);
+      setEditingCommentBody("");
+      toast.success("تم تعديل التعليق");
     },
     onError: issue => toast.error(issue.message),
   });
@@ -3093,20 +3108,83 @@ function TaskDetailPage({
                     رد على تعليق سابق
                   </p>
                 )}
-                <p className="whitespace-pre-wrap text-sm leading-7 text-[#40556D]">
-                  {comment.body}
-                </p>
+                {editingComment?.id === comment.id ? (
+                  <form
+                    onSubmit={event => {
+                      event.preventDefault();
+                      if (!editingCommentBody.trim())
+                        return toast.error("لا يمكن حفظ تعليق فارغ");
+                      updateComment.mutate({
+                        id: comment.id,
+                        body: editingCommentBody.trim(),
+                      });
+                    }}
+                  >
+                    <textarea
+                      autoFocus
+                      value={editingCommentBody}
+                      onChange={event =>
+                        setEditingCommentBody(event.target.value)
+                      }
+                      className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="submit"
+                        disabled={
+                          updateComment.isPending || !editingCommentBody.trim()
+                        }
+                        className="h-8 bg-[#52769F] px-3 text-xs hover:bg-[#46698F]"
+                      >
+                        {updateComment.isPending
+                          ? "جارٍ الحفظ..."
+                          : "حفظ التعليق"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={updateComment.isPending}
+                        onClick={() => {
+                          setEditingComment(null);
+                          setEditingCommentBody("");
+                        }}
+                        className="h-8 px-3 text-xs"
+                      >
+                        إلغاء
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-[#40556D]">
+                    {comment.body}
+                  </p>
+                )}
                 <p className="mt-2 text-[11px] text-[#7C8A9A]">
                   {comment.authorName} · {fullDateText(comment.createdAt)}
                 </p>
-                {canEditWork && (
-                  <button
-                    type="button"
-                    onClick={() => setReplyingTo(comment)}
-                    className="mt-2 text-[11px] font-semibold text-[#52769F]"
-                  >
-                    رد
-                  </button>
+                {canEditWork && editingComment?.id !== comment.id && (
+                  <div className="mt-2 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setReplyingTo(comment)}
+                      className="text-[11px] font-semibold text-[#52769F]"
+                    >
+                      رد
+                    </button>
+                    {(comment.authorUserId === user?.id ||
+                      canModerateComments) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingComment(comment);
+                          setEditingCommentBody(comment.body);
+                        }}
+                        className="text-[11px] font-semibold text-[#52769F]"
+                      >
+                        تعديل
+                      </button>
+                    )}
+                  </div>
                 )}
               </article>
             ))

@@ -37,6 +37,19 @@ const projectStatus = z.enum([
   "complete",
   "blocked",
 ]);
+
+async function bestEffortNotification<T>(
+  operation: string,
+  action: () => Promise<T>
+): Promise<T | undefined> {
+  try {
+    return await action();
+  } catch (error) {
+    console.error(`[Notifications] ${operation} failed`, error);
+    return undefined;
+  }
+}
+
 const platformManagerProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "manager" && ctx.user.role !== "admin")
     throw new TRPCError({
@@ -234,9 +247,13 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         if (ctx.user && input?.pushEndpoint)
-          await notificationService.removeBrowserPushSubscription(
-            ctx.user.id,
-            input.pushEndpoint
+          await bestEffortNotification(
+            "unlink push subscription on logout",
+            () =>
+              notificationService.removeBrowserPushSubscription(
+                ctx.user!.id,
+                input.pushEndpoint!
+              )
           );
         ctx.res.clearCookie(COOKIE_NAME, {
           ...getSessionCookieOptions(ctx.req),
@@ -826,9 +843,11 @@ export const appRouter = router({
           ...input,
           boardId: ctx.activeBoardId,
         });
-        await notificationService.clearLaunchReminderNotifications(
-          input.id,
-          ctx.activeBoardId
+        await bestEffortNotification("reschedule launch reminder", () =>
+          notificationService.clearLaunchReminderNotifications(
+            input.id,
+            ctx.activeBoardId
+          )
         );
         return result;
       }),
@@ -883,10 +902,12 @@ export const appRouter = router({
           ...input,
           boardId: ctx.activeBoardId,
         });
-        await notificationService.notifyTaskCreated(
-          result.id,
-          ctx.activeBoardId,
-          ctx.user.id
+        await bestEffortNotification("notify task assignment", () =>
+          notificationService.notifyTaskCreated(
+            result.id,
+            ctx.activeBoardId,
+            ctx.user.id
+          )
         );
         return result;
       }),
@@ -922,19 +943,25 @@ export const appRouter = router({
           ctx.activeBoardId,
           input.projectId
         );
-        const before = await notificationService.getTaskNotificationSnapshot(
-          input.id,
-          ctx.activeBoardId
+        const before = await bestEffortNotification(
+          "read task notification snapshot",
+          () =>
+            notificationService.getTaskNotificationSnapshot(
+              input.id,
+              ctx.activeBoardId
+            )
         );
         const result = await db.updateTask({
           ...input,
           boardId: ctx.activeBoardId,
         });
         if (before)
-          await notificationService.notifyTaskUpdated(
-            before,
-            ctx.activeBoardId,
-            ctx.user.id
+          await bestEffortNotification("notify task update", () =>
+            notificationService.notifyTaskUpdated(
+              before,
+              ctx.activeBoardId,
+              ctx.user.id
+            )
           );
         return result;
       }),
@@ -953,9 +980,13 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.id);
-        const before = await notificationService.getTaskNotificationSnapshot(
-          input.id,
-          ctx.activeBoardId
+        const before = await bestEffortNotification(
+          "read assignment notification snapshot",
+          () =>
+            notificationService.getTaskNotificationSnapshot(
+              input.id,
+              ctx.activeBoardId
+            )
         );
         const result = await db.assignTask(
           input.id,
@@ -963,10 +994,12 @@ export const appRouter = router({
           ctx.activeBoardId
         );
         if (before)
-          await notificationService.notifyTaskUpdated(
-            before,
-            ctx.activeBoardId,
-            ctx.user.id
+          await bestEffortNotification("notify task assignment update", () =>
+            notificationService.notifyTaskUpdated(
+              before,
+              ctx.activeBoardId,
+              ctx.user.id
+            )
           );
         return result;
       }),
@@ -980,9 +1013,11 @@ export const appRouter = router({
           ctx.activeBoardId
         );
         if (input.status === "complete")
-          await notificationService.clearTaskReminderNotifications(
-            input.id,
-            ctx.activeBoardId
+          await bestEffortNotification("clear completed task reminders", () =>
+            notificationService.clearTaskReminderNotifications(
+              input.id,
+              ctx.activeBoardId
+            )
           );
         return result;
       }),
@@ -1010,10 +1045,12 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         });
         if (input.needsSupport)
-          await notificationService.notifySupportRequested(
-            input.id,
-            ctx.activeBoardId,
-            ctx.user.id
+          await bestEffortNotification("notify support request", () =>
+            notificationService.notifySupportRequested(
+              input.id,
+              ctx.activeBoardId,
+              ctx.user.id
+            )
           );
         return result;
       }),
@@ -1032,15 +1069,35 @@ export const appRouter = router({
           authorUserId: ctx.user.id,
           boardId: ctx.activeBoardId,
         });
-        await notificationService.notifyTaskComment(
-          result.id,
-          input.taskId,
-          ctx.activeBoardId,
-          ctx.user.id,
-          input.body,
-          input.replyToCommentId
+        await bestEffortNotification("notify task comment", () =>
+          notificationService.notifyTaskComment(
+            result.id,
+            input.taskId,
+            ctx.activeBoardId,
+            ctx.user.id,
+            input.body,
+            input.replyToCommentId
+          )
         );
         return result;
+      }),
+    updateTaskComment: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          body: z.string().trim().min(1).max(3000),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const canModerate =
+          ctx.user.role === "admin" ||
+          (await db.hasBoardRole(ctx.user.id, ["manager"], ctx.activeBoardId));
+        return db.updateTaskComment({
+          ...input,
+          boardId: ctx.activeBoardId,
+          actingUserId: ctx.user.id,
+          canModerate,
+        });
       }),
     addDeliverableComment: teamMemberProcedure
       .input(

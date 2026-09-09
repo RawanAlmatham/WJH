@@ -15,8 +15,11 @@ vi.mock("./db", () => ({
   updateProject: vi.fn(async () => ({ success: true })),
   deleteProject: vi.fn(async () => ({ success: true })),
   updateTask: vi.fn(async () => ({ success: true })),
+  createTask: vi.fn(async () => ({ id: 77, showLoadWarning: false })),
   updateTaskSupport: vi.fn(async () => ({ success: true })),
   deleteTask: vi.fn(async () => ({ success: true })),
+  addTaskComment: vi.fn(async () => ({ id: 88 })),
+  updateTaskComment: vi.fn(async () => ({ success: true })),
   createLessonLearned: vi.fn(async () => ({ id: 71 })),
   updateLessonLearned: vi.fn(async () => ({ success: true })),
   deleteLessonLearned: vi.fn(async () => ({ success: true })),
@@ -98,6 +101,7 @@ vi.mock("./notifications", () => ({
   clearLaunchReminderNotifications: vi.fn(async () => undefined),
 }));
 import * as db from "./db";
+import * as notificationService from "./notifications";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -136,6 +140,64 @@ function managerContext(): TrpcContext {
 }
 
 describe("workspace permissions", () => {
+  it("does not fail task creation when notification delivery fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(notificationService.notifyTaskCreated).mockRejectedValueOnce(
+      new Error("push unavailable")
+    );
+    const caller = appRouter.createCaller(memberContext());
+    await expect(
+      caller.workspace.createTask({
+        title: "مهمة محفوظة",
+        projectId: 8,
+        assigneeMemberId: 2,
+        startDate: new Date("2026-09-09T09:00:00Z"),
+        dueDate: new Date("2026-09-12T09:00:00Z"),
+        priority: "medium",
+        status: "not_started",
+      })
+    ).resolves.toEqual({ id: 77, showLoadWarning: false });
+    expect(db.createTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "مهمة محفوظة", boardId: 23 })
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("does not fail comment creation when its notification fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(notificationService.notifyTaskComment).mockRejectedValueOnce(
+      new Error("notification unavailable")
+    );
+    const caller = appRouter.createCaller(memberContext());
+    await expect(
+      caller.workspace.addTaskComment({
+        taskId: 12,
+        body: "تعليق محفوظ",
+      })
+    ).resolves.toEqual({ id: 88 });
+    expect(db.addTaskComment).toHaveBeenCalledWith({
+      taskId: 12,
+      body: "تعليق محفوظ",
+      authorUserId: 2,
+      boardId: 23,
+    });
+    errorSpy.mockRestore();
+  });
+
+  it("lets an author edit a task comment in the active board", async () => {
+    const caller = appRouter.createCaller(memberContext());
+    await expect(
+      caller.workspace.updateTaskComment({ id: 88, body: "النص المعدّل" })
+    ).resolves.toEqual({ success: true });
+    expect(db.updateTaskComment).toHaveBeenCalledWith({
+      id: 88,
+      body: "النص المعدّل",
+      actingUserId: 2,
+      boardId: 23,
+      canModerate: false,
+    });
+  });
+
   it("allows a team member to create a project", async () => {
     const caller = appRouter.createCaller(memberContext());
     await expect(

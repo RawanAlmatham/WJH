@@ -2506,6 +2506,9 @@ export async function getWorkspaceData(boardId: number, userId?: number) {
     authorName:
       members.find(member => member.id === comment.authorMemberId)?.name ??
       "عضو الفريق",
+    authorUserId:
+      members.find(member => member.id === comment.authorMemberId)?.userId ??
+      null,
   }));
   return {
     boardId,
@@ -2580,6 +2583,36 @@ export async function addTaskComment(input: {
     body: input.body,
   });
   return { id: Number(created[0].insertId) };
+}
+
+export async function updateTaskComment(input: {
+  id: number;
+  actingUserId: number;
+  boardId: number;
+  body: string;
+  canModerate: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const rows = await db
+    .select({
+      id: taskComments.id,
+      authorUserId: teamMembers.userId,
+    })
+    .from(taskComments)
+    .innerJoin(tasks, eq(taskComments.taskId, tasks.id))
+    .innerJoin(teamMembers, eq(taskComments.authorMemberId, teamMembers.id))
+    .where(and(eq(taskComments.id, input.id), eq(tasks.boardId, input.boardId)))
+    .limit(1);
+  const comment = rows[0];
+  if (!comment) throw new Error("التعليق غير موجود في اللوحة الحالية");
+  if (comment.authorUserId !== input.actingUserId && !input.canModerate)
+    throw new Error("يمكنك تعديل تعليقاتك فقط");
+  await db
+    .update(taskComments)
+    .set({ body: input.body.trim() })
+    .where(eq(taskComments.id, input.id));
+  return { success: true as const };
 }
 
 export async function createAnnualGoal(input: {
