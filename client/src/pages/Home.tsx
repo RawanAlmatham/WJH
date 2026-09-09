@@ -1184,6 +1184,7 @@ function Sidebar({
         <div className="mt-auto border-t border-slate-100 pt-4">
           <PwaInstallButton
             compact
+            comingSoon
             className="mb-2 h-10 w-full justify-start px-3 text-xs"
           />
           <button

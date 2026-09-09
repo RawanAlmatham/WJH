@@ -13,9 +13,11 @@ type InstallPromptEvent = Event & {
 export function PwaInstallButton({
   className,
   compact = false,
+  comingSoon = false,
 }: {
   className?: string;
   compact?: boolean;
+  comingSoon?: boolean;
 }) {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(
     null
@@ -60,7 +62,7 @@ export function PwaInstallButton({
     if (isAppleMobile) {
       toast.message("لتثبيت أثر على الآيفون", {
         description:
-          "اضغطي زر المشاركة في Safari ثم اختاري «إضافة إلى الشاشة الرئيسية».",
+          "اضغط زر المشاركة في Safari ثم اختر «إضافة إلى الشاشة الرئيسية».",
         duration: 8000,
       });
       return;
@@ -68,7 +70,7 @@ export function PwaInstallButton({
 
     toast.message("تثبيت تطبيق أثر", {
       description:
-        "افتحي قائمة المتصفح واختاري «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».",
+        "افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».",
       duration: 8000,
     });
   };
@@ -77,7 +79,8 @@ export function PwaInstallButton({
     <Button
       type="button"
       variant="outline"
-      onClick={install}
+      onClick={comingSoon ? undefined : install}
+      disabled={comingSoon}
       className={cn(
         "gap-2 border-[#BFD3E7] bg-white text-[#45698F]",
         className
@@ -88,7 +91,14 @@ export function PwaInstallButton({
       ) : (
         <Download className="size-4" />
       )}
-      {compact ? "تثبيت التطبيق" : "تثبيت أثر كتطبيق"}
+      {compact ? (
+        <>
+          تثبيت التطبيق
+          {comingSoon && <span className="text-[10px]">(قريبًا)</span>}
+        </>
+      ) : (
+        "تثبيت أثر كتطبيق"
+      )}
     </Button>
   );
 }
