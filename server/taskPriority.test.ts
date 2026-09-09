@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sortTasksByPriority } from "../shared/taskPriority";
+import {
+  matchesTaskDueFilter,
+  sortTasksByPriority,
+} from "../shared/taskPriority";
 
 describe("automatic task priority ordering", () => {
   const now = new Date("2026-09-07T12:00:00Z");
@@ -78,5 +81,29 @@ describe("automatic task priority ordering", () => {
     ];
     sortTasksByPriority(tasks, now);
     expect(tasks.map(task => task.id)).toEqual([1, 2]);
+  });
+});
+
+describe("task due-date filters", () => {
+  const now = new Date(2026, 8, 9, 12);
+  const task = (dueDate: string | null, status = "in_progress") => ({
+    dueDate,
+    status,
+  });
+
+  it("distinguishes overdue, today, this week, upcoming, and undated tasks", () => {
+    expect(matchesTaskDueFilter(task("2026-09-08"), "overdue", now)).toBe(true);
+    expect(matchesTaskDueFilter(task("2026-09-09"), "today", now)).toBe(true);
+    expect(matchesTaskDueFilter(task("2026-09-10"), "week", now)).toBe(true);
+    expect(matchesTaskDueFilter(task("2026-09-15"), "upcoming", now)).toBe(
+      true
+    );
+    expect(matchesTaskDueFilter(task(null), "none", now)).toBe(true);
+  });
+
+  it("does not classify completed past work as overdue", () => {
+    expect(
+      matchesTaskDueFilter(task("2026-09-08", "complete"), "overdue", now)
+    ).toBe(false);
   });
 });

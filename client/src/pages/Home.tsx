@@ -27,7 +27,11 @@ import {
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { sortTasksByPriority } from "@shared/taskPriority";
+import {
+  matchesTaskDueFilter,
+  sortTasksByPriority,
+  type TaskDueFilter,
+} from "@shared/taskPriority";
 import {
   calculatePeriodCompletion,
   filterTasksByCompletionPeriod,
@@ -2996,6 +3000,8 @@ function TasksPage({
   const [state, setState] = useState("all");
   const [project, setProject] = useState("all");
   const [assignee, setAssignee] = useState("all");
+  const [priority, setPriority] = useState("all");
+  const [due, setDue] = useState<TaskDueFilter>("all");
   const supportCount = data.tasks.filter(
     (task: any) => task.needsSupport
   ).length;
@@ -3005,6 +3011,8 @@ function TasksPage({
         task.title.includes(query) &&
         (scope === "all" || task.needsSupport) &&
         (state === "all" || task.status === state) &&
+        (priority === "all" || task.priority === priority) &&
+        matchesTaskDueFilter(task, due) &&
         (project === "all" ||
           (project === "none"
             ? !task.projectId
@@ -3075,12 +3083,16 @@ function TasksPage({
             activeCount={
               Number(state !== "all") +
               Number(assignee !== "all") +
-              Number(project !== "all")
+              Number(project !== "all") +
+              Number(priority !== "all") +
+              Number(due !== "all")
             }
             onClear={() => {
               setState("all");
               setAssignee("all");
               setProject("all");
+              setPriority("all");
+              setDue("all");
             }}
           >
             <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
@@ -3113,6 +3125,36 @@ function TasksPage({
                     {item.title}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              الأولوية
+              <select
+                value={priority}
+                onChange={e => setPriority(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل الأولويات</option>
+                {Object.entries(priorityLabel).map(([value, label]) => (
+                  <option value={value} key={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+              الموعد
+              <select
+                value={due}
+                onChange={e => setDue(e.target.value as TaskDueFilter)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-normal"
+              >
+                <option value="all">كل المواعيد</option>
+                <option value="overdue">متأخرة</option>
+                <option value="today">اليوم</option>
+                <option value="week">هذا الأسبوع</option>
+                <option value="upcoming">قادمة</option>
+                <option value="none">بدون موعد</option>
               </select>
             </label>
             <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
@@ -3178,8 +3220,42 @@ function TasksPage({
                     </select>
                   </div>
                 </th>
-                <th className="px-4 py-3">الأولوية</th>
-                <th className="px-4 py-3">الموعد</th>
+                <th className="px-4 py-3">
+                  <div className="grid min-w-28 gap-1.5">
+                    <span>الأولوية</span>
+                    <select
+                      value={priority}
+                      onChange={e => setPriority(e.target.value)}
+                      aria-label="تصفية المهام حسب الأولوية"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل الأولويات</option>
+                      {Object.entries(priorityLabel).map(([value, label]) => (
+                        <option value={value} key={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </th>
+                <th className="px-4 py-3">
+                  <div className="grid min-w-28 gap-1.5">
+                    <span>الموعد</span>
+                    <select
+                      value={due}
+                      onChange={e => setDue(e.target.value as TaskDueFilter)}
+                      aria-label="تصفية المهام حسب الموعد"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                    >
+                      <option value="all">كل المواعيد</option>
+                      <option value="overdue">متأخرة</option>
+                      <option value="today">اليوم</option>
+                      <option value="week">هذا الأسبوع</option>
+                      <option value="upcoming">قادمة</option>
+                      <option value="none">بدون موعد</option>
+                    </select>
+                  </div>
+                </th>
                 <th className="px-4 py-3">
                   <div className="grid min-w-28 gap-1.5">
                     <span>الحالة</span>

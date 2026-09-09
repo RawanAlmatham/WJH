@@ -6,6 +6,14 @@ export type PrioritizableTask = {
   createdAt?: Date | string | null;
 };
 
+export type TaskDueFilter =
+  | "all"
+  | "overdue"
+  | "today"
+  | "week"
+  | "upcoming"
+  | "none";
+
 const priorityRank: Record<string, number> = {
   urgent: 4,
   high: 3,
@@ -17,6 +25,49 @@ function timestamp(value: Date | string | null | undefined, fallback: number) {
   if (!value) return fallback;
   const result = new Date(value).getTime();
   return Number.isNaN(result) ? fallback : result;
+}
+
+function taskDate(value: Date | string | null | undefined) {
+  if (!value) return null;
+  if (value instanceof Date)
+    return Number.isNaN(value.getTime()) ? null : value;
+
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const result = dateOnly
+    ? new Date(
+        Number(dateOnly[1]),
+        Number(dateOnly[2]) - 1,
+        Number(dateOnly[3])
+      )
+    : new Date(value);
+  return Number.isNaN(result.getTime()) ? null : result;
+}
+
+export function matchesTaskDueFilter(
+  task: Pick<PrioritizableTask, "dueDate" | "status">,
+  filter: TaskDueFilter,
+  now = new Date()
+) {
+  if (filter === "all") return true;
+
+  const dueDate = taskDate(task.dueDate);
+  if (filter === "none") return !dueDate;
+  if (!dueDate) return false;
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  if (filter === "overdue")
+    return task.status !== "complete" && dueDate < today;
+  if (filter === "today") return dueDate >= today && dueDate < tomorrow;
+  if (filter === "week") return dueDate >= weekStart && dueDate < weekEnd;
+  return dueDate >= tomorrow;
 }
 
 function isOverdue(task: PrioritizableTask, now: Date) {
