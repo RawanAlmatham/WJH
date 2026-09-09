@@ -940,7 +940,10 @@ export default function Home() {
     deleteProject: (id: number) =>
       requireMember(() => deleteProjectMutation.mutate({ id })),
     canEditWork: boardRole !== "viewer",
-    canModerateComments: user.role === "admin" || boardRole === "manager",
+    canModerateComments:
+      user.role === "admin" ||
+      user.role === "manager" ||
+      boardRole === "manager",
     openGoal: () => requireManager(() => setGoalDrawer(true)),
     openLesson: () => requireMember(() => setLessonDrawer(true)),
     canManagePlan: user.role === "admin" || boardRole === "manager",

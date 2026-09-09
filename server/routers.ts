@@ -1091,6 +1091,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const canModerate =
           ctx.user.role === "admin" ||
+          ctx.user.role === "manager" ||
           (await db.hasBoardRole(ctx.user.id, ["manager"], ctx.activeBoardId));
         return db.updateTaskComment({
           ...input,

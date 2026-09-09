@@ -198,6 +198,20 @@ describe("workspace permissions", () => {
     });
   });
 
+  it("lets a platform manager moderate task comments", async () => {
+    const caller = appRouter.createCaller(managerContext());
+    await expect(
+      caller.workspace.updateTaskComment({ id: 88, body: "تعديل المدير" })
+    ).resolves.toEqual({ success: true });
+    expect(db.updateTaskComment).toHaveBeenCalledWith({
+      id: 88,
+      body: "تعديل المدير",
+      actingUserId: 3,
+      boardId: 23,
+      canModerate: true,
+    });
+  });
+
   it("allows a team member to create a project", async () => {
     const caller = appRouter.createCaller(memberContext());
     await expect(
