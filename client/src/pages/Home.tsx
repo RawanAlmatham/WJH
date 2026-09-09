@@ -328,6 +328,13 @@ function dateInputValue(value: Date | string | null | undefined) {
   return local.toISOString().slice(0, 10);
 }
 
+function positiveIdOrNull(value: unknown) {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  if (value === "") return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 function projectResponsibles(project: any, members: any[]) {
   const ids = project.responsibleMemberIds?.length
     ? project.responsibleMemberIds
@@ -922,7 +929,7 @@ export default function Home() {
       updateProjectStatus.mutate({ id, status }),
     openTask: (initialProjectId?: number) =>
       requireMember(() => {
-        setNewTaskProjectId(initialProjectId ?? null);
+        setNewTaskProjectId(positiveIdOrNull(initialProjectId));
         setTaskDrawer(true);
       }),
     openTaskDetail: (selectedTaskId: number) => {
@@ -1447,7 +1454,7 @@ function OverviewPage({
         description="نظرة مركزة على ما يحتاج قرارًا أو متابعة في هذه الفترة."
         action={
           <Button
-            onClick={openTask}
+            onClick={() => openTask()}
             className="h-10 gap-2 bg-[#52769F] px-4 hover:bg-[#46698F]"
           >
             <Plus className="size-4" />
@@ -3402,7 +3409,7 @@ function TasksPage({
         description="وش كل الأعمال المسندة حاليًا؟"
         action={
           <Button
-            onClick={openTask}
+            onClick={() => openTask()}
             className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
           >
             <Plus className="size-4" />
@@ -7025,8 +7032,8 @@ function TaskDrawer({
       {
         title: title.trim(),
         description: description.trim(),
-        projectId: projectId ? Number(projectId) : null,
-        assigneeMemberId: assigneeId ? Number(assigneeId) : null,
+        projectId: positiveIdOrNull(projectId),
+        assigneeMemberId: positiveIdOrNull(assigneeId),
         startDate: startDate ? new Date(`${startDate}T09:00:00`) : null,
         dueDate: hasDueDate && dueDate ? new Date(`${dueDate}T09:00:00`) : null,
         priority,
@@ -7449,8 +7456,8 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
       id: task.id,
       title: title.trim(),
       description: description.trim(),
-      projectId: projectId ? Number(projectId) : null,
-      assigneeMemberId: assigneeId ? Number(assigneeId) : null,
+      projectId: positiveIdOrNull(projectId),
+      assigneeMemberId: positiveIdOrNull(assigneeId),
       startDate: startDate ? new Date(`${startDate}T09:00:00`) : null,
       dueDate: hasDueDate && dueDate ? new Date(`${dueDate}T09:00:00`) : null,
       priority,
