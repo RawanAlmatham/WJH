@@ -16,6 +16,8 @@ import {
   researchFeedMatches,
   researchInterests,
   taskAttachments,
+  taskAssignees,
+  taskChecklistItems,
   taskComments,
   taskParticipants,
   tasks,
@@ -42,13 +44,17 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 type WorkTask = {
   assigneeMemberId: number | null;
+  assigneeMemberIds?: number[];
   status: string;
   priority: string;
 };
 
 export function calculateWorkload(tasks: WorkTask[], memberId: number) {
   const active = tasks.filter(
-    task => task.assigneeMemberId === memberId && task.status !== "complete"
+    task =>
+      (task.assigneeMemberIds?.includes(memberId) ??
+        task.assigneeMemberId === memberId) &&
+      task.status !== "complete"
   );
   const load = active.reduce(
     (sum, task) =>
@@ -1841,6 +1847,16 @@ export async function deleteTeamMember(input: {
       .where(eq(taskParticipants.memberId, input.memberId))
       .limit(1),
     db
+      .select({ id: taskAssignees.id })
+      .from(taskAssignees)
+      .where(eq(taskAssignees.memberId, input.memberId))
+      .limit(1),
+    db
+      .select({ id: taskChecklistItems.id })
+      .from(taskChecklistItems)
+      .where(eq(taskChecklistItems.assigneeMemberId, input.memberId))
+      .limit(1),
+    db
       .select({ id: taskComments.id })
       .from(taskComments)
       .where(eq(taskComments.authorMemberId, input.memberId))
@@ -2444,12 +2460,22 @@ export async function getWorkspaceData(boardId: number, userId?: number) {
           .where(inArray(projectMembers.projectId, projectIds)),
       ])
     : [[], []];
-  const taskCommentRows = taskIds.length
-    ? await db
-        .select()
-        .from(taskComments)
-        .where(inArray(taskComments.taskId, taskIds))
-    : [];
+  const [taskCommentRows, taskAssigneeRows, checklistRows] = taskIds.length
+    ? await Promise.all([
+        db
+          .select()
+          .from(taskComments)
+          .where(inArray(taskComments.taskId, taskIds)),
+        db
+          .select()
+          .from(taskAssignees)
+          .where(inArray(taskAssignees.taskId, taskIds)),
+        db
+          .select()
+          .from(taskChecklistItems)
+          .where(inArray(taskChecklistItems.taskId, taskIds)),
+      ])
+    : [[], [], []];
   const deliverableIds = deliverableRows.map(deliverable => deliverable.id);
   const commentRows = deliverableIds.length
     ? await db
@@ -2457,8 +2483,22 @@ export async function getWorkspaceData(boardId: number, userId?: number) {
         .from(deliverableComments)
         .where(inArray(deliverableComments.deliverableId, deliverableIds))
     : [];
+  const enrichedTasks = visibleTasks.map(task => {
+    const assignedIds = taskAssigneeRows
+      .filter(item => item.taskId === task.id)
+      .map(item => item.memberId);
+    return {
+      ...task,
+      assigneeMemberIds:
+        assignedIds.length > 0
+          ? Array.from(new Set(assignedIds))
+          : task.assigneeMemberId
+            ? [task.assigneeMemberId]
+            : [],
+    };
+  });
   const enrichedMembers = members.map(member => {
-    return { ...member, ...calculateWorkload(visibleTasks, member.id) };
+    return { ...member, ...calculateWorkload(enrichedTasks, member.id) };
   });
   const enrichedProjects = visibleProjects.map(project => {
     const responsibleMemberIds = Array.from(
@@ -2516,7 +2556,8 @@ export async function getWorkspaceData(boardId: number, userId?: number) {
     members: enrichedMembers,
     projects: enrichedProjects,
     deliverables: deliverableRows,
-    tasks: visibleTasks,
+    tasks: enrichedTasks,
+    taskChecklistItems: checklistRows,
     events: visibleEvents,
     lessons: enrichedLessons,
     taskComments: enrichedTaskComments,
@@ -2975,6 +3016,7 @@ export async function createTask(input: {
   description?: string;
   projectId?: number | null;
   assigneeMemberId?: number | null;
+  assigneeMemberIds?: number[];
   startDate?: Date | null;
   dueDate?: Date | null;
   priority: "urgent" | "high" | "medium" | "low";
@@ -3003,20 +3045,25 @@ export async function createTask(input: {
       .limit(1);
     if (!project[0]) throw new Error("المشروع غير موجود في اللوحة الحالية");
   }
-  if (input.assigneeMemberId) {
-    const assignee = await db
+  const assigneeMemberIds = Array.from(
+    new Set(
+      input.assigneeMemberIds ??
+        (input.assigneeMemberId ? [input.assigneeMemberId] : [])
+    )
+  );
+  if (assigneeMemberIds.length) {
+    const assignees = await db
       .select({ id: teamMembers.id })
       .from(teamMembers)
       .where(
         and(
-          eq(teamMembers.id, input.assigneeMemberId),
+          inArray(teamMembers.id, assigneeMemberIds),
           eq(teamMembers.boardId, input.boardId),
           eq(teamMembers.isActive, true)
         )
-      )
-      .limit(1);
-    if (!assignee[0])
-      throw new Error("المكلّف ليس عضوًا نشطًا في اللوحة الحالية");
+      );
+    if (assignees.length !== assigneeMemberIds.length)
+      throw new Error("جميع المسؤولين يجب أن يكونوا أعضاء نشطين في اللوحة");
   }
   if (input.parentTaskId) {
     const parent = await db
@@ -3028,28 +3075,41 @@ export async function createTask(input: {
       .limit(1);
     if (!parent[0]) throw new Error("المهمة الرئيسية ليست في اللوحة الحالية");
   }
-  const warningMember = input.assigneeMemberId
+  const primaryAssigneeId = assigneeMemberIds[0] ?? null;
+  const warningMember = primaryAssigneeId
     ? await db
         .select()
         .from(tasks)
         .where(
           and(
-            eq(tasks.assigneeMemberId, input.assigneeMemberId),
+            eq(tasks.assigneeMemberId, primaryAssigneeId),
             eq(tasks.boardId, input.boardId)
           )
         )
     : [];
-  const created = await db.insert(tasks).values({
-    ...input,
-    projectId: input.projectId ?? null,
-    assigneeMemberId: input.assigneeMemberId ?? null,
-    startDate: input.startDate ?? null,
-    dueDate: input.dueDate ?? null,
-    parentTaskId: input.parentTaskId ?? null,
+  const created = await db.transaction(async tx => {
+    const result = await tx.insert(tasks).values({
+      boardId: input.boardId,
+      title: input.title,
+      description: input.description?.trim() || null,
+      projectId: input.projectId ?? null,
+      assigneeMemberId: primaryAssigneeId,
+      startDate: input.startDate ?? null,
+      dueDate: input.dueDate ?? null,
+      priority: input.priority,
+      status: input.status,
+      parentTaskId: input.parentTaskId ?? null,
+    });
+    const taskId = Number(result[0].insertId);
+    if (assigneeMemberIds.length)
+      await tx
+        .insert(taskAssignees)
+        .values(assigneeMemberIds.map(memberId => ({ taskId, memberId })));
+    return taskId;
   });
   await refreshProjectProgress(input.projectId);
   return {
-    id: Number(created[0].insertId),
+    id: created,
     showLoadWarning: shouldWarnAssignee(
       warningMember.filter(task => task.status !== "complete").length
     ),
@@ -3062,6 +3122,7 @@ export async function updateTask(input: {
   description?: string;
   projectId?: number | null;
   assigneeMemberId?: number | null;
+  assigneeMemberIds?: number[];
   startDate?: Date | null;
   dueDate?: Date | null;
   priority: "urgent" | "high" | "medium" | "low";
@@ -3095,33 +3156,49 @@ export async function updateTask(input: {
       .limit(1);
     if (!project[0]) throw new Error("المشروع غير موجود في اللوحة الحالية");
   }
-  if (input.assigneeMemberId) {
-    const assignee = await db
+  const assigneeMemberIds = Array.from(
+    new Set(
+      input.assigneeMemberIds ??
+        (input.assigneeMemberId ? [input.assigneeMemberId] : [])
+    )
+  );
+  if (assigneeMemberIds.length) {
+    const assignees = await db
       .select({ id: teamMembers.id })
       .from(teamMembers)
       .where(
         and(
-          eq(teamMembers.id, input.assigneeMemberId),
+          inArray(teamMembers.id, assigneeMemberIds),
           eq(teamMembers.boardId, input.boardId),
           eq(teamMembers.isActive, true)
         )
-      )
-      .limit(1);
-    if (!assignee[0]) throw new Error("المكلّف ليس عضوًا نشطًا في اللوحة");
+      );
+    if (assignees.length !== assigneeMemberIds.length)
+      throw new Error("جميع المسؤولين يجب أن يكونوا أعضاء نشطين في اللوحة");
   }
-  await db
-    .update(tasks)
-    .set({
-      title: input.title,
-      description: input.description?.trim() || null,
-      projectId: input.projectId ?? null,
-      assigneeMemberId: input.assigneeMemberId ?? null,
-      startDate: input.startDate ?? null,
-      dueDate: input.dueDate ?? null,
-      priority: input.priority,
-      status: input.status,
-    })
-    .where(and(eq(tasks.id, input.id), eq(tasks.boardId, input.boardId)));
+  await db.transaction(async tx => {
+    await tx
+      .update(tasks)
+      .set({
+        title: input.title,
+        description: input.description?.trim() || null,
+        projectId: input.projectId ?? null,
+        assigneeMemberId: assigneeMemberIds[0] ?? null,
+        startDate: input.startDate ?? null,
+        dueDate: input.dueDate ?? null,
+        priority: input.priority,
+        status: input.status,
+      })
+      .where(and(eq(tasks.id, input.id), eq(tasks.boardId, input.boardId)));
+    await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, input.id));
+    if (assigneeMemberIds.length)
+      await tx.insert(taskAssignees).values(
+        assigneeMemberIds.map(memberId => ({
+          taskId: input.id,
+          memberId,
+        }))
+      );
+  });
   await Promise.all([
     refreshProjectProgress(existing[0].projectId),
     input.projectId !== existing[0].projectId
@@ -3148,6 +3225,10 @@ export async function deleteTask(id: number, boardId: number) {
     await tx.delete(taskAttachments).where(eq(taskAttachments.taskId, id));
     await tx.delete(taskComments).where(eq(taskComments.taskId, id));
     await tx.delete(taskParticipants).where(eq(taskParticipants.taskId, id));
+    await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, id));
+    await tx
+      .delete(taskChecklistItems)
+      .where(eq(taskChecklistItems.taskId, id));
     await tx
       .delete(tasks)
       .where(and(eq(tasks.id, id), eq(tasks.boardId, boardId)));
@@ -3234,10 +3315,128 @@ export async function assignTask(
       .limit(1);
     if (!assignee[0]) throw new Error("المكلّف ليس عضوًا في اللوحة الحالية");
   }
+  await db.transaction(async tx => {
+    await tx
+      .update(tasks)
+      .set({ assigneeMemberId })
+      .where(and(eq(tasks.id, id), eq(tasks.boardId, boardId)));
+    await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, id));
+    if (assigneeMemberId)
+      await tx.insert(taskAssignees).values({
+        taskId: id,
+        memberId: assigneeMemberId,
+      });
+  });
+}
+
+export async function createTaskChecklistItem(input: {
+  taskId: number;
+  title: string;
+  assigneeMemberId?: number | null;
+  boardId: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const task = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.id, input.taskId), eq(tasks.boardId, input.boardId)))
+    .limit(1);
+  if (!task[0]) throw new Error("المهمة غير موجودة في اللوحة الحالية");
+  if (input.assigneeMemberId) {
+    const member = await db
+      .select({ id: teamMembers.id })
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.id, input.assigneeMemberId),
+          eq(teamMembers.boardId, input.boardId),
+          eq(teamMembers.isActive, true)
+        )
+      )
+      .limit(1);
+    if (!member[0]) throw new Error("مسؤول البند ليس عضوًا نشطًا في اللوحة");
+  }
+  const result = await db.insert(taskChecklistItems).values({
+    taskId: input.taskId,
+    title: input.title.trim(),
+    assigneeMemberId: input.assigneeMemberId ?? null,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function updateTaskChecklistItem(input: {
+  id: number;
+  taskId: number;
+  title: string;
+  assigneeMemberId?: number | null;
+  isComplete: boolean;
+  boardId: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const item = await db
+    .select({ id: taskChecklistItems.id })
+    .from(taskChecklistItems)
+    .innerJoin(tasks, eq(taskChecklistItems.taskId, tasks.id))
+    .where(
+      and(
+        eq(taskChecklistItems.id, input.id),
+        eq(taskChecklistItems.taskId, input.taskId),
+        eq(tasks.boardId, input.boardId)
+      )
+    )
+    .limit(1);
+  if (!item[0]) throw new Error("بند القائمة غير موجود في المهمة الحالية");
+  if (input.assigneeMemberId) {
+    const member = await db
+      .select({ id: teamMembers.id })
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.id, input.assigneeMemberId),
+          eq(teamMembers.boardId, input.boardId),
+          eq(teamMembers.isActive, true)
+        )
+      )
+      .limit(1);
+    if (!member[0]) throw new Error("مسؤول البند ليس عضوًا نشطًا في اللوحة");
+  }
   await db
-    .update(tasks)
-    .set({ assigneeMemberId })
-    .where(and(eq(tasks.id, id), eq(tasks.boardId, boardId)));
+    .update(taskChecklistItems)
+    .set({
+      title: input.title.trim(),
+      assigneeMemberId: input.assigneeMemberId ?? null,
+      isComplete: input.isComplete,
+    })
+    .where(eq(taskChecklistItems.id, input.id));
+  return { success: true as const };
+}
+
+export async function deleteTaskChecklistItem(input: {
+  id: number;
+  taskId: number;
+  boardId: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const item = await db
+    .select({ id: taskChecklistItems.id })
+    .from(taskChecklistItems)
+    .innerJoin(tasks, eq(taskChecklistItems.taskId, tasks.id))
+    .where(
+      and(
+        eq(taskChecklistItems.id, input.id),
+        eq(taskChecklistItems.taskId, input.taskId),
+        eq(tasks.boardId, input.boardId)
+      )
+    )
+    .limit(1);
+  if (!item[0]) throw new Error("بند القائمة غير موجود في المهمة الحالية");
+  await db
+    .delete(taskChecklistItems)
+    .where(eq(taskChecklistItems.id, input.id));
+  return { success: true as const };
 }
 
 export async function updateProjectStatus(
@@ -3367,6 +3566,12 @@ export async function deleteProject(id: number, boardId: number) {
       await tx
         .delete(taskParticipants)
         .where(inArray(taskParticipants.taskId, taskIds));
+      await tx
+        .delete(taskAssignees)
+        .where(inArray(taskAssignees.taskId, taskIds));
+      await tx
+        .delete(taskChecklistItems)
+        .where(inArray(taskChecklistItems.taskId, taskIds));
       await tx
         .delete(tasks)
         .where(and(inArray(tasks.id, taskIds), eq(tasks.boardId, boardId)));

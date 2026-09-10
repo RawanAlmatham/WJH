@@ -869,6 +869,10 @@ export const appRouter = router({
             description: z.string().max(5000).optional(),
             projectId: z.number().int().nullable().optional(),
             assigneeMemberId: z.number().int().nullable().optional(),
+            assigneeMemberIds: z
+              .array(z.number().int().positive())
+              .max(20)
+              .optional(),
             startDate: z.date().nullable().optional(),
             dueDate: z.date().nullable().optional(),
             priority: z.enum(["urgent", "high", "medium", "low"]),
@@ -920,6 +924,10 @@ export const appRouter = router({
             description: z.string().max(5000).optional(),
             projectId: z.number().int().nullable().optional(),
             assigneeMemberId: z.number().int().nullable().optional(),
+            assigneeMemberIds: z
+              .array(z.number().int().positive())
+              .max(20)
+              .optional(),
             startDate: z.date().nullable().optional(),
             dueDate: z.date().nullable().optional(),
             priority: z.enum(["urgent", "high", "medium", "low"]),
@@ -1002,6 +1010,52 @@ export const appRouter = router({
             )
           );
         return result;
+      }),
+    createTaskChecklistItem: teamMemberProcedure
+      .input(
+        z.object({
+          taskId: z.number().int().positive(),
+          title: z.string().trim().min(1).max(240),
+          assigneeMemberId: z.number().int().positive().nullable().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
+        return db.createTaskChecklistItem({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+      }),
+    updateTaskChecklistItem: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          taskId: z.number().int().positive(),
+          title: z.string().trim().min(1).max(240),
+          assigneeMemberId: z.number().int().positive().nullable().optional(),
+          isComplete: z.boolean(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
+        return db.updateTaskChecklistItem({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+      }),
+    deleteTaskChecklistItem: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          taskId: z.number().int().positive(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
+        return db.deleteTaskChecklistItem({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
       }),
     updateTaskStatus: teamMemberProcedure
       .input(z.object({ id: z.number().int(), status: taskStatus }))

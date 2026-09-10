@@ -530,7 +530,8 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
             includesSearch(task.title, query) &&
             (!input.project_id || task.projectId === input.project_id) &&
             (!input.assignee_member_id ||
-              task.assigneeMemberId === input.assignee_member_id) &&
+              (task.assigneeMemberIds?.includes(input.assignee_member_id) ??
+                task.assigneeMemberId === input.assignee_member_id)) &&
             (!input.status || task.status === input.status) &&
             (input.needs_support === undefined ||
               task.needsSupport === input.needs_support)
@@ -550,6 +551,10 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
         description: z.string().trim().max(5000).optional(),
         project_id: z.number().int().positive().nullable().optional(),
         assignee_member_id: z.number().int().positive().nullable().optional(),
+        assignee_member_ids: z
+          .array(z.number().int().positive())
+          .max(20)
+          .optional(),
         start_date: dateInput.nullable().optional(),
         due_date: dateInput.nullable().optional(),
         priority: z.enum(["urgent", "high", "medium", "low"]).default("medium"),
@@ -572,6 +577,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           description: input.description,
           projectId: input.project_id,
           assigneeMemberId: input.assignee_member_id,
+          assigneeMemberIds: input.assignee_member_ids,
           startDate: asDate(input.start_date),
           dueDate: asDate(input.due_date),
           priority: input.priority,
@@ -594,6 +600,10 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
         description: z.string().trim().max(5000).optional(),
         project_id: z.number().int().positive().nullable().optional(),
         assignee_member_id: z.number().int().positive().nullable().optional(),
+        assignee_member_ids: z
+          .array(z.number().int().positive())
+          .max(20)
+          .optional(),
         start_date: dateInput.nullable().optional(),
         due_date: dateInput.nullable().optional(),
         priority: z.enum(["urgent", "high", "medium", "low"]).optional(),
@@ -625,6 +635,13 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
             input.assignee_member_id === undefined
               ? current.assigneeMemberId
               : input.assignee_member_id,
+          assigneeMemberIds:
+            input.assignee_member_ids ??
+            (input.assignee_member_id === undefined
+              ? current.assigneeMemberIds
+              : input.assignee_member_id
+                ? [input.assignee_member_id]
+                : []),
           startDate:
             input.start_date === undefined
               ? current.startDate

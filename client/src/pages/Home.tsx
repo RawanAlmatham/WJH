@@ -101,6 +101,7 @@ import Landing from "./Landing";
 
 type Page =
   | "home"
+  | "weekly"
   | "plan"
   | "time"
   | "projects"
@@ -214,6 +215,7 @@ function supportedPresentationSections(
 }
 
 const pageModule: Partial<Record<Page, BoardModule>> = {
+  weekly: "tasks",
   plan: "plan",
   time: "plan",
   projects: "projects",
@@ -342,6 +344,50 @@ function projectResponsibles(project: any, members: any[]) {
   return ids
     .map((id: number) => members.find((member: any) => member.id === id))
     .filter(Boolean);
+}
+
+function taskAssigneeIds(task: any): number[] {
+  if (Array.isArray(task.assigneeMemberIds) && task.assigneeMemberIds.length)
+    return task.assigneeMemberIds;
+  return task.assigneeMemberId ? [task.assigneeMemberId] : [];
+}
+
+function taskAssignees(task: any, members: any[]) {
+  const ids = taskAssigneeIds(task);
+  return members.filter((member: any) => ids.includes(member.id));
+}
+
+function startOfCurrentWeek(value = new Date()) {
+  const start = new Date(value);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  return start;
+}
+
+function endOfCurrentWeek(value = new Date()) {
+  const end = startOfCurrentWeek(value);
+  end.setDate(end.getDate() + 7);
+  return end;
+}
+
+function belongsToWeeklyUpdate(task: any, now = new Date()) {
+  const weekStart = startOfCurrentWeek(now);
+  const weekEnd = endOfCurrentWeek(now);
+  if (task.status === "complete") {
+    const completedAt = new Date(
+      task.updatedAt ?? task.dueDate ?? task.createdAt
+    );
+    return completedAt >= weekStart && completedAt < weekEnd;
+  }
+  if (["in_progress", "blocked", "in_review", "overdue"].includes(task.status))
+    return true;
+  const start = task.startDate ? new Date(task.startDate) : null;
+  const due = task.dueDate ? new Date(task.dueDate) : null;
+  if (!start && !due) {
+    const touchedAt = new Date(task.updatedAt ?? task.createdAt);
+    return touchedAt >= weekStart && touchedAt < weekEnd;
+  }
+  return (!start || start < weekEnd) && (!due || due >= weekStart);
 }
 
 function escapeReportHtml(value: unknown) {
@@ -752,6 +798,7 @@ export default function Home() {
   ) as Page | null;
   const validPages: Page[] = [
     "home",
+    "weekly",
     "plan",
     "time",
     "projects",
@@ -947,6 +994,7 @@ export default function Home() {
     deleteProject: (id: number) =>
       requireMember(() => deleteProjectMutation.mutate({ id })),
     canEditWork: boardRole !== "viewer",
+    isBoardManager: user.role === "admin" || boardRole === "manager",
     canModerateComments:
       user.role === "admin" ||
       user.role === "manager" ||
@@ -1035,6 +1083,7 @@ export default function Home() {
           </div>
         </header>
         {page === "home" && <OverviewPage {...shared} />}
+        {page === "weekly" && <WeeklyUpdatePage {...shared} />}
         {page === "plan" && <AnnualPlanPage {...shared} />}
         {page === "time" && <TemporalPage {...shared} />}
         {page === "projects" && <ProjectsPage {...shared} />}
@@ -1168,6 +1217,12 @@ function Sidebar({
     module?: BoardModule;
   }[] = [
     { id: "home", label: "الرئيسية", icon: LayoutDashboard },
+    {
+      id: "weekly",
+      label: "تحديث الأسبوع",
+      icon: ListChecks,
+      module: "tasks",
+    },
     { id: "plan", label: "الخطة السنوية", icon: Target, module: "plan" },
     {
       id: "projects",
@@ -1396,8 +1451,8 @@ function OverviewPage({
     (member: any) => member.userId === user.id
   );
   const assignedToMe = currentMember
-    ? data.tasks.filter(
-        (task: any) => task.assigneeMemberId === currentMember.id
+    ? data.tasks.filter((task: any) =>
+        taskAssigneeIds(task).includes(currentMember.id)
       )
     : [];
   const myTasks = (
@@ -1423,9 +1478,12 @@ function OverviewPage({
     .map((task: any) => ({
       ...task,
       reason: getTaskAttentionReason(task),
-      assignee: data.members.find(
-        (member: any) => member.id === task.assigneeMemberId
-      ),
+      assignee: {
+        name:
+          taskAssignees(task, data.members)
+            .map((member: any) => member.name)
+            .join("، ") || "غير مسند",
+      },
       project: data.projects.find(
         (project: any) => project.id === task.projectId
       ),
@@ -1526,9 +1584,12 @@ function OverviewPage({
             {completionTasks.length ? (
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                 {completionTasks.map((task: any) => {
-                  const assignee = data.members.find(
-                    (member: any) => member.id === task.assigneeMemberId
-                  );
+                  const assignee = {
+                    name:
+                      taskAssignees(task, data.members)
+                        .map((member: any) => member.name)
+                        .join("، ") || "غير مسند",
+                  };
                   const project = data.projects.find(
                     (item: any) => item.id === task.projectId
                   );
@@ -1729,9 +1790,12 @@ function OverviewPage({
           </SectionTitle>
           <div className="space-y-2">
             {priorities.map((task: any) => {
-              const member = data.members.find(
-                (item: any) => item.id === task.assigneeMemberId
-              );
+              const member = {
+                name:
+                  taskAssignees(task, data.members)
+                    .map((item: any) => item.name)
+                    .join("، ") || "غير مسند",
+              };
               return (
                 <div
                   key={task.id}
@@ -1796,9 +1860,12 @@ function OverviewPage({
         {blockedTasks.length ? (
           <div className="divide-y divide-slate-100">
             {blockedTasks.map((task: any) => {
-              const assignee = data.members.find(
-                (member: any) => member.id === task.assigneeMemberId
-              );
+              const assignee = {
+                name:
+                  taskAssignees(task, data.members)
+                    .map((member: any) => member.name)
+                    .join("، ") || "غير مسند",
+              };
               const project = data.projects.find(
                 (item: any) => item.id === task.projectId
               );
@@ -2086,9 +2153,12 @@ function TemporalPage({
           </SectionTitle>
           <div className="divide-y divide-slate-100">
             {taskRows.map((task: any) => {
-              const member = data.members.find(
-                (item: any) => item.id === task.assigneeMemberId
-              );
+              const member = {
+                name:
+                  taskAssignees(task, data.members)
+                    .map((item: any) => item.name)
+                    .join("، ") || "غير مسند",
+              };
               return (
                 <div key={task.id} className="flex items-center gap-3 py-3">
                   <button
@@ -2852,6 +2922,10 @@ function TaskDetailPage({
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [editingComment, setEditingComment] = useState<any>(null);
   const [editingCommentBody, setEditingCommentBody] = useState("");
+  const [newChecklistTitle, setNewChecklistTitle] = useState("");
+  const [newChecklistAssigneeId, setNewChecklistAssigneeId] = useState("");
+  const [editingChecklistItem, setEditingChecklistItem] = useState<any>(null);
+  const [editingChecklistTitle, setEditingChecklistTitle] = useState("");
   const task =
     data.tasks.find((item: any) => item.id === taskId) ?? data.tasks[0];
   const [supportEnabled, setSupportEnabled] = useState(
@@ -2888,6 +2962,33 @@ function TaskDetailPage({
     },
     onError: issue => toast.error(issue.message),
   });
+  const createChecklistItem =
+    trpc.workspace.createTaskChecklistItem.useMutation({
+      onSuccess: async () => {
+        await utils.workspace.overview.invalidate();
+        setNewChecklistTitle("");
+        setNewChecklistAssigneeId("");
+        toast.success("تمت إضافة البند الفرعي");
+      },
+      onError: issue => toast.error(issue.message),
+    });
+  const updateChecklistItem =
+    trpc.workspace.updateTaskChecklistItem.useMutation({
+      onSuccess: async () => {
+        await utils.workspace.overview.invalidate();
+        setEditingChecklistItem(null);
+        setEditingChecklistTitle("");
+      },
+      onError: issue => toast.error(issue.message),
+    });
+  const deleteChecklistItem =
+    trpc.workspace.deleteTaskChecklistItem.useMutation({
+      onSuccess: async () => {
+        await utils.workspace.overview.invalidate();
+        toast.success("تم حذف البند الفرعي");
+      },
+      onError: issue => toast.error(issue.message),
+    });
   useEffect(() => {
     setSupportEnabled(Boolean(task?.needsSupport));
     setSupportRequest(task?.supportRequest ?? "");
@@ -2919,9 +3020,13 @@ function TaskDetailPage({
       </div>
     );
   const project = data.projects.find((item: any) => item.id === task.projectId);
-  const assignee = data.members.find(
-    (item: any) => item.id === task.assigneeMemberId
+  const assignees = taskAssignees(task, data.members);
+  const checklistItems = (data.taskChecklistItems ?? []).filter(
+    (item: any) => item.taskId === task.id
   );
+  const completedChecklistItems = checklistItems.filter(
+    (item: any) => item.isComplete
+  ).length;
   const comments = (data.taskComments ?? []).filter(
     (comment: any) => comment.taskId === task.id
   );
@@ -2975,7 +3080,11 @@ function TaskDetailPage({
         <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             ["المشروع", project?.title ?? "غير مرتبط"],
-            ["المسؤول", assignee?.name ?? "غير مسند"],
+            [
+              "المسؤولون",
+              assignees.map((member: any) => member.name).join("، ") ||
+                "غير مسند",
+            ],
             [
               "تاريخ البداية",
               task.startDate ? fullDateText(task.startDate) : "غير محدد",
@@ -3022,6 +3131,182 @@ function TaskDetailPage({
               {task.status === "complete" ? "إلغاء الإكمال" : "تحديد كمكتملة"}
             </Button>
           </div>
+        )}
+      </section>
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-7">
+        <SectionTitle
+          action={
+            <span className="text-xs text-[#7C8A9A]">
+              {completedChecklistItems} من {checklistItems.length} مكتملة
+            </span>
+          }
+        >
+          قائمة المهام الفرعية
+        </SectionTitle>
+        <p className="mb-4 text-xs leading-6 text-[#7C8A9A]">
+          حوّل المهمة إلى خطوات قابلة للإنجاز، وحدد مسؤولًا مستقلًا لكل خطوة.
+        </p>
+        <div className="space-y-2">
+          {checklistItems.map((item: any) => (
+            <div
+              key={item.id}
+              className="flex flex-col gap-3 rounded-lg border border-slate-100 bg-[#FBFCFE] p-3 sm:flex-row sm:items-center"
+            >
+              <Checkbox
+                checked={item.isComplete}
+                disabled={!canEditWork || updateChecklistItem.isPending}
+                onCheckedChange={checked =>
+                  updateChecklistItem.mutate({
+                    id: item.id,
+                    taskId: task.id,
+                    title: item.title,
+                    assigneeMemberId: item.assigneeMemberId ?? null,
+                    isComplete: checked === true,
+                  })
+                }
+                aria-label={`تحديد ${item.title} كمكتمل`}
+                className="data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500"
+              />
+              {editingChecklistItem?.id === item.id ? (
+                <Input
+                  autoFocus
+                  value={editingChecklistTitle}
+                  onChange={event =>
+                    setEditingChecklistTitle(event.target.value)
+                  }
+                  className="min-w-0 flex-1"
+                />
+              ) : (
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 text-sm text-[#40556D]",
+                    item.isComplete && "text-slate-400 line-through"
+                  )}
+                >
+                  {item.title}
+                </span>
+              )}
+              <select
+                value={item.assigneeMemberId ?? ""}
+                disabled={!canEditWork || updateChecklistItem.isPending}
+                onChange={event =>
+                  updateChecklistItem.mutate({
+                    id: item.id,
+                    taskId: task.id,
+                    title: item.title,
+                    assigneeMemberId: positiveIdOrNull(event.target.value),
+                    isComplete: item.isComplete,
+                  })
+                }
+                aria-label={`مسؤول البند ${item.title}`}
+                className="h-9 min-w-36 rounded-md border border-slate-200 bg-white px-2 text-xs text-[#52657A]"
+              >
+                <option value="">غير مسند</option>
+                {data.members.map((member: any) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+              {canEditWork && (
+                <div className="flex items-center gap-1">
+                  {editingChecklistItem?.id === item.id ? (
+                    <button
+                      type="button"
+                      disabled={!editingChecklistTitle.trim()}
+                      onClick={() =>
+                        updateChecklistItem.mutate({
+                          id: item.id,
+                          taskId: task.id,
+                          title: editingChecklistTitle.trim(),
+                          assigneeMemberId: item.assigneeMemberId ?? null,
+                          isComplete: item.isComplete,
+                        })
+                      }
+                      aria-label="حفظ تعديل البند"
+                      className="rounded-md p-2 text-emerald-600 hover:bg-emerald-50 disabled:opacity-40"
+                    >
+                      <Check className="size-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingChecklistItem(item);
+                        setEditingChecklistTitle(item.title);
+                      }}
+                      aria-label="تعديل البند"
+                      className="rounded-md p-2 text-[#52769F] hover:bg-[#EDF4FA]"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      deleteChecklistItem.mutate({
+                        id: item.id,
+                        taskId: task.id,
+                      })
+                    }
+                    aria-label="حذف البند"
+                    className="rounded-md p-2 text-rose-500 hover:bg-rose-50"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {!checklistItems.length && (
+            <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-[#7C8A9A]">
+              لا توجد مهام فرعية بعد.
+            </p>
+          )}
+        </div>
+        {canEditWork && (
+          <form
+            onSubmit={event => {
+              event.preventDefault();
+              if (!newChecklistTitle.trim())
+                return toast.error("اكتب اسم المهمة الفرعية");
+              createChecklistItem.mutate({
+                taskId: task.id,
+                title: newChecklistTitle.trim(),
+                assigneeMemberId: positiveIdOrNull(newChecklistAssigneeId),
+              });
+            }}
+            className="mt-4 grid gap-2 sm:grid-cols-[1fr_180px_auto]"
+          >
+            <Input
+              value={newChecklistTitle}
+              onChange={event => setNewChecklistTitle(event.target.value)}
+              placeholder="أضف مهمة فرعية..."
+            />
+            <select
+              value={newChecklistAssigneeId}
+              onChange={event => setNewChecklistAssigneeId(event.target.value)}
+              className="form-select"
+              aria-label="مسؤول المهمة الفرعية الجديدة"
+            >
+              <option value="">غير مسند</option>
+              {data.members.map((member: any) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="submit"
+              disabled={
+                createChecklistItem.isPending || !newChecklistTitle.trim()
+              }
+              className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+            >
+              <Plus className="size-4" />
+              إضافة
+            </Button>
+          </form>
         )}
       </section>
       <section className="mt-5 rounded-xl border border-violet-100 bg-white p-5 sm:p-7">
@@ -3363,6 +3648,103 @@ function TeamPageWithInvite({
   );
 }
 
+function WeeklyUpdatePage({ data, user, isBoardManager, openTaskDetail }: any) {
+  const currentMember = data.members.find(
+    (member: any) => member.userId === user?.id
+  );
+  const weeklyTasks = data.tasks.filter(
+    (task: any) =>
+      belongsToWeeklyUpdate(task) &&
+      (isBoardManager ||
+        (currentMember && taskAssigneeIds(task).includes(currentMember.id)))
+  );
+  const groups = data.projects
+    .map((project: any) => ({
+      project,
+      tasks: weeklyTasks.filter((task: any) => task.projectId === project.id),
+    }))
+    .filter((group: any) => group.tasks.length);
+  const unlinked = weeklyTasks.filter((task: any) => !task.projectId);
+  if (unlinked.length)
+    groups.push({ project: { id: 0, title: "بدون مشروع" }, tasks: unlinked });
+
+  return (
+    <div className="entry">
+      <PageHeading
+        title="تحديث الأسبوع"
+        description={
+          isBoardManager
+            ? "جميع مهام الفريق الجارية أو المنجزة هذا الأسبوع، مصنفة حسب المشاريع."
+            : "مهامك الجارية أو المنجزة هذا الأسبوع، مصنفة حسب المشاريع."
+        }
+      />
+      <div className="mb-5 rounded-lg border border-[#DCE7F2] bg-[#F5F9FD] px-4 py-3 text-xs leading-6 text-[#52657A]">
+        يعرض هذا التحديث الأعمال المستمرة حاليًا، والأعمال التي اكتملت خلال
+        الأسبوع. لا يغيّر هذا التبويب قائمة المهام الأصلية.
+      </div>
+      <div className="space-y-5">
+        {groups.map((group: any) => {
+          const completed = group.tasks.filter(
+            (task: any) => task.status === "complete"
+          ).length;
+          return (
+            <section
+              key={group.project.id}
+              className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-[#FBFCFE] px-5 py-4">
+                <div>
+                  <h2 className="font-semibold text-[#334A63]">
+                    {group.project.title}
+                  </h2>
+                  <p className="mt-1 text-xs text-[#7C8A9A]">
+                    {group.tasks.length} مهام · {completed} مكتملة
+                  </p>
+                </div>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {group.tasks.map((task: any) => {
+                  const names = taskAssignees(task, data.members)
+                    .map((member: any) => member.name)
+                    .join("، ");
+                  return (
+                    <button
+                      type="button"
+                      key={task.id}
+                      onClick={() => openTaskDetail(task.id)}
+                      className="flex w-full flex-col gap-3 px-5 py-4 text-right transition hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-[#334A63]">
+                          {task.title}
+                        </p>
+                        <p className="mt-1 text-xs text-[#7C8A9A]">
+                          {names || "غير مسند"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill status={task.status} />
+                        {task.dueDate && (
+                          <span className="text-xs text-[#7C8A9A]">
+                            {dateText(task.dueDate)}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+        {!groups.length && (
+          <EmptyState title="لا توجد أعمال في تحديث هذا الأسبوع" />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TasksPage({
   data,
   openTask,
@@ -3398,8 +3780,8 @@ function TasksPage({
             : task.projectId === Number(project))) &&
         (assignee === "all" ||
           (assignee === "none"
-            ? !task.assigneeMemberId
-            : task.assigneeMemberId === Number(assignee)))
+            ? taskAssigneeIds(task).length === 0
+            : taskAssigneeIds(task).includes(Number(assignee))))
     )
   );
   return (
@@ -3714,27 +4096,11 @@ function TasksPage({
                       )}
                     </td>
                     <td data-label="المسؤول" className="px-4 py-3.5">
-                      <select
-                        aria-label={`إسناد ${task.title}`}
-                        value={task.assigneeMemberId ?? ""}
-                        onChange={event =>
-                          assignTask(
-                            task.id,
-                            event.target.value
-                              ? Number(event.target.value)
-                              : null
-                          )
-                        }
-                        disabled={!canEditWork}
-                        className="max-w-36 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-[#52657A]"
-                      >
-                        <option value="">غير مسند</option>
-                        {data.members.map((member: any) => (
-                          <option key={member.id} value={member.id}>
-                            {member.name}
-                          </option>
-                        ))}
-                      </select>
+                      <span className="block max-w-48 text-xs leading-5 text-[#52657A]">
+                        {taskAssignees(task, data.members)
+                          .map((member: any) => member.name)
+                          .join("، ") || "غير مسند"}
+                      </span>
                     </td>
                     <td
                       data-label="المشروع"
@@ -4491,7 +4857,7 @@ function MemberDetail({ data, memberId, setPage }: any) {
     data.members.find((item: any) => item.id === memberId) ?? data.members[0];
   const current = data.tasks.filter(
     (task: any) =>
-      task.assigneeMemberId === member.id && task.status !== "complete"
+      taskAssigneeIds(task).includes(member.id) && task.status !== "complete"
   );
   return (
     <div className="entry max-w-4xl">
@@ -7104,6 +7470,63 @@ function PresentationMode({
   );
 }
 
+function TaskAssigneeSelector({
+  members,
+  selectedIds,
+  onChange,
+  idPrefix,
+}: any) {
+  return (
+    <fieldset>
+      <div className="flex items-center justify-between gap-3">
+        <legend className="text-sm font-medium text-[#52657A]">
+          مسؤولو المهمة
+        </legend>
+        <span className="text-[11px] text-[#7C8A9A]">
+          {selectedIds.length
+            ? `تم اختيار ${selectedIds.length}`
+            : "يمكن ترك المهمة دون إسناد"}
+        </span>
+      </div>
+      <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2">
+        {members.map((member: any) => {
+          const selected = selectedIds.includes(member.id);
+          const inputId = `${idPrefix}-${member.id}`;
+          return (
+            <label
+              key={member.id}
+              htmlFor={inputId}
+              className={cn(
+                "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors",
+                selected ? "bg-[#EDF4FA]" : "hover:bg-slate-50"
+              )}
+            >
+              <Checkbox
+                id={inputId}
+                checked={selected}
+                onCheckedChange={checked =>
+                  onChange(
+                    checked === true
+                      ? [...selectedIds, member.id]
+                      : selectedIds.filter((id: number) => id !== member.id)
+                  )
+                }
+                className="data-[state=checked]:border-[#52769F] data-[state=checked]:bg-[#52769F]"
+              />
+              <Avatar
+                initials={member.avatarInitials}
+                color={member.color}
+                className="size-7 text-[9px]"
+              />
+              <span className="text-sm text-[#40556D]">{member.name}</span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 function TaskDrawer({
   open,
   setOpen,
@@ -7115,7 +7538,7 @@ function TaskDrawer({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
   const [startDate, setStartDate] = useState(todayInputValue);
   const [hasDueDate, setHasDueDate] = useState(false);
   const [dueDate, setDueDate] = useState("");
@@ -7136,7 +7559,7 @@ function TaskDrawer({
         title: title.trim(),
         description: description.trim(),
         projectId: positiveIdOrNull(projectId),
-        assigneeMemberId: positiveIdOrNull(assigneeId),
+        assigneeMemberIds: assigneeIds,
         startDate: startDate ? new Date(`${startDate}T09:00:00`) : null,
         dueDate: hasDueDate && dueDate ? new Date(`${dueDate}T09:00:00`) : null,
         priority,
@@ -7147,7 +7570,7 @@ function TaskDrawer({
           setTitle("");
           setDescription("");
           setProjectId("");
-          setAssigneeId("");
+          setAssigneeIds([]);
           setStartDate(todayInputValue());
           setHasDueDate(false);
           setDueDate("");
@@ -7202,20 +7625,12 @@ function TaskDrawer({
               ))}
             </select>
           </Field>
-          <Field label="المسؤول">
-            <select
-              value={assigneeId}
-              onChange={e => setAssigneeId(e.target.value)}
-              className="form-select"
-            >
-              <option value="">غير مسند</option>
-              {data.members.map((member: any) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <TaskAssigneeSelector
+            members={data.members}
+            selectedIds={assigneeIds}
+            onChange={setAssigneeIds}
+            idPrefix="new-task-assignee"
+          />
           <Field label="تاريخ البداية">
             <Input
               type="date"
@@ -7530,7 +7945,7 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [hasDueDate, setHasDueDate] = useState(false);
@@ -7542,7 +7957,7 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
     setTitle(task.title ?? "");
     setDescription(task.description ?? "");
     setProjectId(task.projectId ? String(task.projectId) : "");
-    setAssigneeId(task.assigneeMemberId ? String(task.assigneeMemberId) : "");
+    setAssigneeIds(taskAssigneeIds(task));
     setStartDate(dateInputValue(task.startDate));
     setDueDate(dateInputValue(task.dueDate));
     setHasDueDate(Boolean(task.dueDate));
@@ -7560,7 +7975,7 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
       title: title.trim(),
       description: description.trim(),
       projectId: positiveIdOrNull(projectId),
-      assigneeMemberId: positiveIdOrNull(assigneeId),
+      assigneeMemberIds: assigneeIds,
       startDate: startDate ? new Date(`${startDate}T09:00:00`) : null,
       dueDate: hasDueDate && dueDate ? new Date(`${dueDate}T09:00:00`) : null,
       priority,
@@ -7611,20 +8026,12 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
               ))}
             </select>
           </Field>
-          <Field label="المسؤول">
-            <select
-              value={assigneeId}
-              onChange={event => setAssigneeId(event.target.value)}
-              className="form-select"
-            >
-              <option value="">غير مسند</option>
-              {data.members.map((member: any) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <TaskAssigneeSelector
+            members={data.members}
+            selectedIds={assigneeIds}
+            onChange={setAssigneeIds}
+            idPrefix="edit-task-assignee"
+          />
           <Field label="تاريخ البداية">
             <Input
               type="date"

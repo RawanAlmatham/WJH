@@ -431,6 +431,49 @@ export const taskParticipants = mysqlTable("taskParticipants", {
     .notNull(),
 });
 
+export const taskAssignees = mysqlTable(
+  "taskAssignees",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    taskId: int("taskId")
+      .references(() => tasks.id, { onDelete: "cascade" })
+      .notNull(),
+    memberId: int("memberId")
+      .references(() => teamMembers.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    uniqueIndex("taskAssignees_task_member_unique").on(
+      table.taskId,
+      table.memberId
+    ),
+    index("taskAssignees_member_idx").on(table.memberId),
+  ]
+);
+
+export const taskChecklistItems = mysqlTable(
+  "taskChecklistItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    taskId: int("taskId")
+      .references(() => tasks.id, { onDelete: "cascade" })
+      .notNull(),
+    title: varchar("title", { length: 240 }).notNull(),
+    assigneeMemberId: int("assigneeMemberId").references(() => teamMembers.id, {
+      onDelete: "set null",
+    }),
+    isComplete: boolean("isComplete").default(false).notNull(),
+    position: int("position").default(0).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("taskChecklistItems_task_idx").on(table.taskId),
+    index("taskChecklistItems_assignee_idx").on(table.assigneeMemberId),
+  ]
+);
+
 export const taskComments = mysqlTable(
   "taskComments",
   {

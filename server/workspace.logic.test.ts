@@ -28,6 +28,17 @@ describe("workspace operating logic", () => {
     });
   });
 
+  it("counts one task for every assigned member when a task has multiple assignees", () => {
+    const sharedTask = {
+      assigneeMemberId: 1,
+      assigneeMemberIds: [1, 2],
+      status: "in_progress",
+      priority: "high",
+    };
+    expect(calculateWorkload([sharedTask], 1).activeTaskCount).toBe(1);
+    expect(calculateWorkload([sharedTask], 2).activeTaskCount).toBe(1);
+  });
+
   it("warns before assignment when an assignee already has four active tasks", () => {
     expect(shouldWarnAssignee(3)).toBe(false);
     expect(shouldWarnAssignee(4)).toBe(true);

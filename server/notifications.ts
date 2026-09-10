@@ -20,6 +20,7 @@ import {
   projectMembers,
   projects,
   taskComments,
+  taskAssignees,
   tasks,
   teamMembers,
   users,
@@ -264,7 +265,40 @@ export async function getTaskNotificationSnapshot(
     .leftJoin(teamMembers, eq(tasks.assigneeMemberId, teamMembers.id))
     .where(and(eq(tasks.id, taskId), eq(tasks.boardId, boardId)))
     .limit(1);
-  return rows[0] ?? null;
+  if (!rows[0]) return null;
+  const assigneeRows = await database
+    .select({ memberId: taskAssignees.memberId, userId: teamMembers.userId })
+    .from(taskAssignees)
+    .innerJoin(teamMembers, eq(taskAssignees.memberId, teamMembers.id))
+    .where(eq(taskAssignees.taskId, taskId));
+  return {
+    ...rows[0],
+    assigneeMemberIds: assigneeRows.length
+      ? assigneeRows.map(row => row.memberId)
+      : rows[0].assigneeMemberId
+        ? [rows[0].assigneeMemberId]
+        : [],
+    assigneeUserIds: assigneeRows.length
+      ? assigneeRows
+          .map(row => row.userId)
+          .filter((id): id is number => Boolean(id))
+      : rows[0].assigneeUserId
+        ? [rows[0].assigneeUserId]
+        : [],
+    assigneeRecipients: assigneeRows.length
+      ? assigneeRows.filter(
+          (row): row is { memberId: number; userId: number } =>
+            Boolean(row.userId)
+        )
+      : rows[0].assigneeMemberId && rows[0].assigneeUserId
+        ? [
+            {
+              memberId: rows[0].assigneeMemberId,
+              userId: rows[0].assigneeUserId,
+            },
+          ]
+        : [],
+  };
 }
 
 export async function notifyTaskCreated(
@@ -273,21 +307,25 @@ export async function notifyTaskCreated(
   actorUserId: number
 ) {
   const task = await getTaskNotificationSnapshot(taskId, boardId);
-  if (!task?.assigneeUserId) return;
+  if (!task?.assigneeUserIds.length) return;
   const actor = actorPrefix(await actorName(actorUserId));
-  await createNotification({
-    userId: task.assigneeUserId,
-    boardId,
-    type: "task_assigned",
-    title: "مهمة جديدة مسندة لك",
-    message: `${actor} أسند لك مهمة: ${task.title}`,
-    actorUserId,
-    taskId,
-    projectId: task.projectId,
-    link: `/?view=task&taskId=${taskId}`,
-    dedupeKey: `task-assigned:${taskId}`,
-    aggregate: true,
-  });
+  await Promise.all(
+    task.assigneeUserIds.map(userId =>
+      createNotification({
+        userId,
+        boardId,
+        type: "task_assigned",
+        title: "مهمة جديدة مسندة لك",
+        message: `${actor} أسند لك مهمة: ${task.title}`,
+        actorUserId,
+        taskId,
+        projectId: task.projectId,
+        link: `/?view=task&taskId=${taskId}`,
+        dedupeKey: `task-assigned:${taskId}`,
+        aggregate: true,
+      })
+    )
+  );
 }
 
 export async function notifyTaskUpdated(
@@ -300,55 +338,68 @@ export async function notifyTaskUpdated(
   const actor = actorPrefix(await actorName(actorUserId));
   if (!sameMoment(before.dueDate, after.dueDate) || after.status === "complete")
     await clearTaskReminderNotifications(after.id, boardId);
-  if (
-    after.assigneeUserId &&
-    after.assigneeMemberId !== before.assigneeMemberId
-  ) {
-    await createNotification({
-      userId: after.assigneeUserId,
-      boardId,
-      type: "task_assigned",
-      title: "مهمة جديدة مسندة لك",
-      message: `${actor} أسند لك مهمة: ${after.title}`,
-      actorUserId,
-      taskId: after.id,
-      projectId: after.projectId,
-      link: `/?view=task&taskId=${after.id}`,
-      dedupeKey: `task-assigned:${after.id}`,
-      aggregate: true,
-    });
+  const previousMemberIds = new Set(before.assigneeMemberIds);
+  const newlyAssignedUserIds = after.assigneeRecipients
+    .filter(recipient => !previousMemberIds.has(recipient.memberId))
+    .map(recipient => recipient.userId);
+  if (newlyAssignedUserIds.length) {
+    await Promise.all(
+      newlyAssignedUserIds.map(userId =>
+        createNotification({
+          userId,
+          boardId,
+          type: "task_assigned",
+          title: "مهمة جديدة مسندة لك",
+          message: `${actor} أسند لك مهمة: ${after.title}`,
+          actorUserId,
+          taskId: after.id,
+          projectId: after.projectId,
+          link: `/?view=task&taskId=${after.id}`,
+          dedupeKey: `task-assigned:${after.id}`,
+          aggregate: true,
+        })
+      )
+    );
   }
-  if (!after.assigneeUserId) return;
+  if (!after.assigneeUserIds.length) return;
   if (!sameMoment(before.dueDate, after.dueDate))
-    await createNotification({
-      userId: after.assigneeUserId,
-      boardId,
-      type: "task_due_changed",
-      title: "تغيّر موعد مهمتك",
-      message: after.dueDate
-        ? `${actor} غيّر موعد «${after.title}» إلى ${arabicDate(after.dueDate)}`
-        : `${actor} أزال الموعد النهائي من «${after.title}»`,
-      actorUserId,
-      taskId: after.id,
-      projectId: after.projectId,
-      link: `/?view=task&taskId=${after.id}`,
-      dedupeKey: `task-due-changed:${after.id}`,
-      aggregate: true,
-    });
+    await Promise.all(
+      after.assigneeUserIds.map(userId =>
+        createNotification({
+          userId,
+          boardId,
+          type: "task_due_changed",
+          title: "تغيّر موعد مهمتك",
+          message: after.dueDate
+            ? `${actor} غيّر موعد «${after.title}» إلى ${arabicDate(after.dueDate)}`
+            : `${actor} أزال الموعد النهائي من «${after.title}»`,
+          actorUserId,
+          taskId: after.id,
+          projectId: after.projectId,
+          link: `/?view=task&taskId=${after.id}`,
+          dedupeKey: `task-due-changed:${after.id}`,
+          aggregate: true,
+        })
+      )
+    );
   if (before.priority !== after.priority)
-    await createNotification({
-      userId: after.assigneeUserId,
-      boardId,
-      type: "task_priority_changed",
-      title: "تغيّرت أولوية مهمتك",
-      message: `${actor} غيّر أولوية «${after.title}»`,
-      actorUserId,
-      taskId: after.id,
-      projectId: after.projectId,
-      link: `/?view=task&taskId=${after.id}`,
-      dedupeKey: `task-priority-changed:${after.id}`,
-      aggregate: true,
-    });
+    await Promise.all(
+      after.assigneeUserIds.map(userId =>
+        createNotification({
+          userId,
+          boardId,
+          type: "task_priority_changed",
+          title: "تغيّرت أولوية مهمتك",
+          message: `${actor} غيّر أولوية «${after.title}»`,
+          actorUserId,
+          taskId: after.id,
+          projectId: after.projectId,
+          link: `/?view=task&taskId=${after.id}`,
+          dedupeKey: `task-priority-changed:${after.id}`,
+          aggregate: true,
+        })
+      )
+    );
 }
 
 export async function clearTaskReminderNotifications(
@@ -432,7 +483,7 @@ export async function notifySupportRequested(
       )
     );
   const recipients = new Set<number>(managerRows.map(row => row.userId));
-  if (task.assigneeUserId) recipients.add(task.assigneeUserId);
+  task.assigneeUserIds.forEach(userId => recipients.add(userId));
   if (task.projectId)
     (await projectParticipantUserIds(task.projectId, boardId)).forEach(id =>
       recipients.add(id)
@@ -724,7 +775,8 @@ export async function runNotificationReminderJob(now = new Date()) {
       userId: teamMembers.userId,
     })
     .from(tasks)
-    .innerJoin(teamMembers, eq(tasks.assigneeMemberId, teamMembers.id))
+    .innerJoin(taskAssignees, eq(tasks.id, taskAssignees.taskId))
+    .innerJoin(teamMembers, eq(taskAssignees.memberId, teamMembers.id))
     .where(
       and(
         ne(tasks.status, "complete"),
@@ -742,7 +794,8 @@ export async function runNotificationReminderJob(now = new Date()) {
       userId: teamMembers.userId,
     })
     .from(tasks)
-    .innerJoin(teamMembers, eq(tasks.assigneeMemberId, teamMembers.id))
+    .innerJoin(taskAssignees, eq(tasks.id, taskAssignees.taskId))
+    .innerJoin(teamMembers, eq(taskAssignees.memberId, teamMembers.id))
     .where(and(ne(tasks.status, "complete"), lt(tasks.dueDate, now)));
   await Promise.all([
     ...dueSoon
