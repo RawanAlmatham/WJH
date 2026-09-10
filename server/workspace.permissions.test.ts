@@ -19,7 +19,11 @@ vi.mock("./db", () => ({
   updateTaskSupport: vi.fn(async () => ({ success: true })),
   deleteTask: vi.fn(async () => ({ success: true })),
   addTaskComment: vi.fn(async () => ({ id: 88 })),
-  updateTaskComment: vi.fn(async () => ({ success: true })),
+  updateTaskComment: vi.fn(async () => ({
+    success: true,
+    taskId: 12,
+    previousBody: "النص السابق",
+  })),
   createLessonLearned: vi.fn(async () => ({ id: 71 })),
   updateLessonLearned: vi.fn(async () => ({ success: true })),
   deleteLessonLearned: vi.fn(async () => ({ success: true })),
@@ -197,6 +201,15 @@ describe("workspace permissions", () => {
       boardId: 23,
       canModerate: false,
     });
+    expect(notificationService.notifyTaskComment).toHaveBeenLastCalledWith(
+      88,
+      12,
+      23,
+      2,
+      "النص المعدّل",
+      null,
+      "النص السابق"
+    );
   });
 
   it("lets a platform manager moderate task comments", async () => {

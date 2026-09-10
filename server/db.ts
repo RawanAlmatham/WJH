@@ -2638,6 +2638,8 @@ export async function updateTaskComment(input: {
   const rows = await db
     .select({
       id: taskComments.id,
+      taskId: taskComments.taskId,
+      body: taskComments.body,
       authorUserId: teamMembers.userId,
     })
     .from(taskComments)
@@ -2653,7 +2655,11 @@ export async function updateTaskComment(input: {
     .update(taskComments)
     .set({ body: input.body.trim() })
     .where(eq(taskComments.id, input.id));
-  return { success: true as const };
+  return {
+    success: true as const,
+    taskId: comment.taskId,
+    previousBody: comment.body,
+  };
 }
 
 export async function createAnnualGoal(input: {

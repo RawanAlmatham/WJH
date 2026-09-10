@@ -508,13 +508,33 @@ export async function notifySupportRequested(
   );
 }
 
+export function includesMemberMention(content: string, identity: string) {
+  const normalizedContent = content.toLocaleLowerCase("ar");
+  const normalizedIdentity = identity.trim().toLocaleLowerCase("ar");
+  if (!normalizedIdentity) return false;
+  const escapedIdentity = normalizedIdentity.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
+  const trailingBoundary = normalizedIdentity.includes("@")
+    ? "[\\s،,؛;.!?]"
+    : "[،,؛;.!?]";
+  return (
+    normalizedContent.includes(`@[${normalizedIdentity}]`) ||
+    new RegExp(`@${escapedIdentity}(?=$|${trailingBoundary})`).test(
+      normalizedContent
+    )
+  );
+}
+
 export async function notifyTaskComment(
   commentId: number,
   taskId: number,
   boardId: number,
   actorUserId: number,
   body: string,
-  replyToCommentId?: number | null
+  replyToCommentId?: number | null,
+  previousBody?: string | null
 ) {
   const database = await getDb();
   if (!database) return;
@@ -531,13 +551,17 @@ export async function notifyTaskComment(
       and(eq(teamMembers.boardId, boardId), eq(teamMembers.isActive, true))
     );
   const actor = actorPrefix(await actorName(actorUserId));
-  const normalizedBody = body.toLocaleLowerCase("ar");
   const mentioned = members.filter(member => {
     if (!member.userId || member.userId === actorUserId) return false;
-    const names = [member.name, member.email]
+    const identities = [member.name, member.email]
       .filter((value): value is string => Boolean(value?.trim()))
-      .map(value => `@${value.trim().toLocaleLowerCase("ar")}`);
-    return names.some(name => normalizedBody.includes(name));
+      .map(value => value.trim());
+    return (
+      identities.some(identity => includesMemberMention(body, identity)) &&
+      !identities.some(identity =>
+        includesMemberMention(previousBody ?? "", identity)
+      )
+    );
   });
   await Promise.all(
     mentioned.map(member =>

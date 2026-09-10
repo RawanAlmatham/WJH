@@ -1147,12 +1147,26 @@ export const appRouter = router({
           ctx.user.role === "admin" ||
           ctx.user.role === "manager" ||
           (await db.hasBoardRole(ctx.user.id, ["manager"], ctx.activeBoardId));
-        return db.updateTaskComment({
+        const result = await db.updateTaskComment({
           ...input,
           boardId: ctx.activeBoardId,
           actingUserId: ctx.user.id,
           canModerate,
         });
+        await bestEffortNotification(
+          "notify edited task comment mentions",
+          () =>
+            notificationService.notifyTaskComment(
+              input.id,
+              result.taskId,
+              ctx.activeBoardId,
+              ctx.user.id,
+              input.body,
+              null,
+              result.previousBody
+            )
+        );
+        return { success: true as const };
       }),
     addDeliverableComment: teamMemberProcedure
       .input(

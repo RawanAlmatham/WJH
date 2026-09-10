@@ -87,7 +87,7 @@ import {
   SlidersHorizontal,
   Link2,
 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Line,
   LineChart,
@@ -355,6 +355,141 @@ function taskAssigneeIds(task: any): number[] {
 function taskAssignees(task: any, members: any[]) {
   const ids = taskAssigneeIds(task);
   return members.filter((member: any) => ids.includes(member.id));
+}
+
+function MentionTextarea({
+  value,
+  onChange,
+  members,
+  placeholder,
+  autoFocus = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  members: any[];
+  placeholder?: string;
+  autoFocus?: boolean;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mention, setMention] = useState<{
+    start: number;
+    end: number;
+    query: string;
+  } | null>(null);
+  const suggestions = mention
+    ? members
+        .filter((member: any) => {
+          const query = mention.query.toLocaleLowerCase("ar");
+          return [member.name, member.email].some((candidate: unknown) =>
+            String(candidate ?? "")
+              .toLocaleLowerCase("ar")
+              .includes(query)
+          );
+        })
+        .slice(0, 6)
+    : [];
+
+  const updateMention = (nextValue: string, caret: number) => {
+    const beforeCaret = nextValue.slice(0, caret);
+    const start = beforeCaret.lastIndexOf("@");
+    if (start < 0) return setMention(null);
+    const fragment = beforeCaret.slice(start + 1);
+    if (/\s{2,}|[\n\]\[،,؛;.!?]/.test(fragment)) return setMention(null);
+    setMention({ start, end: caret, query: fragment.trimStart() });
+  };
+
+  const selectMember = (member: any) => {
+    if (!mention) return;
+    const inserted = `@[${member.name}] `;
+    const nextValue =
+      value.slice(0, mention.start) + inserted + value.slice(mention.end);
+    const nextCaret = mention.start + inserted.length;
+    onChange(nextValue);
+    setMention(null);
+    window.requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(nextCaret, nextCaret);
+    });
+  };
+
+  return (
+    <div className="relative">
+      <textarea
+        ref={textareaRef}
+        autoFocus={autoFocus}
+        value={value}
+        onChange={event => {
+          onChange(event.target.value);
+          updateMention(event.target.value, event.target.selectionStart);
+        }}
+        onClick={event =>
+          updateMention(
+            event.currentTarget.value,
+            event.currentTarget.selectionStart
+          )
+        }
+        onKeyDown={event => {
+          if (event.key === "Escape") setMention(null);
+        }}
+        placeholder={placeholder}
+        className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+      />
+      {mention && (
+        <div className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+          {suggestions.length ? (
+            suggestions.map((member: any) => (
+              <button
+                key={member.id}
+                type="button"
+                onMouseDown={event => event.preventDefault()}
+                onClick={() => selectMember(member)}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-right hover:bg-[#EDF4FA]"
+              >
+                <Avatar
+                  initials={member.avatarInitials}
+                  color={member.color}
+                  className="size-7 text-[9px]"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-[#40556D]">
+                    {member.name}
+                  </span>
+                  {member.email && (
+                    <span className="block truncate text-[10px] text-[#7C8A9A]">
+                      {member.email}
+                    </span>
+                  )}
+                </span>
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-3 text-xs text-[#7C8A9A]">
+              لا يوجد عضو مطابق في هذه اللوحة.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommentBody({ body }: { body: string }) {
+  return (
+    <p className="whitespace-pre-wrap text-sm leading-7 text-[#40556D]">
+      {body.split(/(@\[[^\]]+\])/g).map((part, index) =>
+        part.startsWith("@[") && part.endsWith("]") ? (
+          <span
+            key={`${part}-${index}`}
+            className="rounded bg-[#E8F1F9] px-1 font-semibold text-[#46698F]"
+          >
+            @{part.slice(2, -1)}
+          </span>
+        ) : (
+          part
+        )
+      )}
+    </p>
+  );
 }
 
 function startOfCurrentWeek(value = new Date()) {
@@ -3415,13 +3550,15 @@ function TaskDetailPage({
                       });
                     }}
                   >
-                    <textarea
+                    <MentionTextarea
                       autoFocus
                       value={editingCommentBody}
-                      onChange={event =>
-                        setEditingCommentBody(event.target.value)
-                      }
-                      className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+                      onChange={setEditingCommentBody}
+                      members={data.members.filter(
+                        (member: any) =>
+                          member.userId && member.userId !== user?.id
+                      )}
+                      placeholder="اكتب @ ثم اختر عضوًا من اللوحة..."
                     />
                     <div className="mt-2 flex gap-2">
                       <Button
@@ -3450,9 +3587,7 @@ function TaskDetailPage({
                     </div>
                   </form>
                 ) : (
-                  <p className="whitespace-pre-wrap text-sm leading-7 text-[#40556D]">
-                    {comment.body}
-                  </p>
+                  <CommentBody body={comment.body} />
                 )}
                 <p className="mt-2 text-[11px] text-[#7C8A9A]">
                   {comment.authorName} · {fullDateText(comment.createdAt)}
@@ -3519,11 +3654,13 @@ function TaskDetailPage({
                 </button>
               </div>
             )}
-            <textarea
+            <MentionTextarea
               value={body}
-              onChange={event => setBody(event.target.value)}
-              placeholder="اكتب تعليقًا، وللإشارة إلى عضو اكتب @ ثم اسمه الكامل أو بريده..."
-              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+              onChange={setBody}
+              members={data.members.filter(
+                (member: any) => member.userId && member.userId !== user?.id
+              )}
+              placeholder="اكتب تعليقًا، وللمنشن اكتب @ ثم اختر عضوًا من اللوحة..."
             />
             <Button
               disabled={addComment.isPending || !body.trim()}
