@@ -34,6 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       PUBLIC_URL: ${PUBLIC_URL:-https://athr.aidept.io}
+      OPENALEX_API_KEY: ${OPENALEX_API_KEY:-}
     command: ["sh", "-c", "pnpm exec drizzle-kit migrate && pnpm start"]
     depends_on:
       db:

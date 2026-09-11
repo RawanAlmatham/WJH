@@ -35,7 +35,7 @@ import {
   type PresentationSection,
 } from "../shared/presentationSections";
 import {
-  fetchArxivResearchFeed,
+  fetchResearchFeed,
   normalizeResearchKeywords,
   RESEARCH_FEED_REFRESH_INTERVAL_MS,
 } from "./researchFeeds";
@@ -826,7 +826,7 @@ export async function refreshResearchInterest(id: number, boardId: number) {
   if (!interest) throw new Error("لم نعثر على الاهتمام المطلوب");
   if (!interest.isActive) return { fetched: 0, skipped: true } as const;
   try {
-    const entries = await fetchArxivResearchFeed(interest.keywords);
+    const entries = await fetchResearchFeed(interest.keywords);
     for (const entry of entries) {
       await db
         .insert(researchFeedItems)

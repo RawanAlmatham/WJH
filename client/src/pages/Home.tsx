@@ -5922,7 +5922,7 @@ function ResearchFeedsPage({
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] leading-5">
             <p className="text-[#7C8A9A]">
               افصل بين الكلمات بفاصلة أو سطر جديد. يُحدّث أثر النتائج تلقائيًا
-              كل 6 ساعات من arXiv دون تكلفة ذكاء اصطناعي.
+              كل 6 ساعات من arXiv وOpenAlex دون تكلفة ذكاء اصطناعي.
             </p>
             <p
               className={cn(
@@ -6057,7 +6057,8 @@ function ResearchFeedsPage({
           </label>
         </div>
         <p className="mt-3 text-[11px] text-[#7C8A9A]">
-          المصدر الحالي: arXiv · آخر تحديث: {fullDateText(latestRefresh)}
+          المصادر الحالية: arXiv وOpenAlex · آخر تحديث:{" "}
+          {fullDateText(latestRefresh)}
         </p>
         {canAddFeeds && (
           <p className="mt-1 text-[11px] leading-5 text-[#6C8FB8]">
@@ -6159,7 +6160,7 @@ function ResearchFeedsPage({
                 </div>
                 <div className="mt-4 flex flex-col justify-between gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
                   <span className="text-[10px] font-bold tracking-wide text-[#6C8FB8]">
-                    arXiv
+                    {item.source === "openalex" ? "OpenAlex" : "arXiv"}
                   </span>
                   <label className="flex min-w-0 items-center gap-2 text-xs text-[#647487]">
                     <Link2 className="size-3.5 shrink-0" />
