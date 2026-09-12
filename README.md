@@ -130,12 +130,12 @@ pnpm mobile:android
 
 ## المساهمة والتعاون
 
-المستودع الرسمي هو `RawanAlmatham/athr`. ابدأ كل تعديل من فرع مستقل ثم افتح
+المستودع الرسمي هو `RawanAlmatham/WJH`. ابدأ كل تعديل من فرع مستقل ثم افتح
 Pull Request بدل العمل المباشر على `main`:
 
 ```bash
-git clone https://github.com/RawanAlmatham/athr.git
-cd athr
+git clone https://github.com/RawanAlmatham/WJH.git
+cd WJH
 pnpm install
 git switch -c feature/short-description
 ```
