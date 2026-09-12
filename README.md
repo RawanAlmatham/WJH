@@ -44,7 +44,7 @@ HTTPS صادر إلى `export.arxiv.org` و`api.openalex.org`. يعمل OpenAlex
 - `DATABASE_URL`: رابط اتصال MySQL.
 - `JWT_SECRET`: مفتاح طويل وعشوائي لتوقيع جلسات الدخول.
 - `ADMIN_EMAIL`: البريد الذي يحصل على صلاحية مدير المنصة.
-- `PUBLIC_URL`: رابط أثر العام، مثل `https://athr.aidept.io`.
+- `PUBLIC_URL`: رابط أثر العام، مثل `https://wjh.ralmatham.ai`.
 - `PORT`: منفذ الخادم، والافتراضي `3000`.
 - `OPENALEX_API_KEY`: مفتاح OpenAlex اختياري لرفع حد طلبات الخلاصات.
 
@@ -55,7 +55,7 @@ HTTPS صادر إلى `export.arxiv.org` و`api.openalex.org`. يعمل OpenAlex
 الإنتاج هو:
 
 ```text
-https://athr.aidept.io/mcp
+https://wjh.ralmatham.ai/mcp
 ```
 
 بعد إضافة الرابط في عميل يدعم MCP، ينقل أثر المستخدم إلى شاشة الدخول ثم يطلب
@@ -104,7 +104,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail
 
 الموقع نفسه تطبيق ويب تقدمي (PWA)، ويمكن تثبيته من المتصفح على الجوال
 والكمبيوتر. كما توجد مشاريع iOS وAndroid أصلية مبنية باستخدام Capacitor،
-وتستخدم نفس نسخة الإنتاج على `https://athr.aidept.io`؛ لذلك تظهر تحديثات
+وتستخدم نفس نسخة الإنتاج على `https://wjh.ralmatham.ai`؛ لذلك تظهر تحديثات
 المنصة داخل التطبيق مباشرة وتبقى الحسابات والبيانات موحدة.
 
 لمزامنة تطبيقَي الجوال بعد تعديل الإعدادات أو الإضافات الأصلية:

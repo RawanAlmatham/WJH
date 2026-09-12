@@ -6594,10 +6594,10 @@ function McpPage() {
       steps: [
         "افتح ملف ~/.gemini/settings.json.",
         "أضف إعداد أثر الموضح أدناه ثم أعد تشغيل Gemini CLI.",
-        "نفّذ ‎/mcp auth athr‎ وأكمل تسجيل الدخول إلى أثر.",
+        "نفّذ ‎/mcp auth wjh‎ وأكمل تسجيل الدخول إلى wjh.",
       ],
       config: JSON.stringify(
-        { mcpServers: { athr: { httpUrl: endpoint } } },
+        { mcpServers: { wjh: { httpUrl: endpoint } } },
         null,
         2
       ),
@@ -6635,10 +6635,10 @@ function McpPage() {
       steps: [
         "افتح ملف ~/.kimi-code/mcp.json.",
         "أضف إعداد أثر الموضح أدناه، ثم ابدأ جلسة Kimi Code جديدة.",
-        "نفّذ ‎/mcp-config login athr‎ وأكمل تسجيل الدخول إلى أثر.",
+        "نفّذ ‎/mcp-config login wjh‎ وأكمل تسجيل الدخول إلى wjh.",
       ],
       config: JSON.stringify(
-        { mcpServers: { athr: { url: endpoint } } },
+        { mcpServers: { wjh: { url: endpoint } } },
         null,
         2
       ),

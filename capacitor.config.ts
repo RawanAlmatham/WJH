@@ -2,10 +2,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "io.aidept.athr",
-  appName: "أثر",
+  appName: "wjh",
   webDir: "dist/public",
   server: {
-    url: "https://athr.aidept.io",
+    url: "https://wjh.ralmatham.ai",
     cleartext: false,
   },
   ios: {
