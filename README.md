@@ -125,7 +125,7 @@ pnpm mobile:ios
 pnpm mobile:android
 ```
 
-هوية التطبيق هي `io.aidept.athr`. ملفات المصدر الأصلية موجودة في `ios/`
+هوية التطبيق هي `io.ralmatham.wjh`. ملفات المصدر الأصلية موجودة في `ios/`
 و`android/`، وأصول الأيقونة وشاشة البدء في `assets/`.
 
 ## المساهمة والتعاون
