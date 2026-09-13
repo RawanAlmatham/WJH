@@ -26,7 +26,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { nanoid } from "nanoid";
-import { ENV } from "./_core/env";
+import { ENV, isConfiguredAdminEmail } from "./_core/env";
 import { createHash } from "node:crypto";
 import type { BoardModule } from "../shared/boardModules";
 import { DEFAULT_BOARD_MODULES } from "../shared/boardModules";
@@ -177,9 +177,9 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet[field] = user[field] ?? null;
     }
   });
-  values.role =
-    user.role ??
-    (user.email?.toLowerCase() === ENV.adminEmail ? "admin" : "user");
+  values.role = isConfiguredAdminEmail(user.email)
+    ? "admin"
+    : (user.role ?? "user");
   updateSet.role = values.role;
   await db
     .insert(users)
@@ -217,6 +217,7 @@ export async function getOrCreateGoogleUser(input: {
         name: input.name || userByOpenId.name,
         loginMethod: "google",
         lastSignedIn: new Date(),
+        ...(isConfiguredAdminEmail(email) ? { role: "admin" as const } : {}),
       })
       .where(eq(users.id, userByOpenId.id));
     return await getUserById(userByOpenId.id);
@@ -232,6 +233,7 @@ export async function getOrCreateGoogleUser(input: {
         name: input.name || userByEmail.name,
         loginMethod: "google",
         lastSignedIn: new Date(),
+        ...(isConfiguredAdminEmail(email) ? { role: "admin" as const } : {}),
       })
       .where(eq(users.id, userByEmail.id));
     return await getUserById(userByEmail.id);
@@ -242,7 +244,7 @@ export async function getOrCreateGoogleUser(input: {
     email,
     name: input.name,
     loginMethod: "google",
-    role: email === ENV.adminEmail ? "admin" : "user",
+    role: isConfiguredAdminEmail(email) ? "admin" : "user",
     lastSignedIn: new Date(),
   });
   return await getUserByOpenId(openId);
@@ -273,8 +275,7 @@ export async function getUserByOpenId(openId: string) {
 export async function ensureConfiguredAdmin<
   T extends { id: number; email: string | null; role: string },
 >(user: T) {
-  if (!ENV.adminEmail || user.email?.toLowerCase() !== ENV.adminEmail)
-    return user;
+  if (!isConfiguredAdminEmail(user.email)) return user;
   if (user.role !== "admin") {
     const db = await getDb();
     if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");

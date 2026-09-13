@@ -1,7 +1,16 @@
+const adminEmails = Array.from(
+  new Set(
+    [process.env.ADMIN_EMAIL, ...(process.env.ADMIN_EMAILS ?? "").split(",")]
+      .map(email => email?.trim().toLowerCase())
+      .filter((email): email is string => Boolean(email))
+  )
+);
+
 export const ENV = {
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  adminEmail: process.env.ADMIN_EMAIL?.trim().toLowerCase() ?? "",
+  adminEmail: adminEmails[0] ?? "",
+  adminEmails,
   googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim() ?? "",
   publicUrl: (
@@ -12,3 +21,7 @@ export const ENV = {
   ).replace(/\/+$/, ""),
   isProduction: process.env.NODE_ENV === "production",
 };
+
+export function isConfiguredAdminEmail(email: string | null | undefined) {
+  return Boolean(email && ENV.adminEmails.includes(email.trim().toLowerCase()));
+}
