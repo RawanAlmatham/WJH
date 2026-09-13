@@ -10,18 +10,52 @@ export const boardTemplates = [
 
 export type BoardTemplate = (typeof boardTemplates)[number];
 
+export const templateNavigationKeys = [
+  "home",
+  "weekly",
+  "plan",
+  "projects",
+  "tasks",
+  "team",
+  "feeds",
+  "lessons",
+  "launches",
+  "calendar",
+  "reports",
+] as const;
+
+export type TemplateNavigationKey = (typeof templateNavigationKeys)[number];
+
+type StarterTask = {
+  title: string;
+  description: string;
+  priority: "urgent" | "high" | "medium" | "low";
+};
+
 export const BOARD_TEMPLATE_LABELS: Record<
   BoardTemplate,
   {
     title: string;
     description: string;
+    accent: string;
+    softAccent: string;
+    highlights: string[];
     modules: BoardModule[];
     sections: PresentationSection[];
+    navigation: Record<TemplateNavigationKey, string>;
+    starterTasks: StarterTask[];
   }
 > = {
   work: {
     title: "قالب العمل",
     description: "إدارة فرق المشاريع ومتابعة الحملات والجداول التشغيلية.",
+    accent: "#7A4CCF",
+    softAccent: "#F0EAFE",
+    highlights: [
+      "أهداف وخطة سنوية",
+      "مشاريع ومهام الفريق",
+      "دروس وخلاصات بحثية",
+    ],
     modules: [
       "plan",
       "projects",
@@ -39,10 +73,44 @@ export const BOARD_TEMPLATE_LABELS: Record<
       "team",
       "feeds",
     ],
+    navigation: {
+      home: "الرئيسية",
+      weekly: "تحديث الأسبوع",
+      plan: "الخطة السنوية",
+      projects: "المشاريع",
+      tasks: "المهام",
+      team: "الفريق",
+      feeds: "الخلاصات البحثية",
+      lessons: "الدروس المستفادة",
+      launches: "الإطلاقات",
+      calendar: "التقويم",
+      reports: "التقارير",
+    },
+    starterTasks: [
+      {
+        title: "تحديد أهداف الفريق لهذه الفترة",
+        description:
+          "اكتب النتائج التي تريد من الفريق الوصول إليها وحدد الأولويات.",
+        priority: "high",
+      },
+      {
+        title: "إضافة أول مشروع ومخرجاته",
+        description: "حوّل الهدف الأهم إلى مشروع واضح وحدد مخرجاته الرئيسية.",
+        priority: "medium",
+      },
+      {
+        title: "دعوة أعضاء الفريق وتحديد الأدوار",
+        description: "أضف أعضاء الفريق وحدد صلاحية كل عضو داخل اللوحة.",
+        priority: "medium",
+      },
+    ],
   },
   startup: {
     title: "قالب شركة ناشئة",
-    description: "متابعة roadmap المنتج والملف التسويقي والتحديثات السريعة.",
+    description: "إدارة خارطة المنتج والتجارب والنمو وإيقاع الفريق السريع.",
+    accent: "#2563EB",
+    softAccent: "#EAF2FF",
+    highlights: ["رؤية وأهداف مرحلية", "خارطة المنتج", "تجارب وإطلاقات"],
     modules: ["plan", "projects", "tasks", "team", "calendar", "reports"],
     sections: [
       "completion",
@@ -52,19 +120,120 @@ export const BOARD_TEMPLATE_LABELS: Record<
       "goals",
       "team",
     ],
+    navigation: {
+      home: "مركز الشركة",
+      weekly: "تحديث الفريق",
+      plan: "الرؤية والأهداف",
+      projects: "خارطة المنتج",
+      tasks: "سجل التنفيذ",
+      team: "فريق الشركة",
+      feeds: "رادار السوق",
+      lessons: "نتائج التجارب",
+      launches: "إطلاقات المنتج",
+      calendar: "تقويم الشركة",
+      reports: "مؤشرات النمو",
+    },
+    starterTasks: [
+      {
+        title: "صياغة فرضية المنتج والقيمة المقترحة",
+        description:
+          "حدد العميل المستهدف والمشكلة والقيمة التي يقدمها المنتج بوضوح.",
+        priority: "high",
+      },
+      {
+        title: "تحديد نطاق الإصدار الأول",
+        description: "اختر أقل مجموعة خصائص تكفي لاختبار الفرضية مع العملاء.",
+        priority: "high",
+      },
+      {
+        title: "اختيار مؤشرات النمو للأسبوع",
+        description:
+          "حدد المقاييس التي سيتابعها الفريق مثل التفعيل والاحتفاظ والتحويل.",
+        priority: "medium",
+      },
+    ],
   },
   ecommerce: {
     title: "قالب تجارة إلكترونية",
     description:
       "إدارة المنتجات والعروض والمتابعات اليومية للعمليات التشغيلية.",
+    accent: "#059669",
+    softAccent: "#E9FBF4",
+    highlights: ["تشغيل المتجر", "حملات وعروض", "تقارير الأداء"],
     modules: ["tasks", "projects", "calendar", "team", "reports"],
     sections: ["completion", "projects", "attention", "upcoming", "team"],
+    navigation: {
+      home: "ملخص المتجر",
+      weekly: "متابعة التشغيل",
+      plan: "خطة النمو",
+      projects: "الحملات والمبادرات",
+      tasks: "عمليات المتجر",
+      team: "فريق المتجر",
+      feeds: "رصد السوق",
+      lessons: "تحسينات المتجر",
+      launches: "العروض والمواسم",
+      calendar: "تقويم المتجر",
+      reports: "تقارير الأداء",
+    },
+    starterTasks: [
+      {
+        title: "مراجعة جاهزية المنتجات والمخزون",
+        description:
+          "تحقق من توفر المنتجات والأسعار والصور ووصف صفحات المنتجات.",
+        priority: "high",
+      },
+      {
+        title: "تجهيز الحملة أو العرض القادم",
+        description: "حدد العرض والجمهور وقنوات التسويق وتاريخ الإطلاق.",
+        priority: "high",
+      },
+      {
+        title: "متابعة الطلبات وخدمة العملاء",
+        description:
+          "راجع الطلبات المتأخرة والاسترجاعات والاستفسارات المفتوحة.",
+        priority: "medium",
+      },
+    ],
   },
   "personal-tasks": {
     title: "قالب متابعة مهام شخصية",
     description: "تنظيم مهامك اليومية والتخطيط الأسبوعي والمراجعات السريعة.",
+    accent: "#D97706",
+    softAccent: "#FFF6E5",
+    highlights: ["أولويات يومية", "تخطيط أسبوعي", "مراجعة الإنجاز"],
     modules: ["plan", "tasks", "calendar", "reports"],
     sections: ["completion", "priorities", "attention", "upcoming"],
+    navigation: {
+      home: "يومي",
+      weekly: "مراجعة الأسبوع",
+      plan: "أهدافي",
+      projects: "مشاريعي",
+      tasks: "مهامي",
+      team: "المشاركون",
+      feeds: "مصادري",
+      lessons: "ملاحظاتي",
+      launches: "المواعيد المهمة",
+      calendar: "تقويمي",
+      reports: "إنجازي",
+    },
+    starterTasks: [
+      {
+        title: "كتابة أهم ثلاث أولويات",
+        description: "اختر ثلاث نتائج مهمة تريد إنجازها خلال هذا الأسبوع.",
+        priority: "high",
+      },
+      {
+        title: "ترتيب مهام اليوم",
+        description: "قسّم أولوياتك إلى خطوات قصيرة قابلة للتنفيذ.",
+        priority: "medium",
+      },
+      {
+        title: "تحديد موعد المراجعة الأسبوعية",
+        description:
+          "احجز وقتًا ثابتًا لمراجعة ما أُنجز وتجهيز الأسبوع التالي.",
+        priority: "low",
+      },
+    ],
   },
 } as const;
 

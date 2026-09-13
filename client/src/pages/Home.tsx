@@ -1357,53 +1357,62 @@ function Sidebar({
         : membershipRole === "viewer"
           ? "مشاهد"
           : "عضو";
+  const activeTemplate =
+    boards.find(board => board.id === activeBoardId)?.template ?? "work";
+  const activeTemplateConfig = BOARD_TEMPLATE_LABELS[activeTemplate];
+  const navLabels = activeTemplateConfig.navigation;
   const entries: {
     id: Page;
     label: string;
     icon: typeof LayoutDashboard;
     module?: BoardModule;
   }[] = [
-    { id: "home", label: "الرئيسية", icon: LayoutDashboard },
+    { id: "home", label: navLabels.home, icon: LayoutDashboard },
     {
       id: "weekly",
-      label: "تحديث الأسبوع",
+      label: navLabels.weekly,
       icon: ListChecks,
       module: "tasks",
     },
-    { id: "plan", label: "الخطة السنوية", icon: Target, module: "plan" },
+    { id: "plan", label: navLabels.plan, icon: Target, module: "plan" },
     {
       id: "projects",
-      label: "المشاريع",
+      label: navLabels.projects,
       icon: FolderKanban,
       module: "projects",
     },
-    { id: "tasks", label: "المهام", icon: ListChecks, module: "tasks" },
-    { id: "team", label: "الفريق", icon: Users, module: "team" },
+    { id: "tasks", label: navLabels.tasks, icon: ListChecks, module: "tasks" },
+    { id: "team", label: navLabels.team, icon: Users, module: "team" },
     {
       id: "feeds",
-      label: "الخلاصات البحثية",
+      label: navLabels.feeds,
       icon: Rss,
       module: "feeds",
     },
     {
       id: "lessons",
-      label: "الدروس المستفادة",
+      label: navLabels.lessons,
       icon: Lightbulb,
       module: "lessons",
     },
     {
       id: "launches",
-      label: "الإطلاقات",
+      label: navLabels.launches,
       icon: Rocket,
       module: "calendar",
     },
     {
       id: "calendar",
-      label: "التقويم",
+      label: navLabels.calendar,
       icon: CalendarDays,
       module: "calendar",
     },
-    { id: "reports", label: "التقارير", icon: BarChart3, module: "reports" },
+    {
+      id: "reports",
+      label: navLabels.reports,
+      icon: BarChart3,
+      module: "reports",
+    },
   ];
   const visibleEntries = entries.filter(
     entry => !entry.module || enabledModules.includes(entry.module)
@@ -1425,7 +1434,13 @@ function Sidebar({
       >
         <div className="mb-4 flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#F0EAFE] text-[#7A4CCF]">
+            <span
+              className="flex size-9 items-center justify-center rounded-xl"
+              style={{
+                color: activeTemplateConfig.accent,
+                backgroundColor: activeTemplateConfig.softAccent,
+              }}
+            >
               <Target className="size-5" />
             </span>
             <div>
@@ -1435,10 +1450,11 @@ function Sidebar({
               <p className="max-w-36 truncate text-[11px] text-[#6D6279]">
                 {workspaceName}
               </p>
-              <p className="mt-1 max-w-36 truncate text-[11px] font-medium text-[#7A4CCF]">
-                {templateLabel(
-                  boards.find(board => board.id === activeBoardId)?.template
-                )}
+              <p
+                className="mt-1 max-w-36 truncate text-[11px] font-medium"
+                style={{ color: activeTemplateConfig.accent }}
+              >
+                {templateLabel(activeTemplate)}
               </p>
             </div>
           </div>
@@ -1488,9 +1504,17 @@ function Sidebar({
                   className={cn(
                     "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-right text-sm transition-colors",
                     active
-                      ? "bg-[#F0EAFE] font-semibold text-[#7A4CCF]"
+                      ? "font-semibold"
                       : "text-[#615A74] hover:bg-slate-50 hover:text-[#5A5570]"
                   )}
+                  style={
+                    active
+                      ? {
+                          color: activeTemplateConfig.accent,
+                          backgroundColor: activeTemplateConfig.softAccent,
+                        }
+                      : undefined
+                  }
                 >
                   <entry.icon className="size-[18px]" />
                   {entry.label}
@@ -6852,6 +6876,8 @@ function SettingsPage({
   const utils = trpc.useUtils();
   const canManage =
     board?.membershipRole === "manager" || accountRole === "admin";
+  const settingsTemplate = board?.template ?? "work";
+  const settingsTemplateConfig = BOARD_TEMPLATE_LABELS[settingsTemplate];
   const [selectedModules, setSelectedModules] = useState<BoardModule[]>(
     board?.enabledModules ?? DEFAULT_BOARD_MODULES
   );
@@ -6888,49 +6914,49 @@ function SettingsPage({
   }[] = [
     {
       id: "plan",
-      label: "الخطة السنوية",
+      label: settingsTemplateConfig.navigation.plan,
       description: "الأهداف السنوية والمتابعة حسب الفترات.",
       icon: Target,
     },
     {
       id: "projects",
-      label: "المشاريع",
+      label: settingsTemplateConfig.navigation.projects,
       description: "المشاريع وتقدمها والمخرجات المرتبطة بها.",
       icon: FolderKanban,
     },
     {
       id: "tasks",
-      label: "المهام",
+      label: settingsTemplateConfig.navigation.tasks,
       description: "إنشاء الأعمال وإسنادها ومتابعة حالتها.",
       icon: ListChecks,
     },
     {
       id: "team",
-      label: "الفريق",
+      label: settingsTemplateConfig.navigation.team,
       description: "الأعضاء والأدوار وعبء العمل وإدارة الوصول.",
       icon: Users,
     },
     {
       id: "calendar",
-      label: "التقويم والإطلاقات",
+      label: `${settingsTemplateConfig.navigation.calendar} و${settingsTemplateConfig.navigation.launches}`,
       description: "مواعيد المهام والإطلاقات والاجتماعات والتسليمات القادمة.",
       icon: CalendarDays,
     },
     {
       id: "feeds",
-      label: "الخلاصات البحثية",
+      label: settingsTemplateConfig.navigation.feeds,
       description: "أبحاث جديدة حسب الكلمات والاهتمامات التي يحددها المدير.",
       icon: Rss,
     },
     {
       id: "reports",
-      label: "التقارير",
+      label: settingsTemplateConfig.navigation.reports,
       description: "ملخص الإنجاز والتأخر ومؤشرات الأداء.",
       icon: BarChart3,
     },
     {
       id: "lessons",
-      label: "الدروس المستفادة",
+      label: settingsTemplateConfig.navigation.lessons,
       description: "توثيق الخبرات وربطها بالمشاريع وإصدار تقاريرها.",
       icon: Lightbulb,
     },
@@ -6973,8 +6999,22 @@ function SettingsPage({
             {templateLabel(board?.template)}
           </p>
           <p className="mt-2 text-xs leading-6 text-[#6D6279]">
-            القالب يحدد الأقسام المبدئية والوحدات المتاحة عند إنشاء اللوحة.
+            {settingsTemplateConfig.description}
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {settingsTemplateConfig.highlights.map(highlight => (
+              <span
+                key={highlight}
+                className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+                style={{
+                  color: settingsTemplateConfig.accent,
+                  backgroundColor: settingsTemplateConfig.softAccent,
+                }}
+              >
+                {highlight}
+              </span>
+            ))}
+          </div>
           <p className="mt-2 text-xs text-[#7A4CCF]">
             لتغيير النمط، أنشئ لوحة جديدة واختر القالب المطلوب.
           </p>

@@ -630,7 +630,23 @@ export async function createManagementBoard(
     .update(users)
     .set({ activeBoardId: boardId })
     .where(eq(users.id, ownerUserId));
-  await ensureTeamMemberForUser(ownerUserId, boardId);
+  const ownerMemberId = await ensureTeamMemberForUser(ownerUserId, boardId);
+  await db.transaction(async tx => {
+    for (const starterTask of safeTemplate.starterTasks) {
+      const inserted = await tx.insert(tasks).values({
+        boardId,
+        title: starterTask.title,
+        description: starterTask.description,
+        assigneeMemberId: ownerMemberId,
+        priority: starterTask.priority,
+        status: "not_started",
+      });
+      await tx.insert(taskAssignees).values({
+        taskId: Number(inserted[0].insertId),
+        memberId: ownerMemberId,
+      });
+    }
+  });
   return {
     id: boardId,
     name,

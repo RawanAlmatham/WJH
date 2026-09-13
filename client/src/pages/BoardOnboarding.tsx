@@ -237,7 +237,11 @@ export default function BoardOnboarding({
             />
           </div>
         ) : (
-          <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div
+            className={`mx-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${
+              effectiveMode === "create" ? "max-w-2xl" : "max-w-md"
+            }`}
+          >
             <button
               onClick={() => setMode("choice")}
               className="text-sm text-[#7A4CCF]"
@@ -261,9 +265,9 @@ export default function BoardOnboarding({
                   />
                 </label>
                 <label className="mt-5 block text-sm font-medium text-[#5A5570]">
-                  قالب العمل <span className="text-red-500">*</span>
+                  نوع القالب <span className="text-red-500">*</span>
                 </label>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
                   {!template ? (
                     <p className="-mt-1 text-xs text-amber-700">
                       اختر قالبًا واحدًا للوحة قبل المتابعة.
@@ -277,20 +281,62 @@ export default function BoardOnboarding({
                         type="button"
                         key={item}
                         onClick={() => setTemplate(item)}
-                        className={`rounded-xl border p-3 text-right transition ${
-                          isSelected
-                            ? "border-[#7A4CCF] bg-[#F7F3FF]"
-                            : "border-slate-200 bg-white"
-                        }`}
+                        aria-pressed={isSelected}
+                        className="rounded-xl border p-4 text-right transition hover:-translate-y-0.5 hover:shadow-sm"
+                        style={{
+                          borderColor: isSelected ? config.accent : "#E2E8F0",
+                          backgroundColor: isSelected
+                            ? config.softAccent
+                            : "#FFFFFF",
+                        }}
                       >
-                        <p className="font-medium">{config.title}</p>
+                        <span
+                          className="mb-3 flex size-8 items-center justify-center rounded-lg"
+                          style={{
+                            color: config.accent,
+                            backgroundColor: config.softAccent,
+                          }}
+                        >
+                          {isSelected ? (
+                            <Check className="size-4" />
+                          ) : (
+                            <Plus className="size-4" />
+                          )}
+                        </span>
+                        <p className="font-semibold">{config.title}</p>
                         <p className="mt-1 text-xs leading-5 text-[#6D6279]">
                           {config.description}
                         </p>
+                        <ul className="mt-3 space-y-1.5">
+                          {config.highlights.map(highlight => (
+                            <li
+                              key={highlight}
+                              className="flex items-center gap-2 text-[11px] text-[#5A5570]"
+                            >
+                              <span
+                                className="size-1.5 rounded-full"
+                                style={{ backgroundColor: config.accent }}
+                              />
+                              {highlight}
+                            </li>
+                          ))}
+                        </ul>
                       </button>
                     );
                   })}
                 </div>
+                {template ? (
+                  <p
+                    className="mt-3 rounded-lg px-3 py-2 text-xs leading-5"
+                    style={{
+                      color: BOARD_TEMPLATE_LABELS[template].accent,
+                      backgroundColor:
+                        BOARD_TEMPLATE_LABELS[template].softAccent,
+                    }}
+                  >
+                    ستُنشأ اللوحة بأقسامها المناسبة و3 مهام بداية قابلة للتعديل.
+                  </p>
+                ) : null}
                 <Button
                   disabled={
                     create.isPending || boardName.trim().length < 2 || !template
