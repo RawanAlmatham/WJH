@@ -82,7 +82,7 @@ export function PwaInstallButton({
       onClick={comingSoon ? undefined : install}
       disabled={comingSoon}
       className={cn(
-        "gap-2 border-[#D9CCF3] bg-white text-[#5F4FB5]",
+        "gap-2 border-[#CCD4E6] bg-white text-[#1E3A8A]",
         className
       )}
     >

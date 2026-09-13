@@ -49,8 +49,8 @@ export const BOARD_TEMPLATE_LABELS: Record<
   work: {
     title: "قالب العمل",
     description: "إدارة فرق المشاريع ومتابعة الحملات والجداول التشغيلية.",
-    accent: "#7A4CCF",
-    softAccent: "#F0EAFE",
+    accent: "#1E3A8A",
+    softAccent: "#E9EDF7",
     highlights: [
       "أهداف وخطة سنوية",
       "مشاريع ومهام الفريق",
@@ -108,8 +108,8 @@ export const BOARD_TEMPLATE_LABELS: Record<
   startup: {
     title: "قالب شركة ناشئة",
     description: "إدارة خارطة المنتج والتجارب والنمو وإيقاع الفريق السريع.",
-    accent: "#2563EB",
-    softAccent: "#EAF2FF",
+    accent: "#7A2E5C",
+    softAccent: "#F5EAF0",
     highlights: ["رؤية وأهداف مرحلية", "خارطة المنتج", "تجارب وإطلاقات"],
     modules: ["plan", "projects", "tasks", "team", "calendar", "reports"],
     sections: [
@@ -157,8 +157,8 @@ export const BOARD_TEMPLATE_LABELS: Record<
     title: "قالب تجارة إلكترونية",
     description:
       "إدارة المنتجات والعروض والمتابعات اليومية للعمليات التشغيلية.",
-    accent: "#059669",
-    softAccent: "#E9FBF4",
+    accent: "#45613F",
+    softAccent: "#E9EDE4",
     highlights: ["تشغيل المتجر", "حملات وعروض", "تقارير الأداء"],
     modules: ["tasks", "projects", "calendar", "team", "reports"],
     sections: ["completion", "projects", "attention", "upcoming", "team"],
@@ -198,8 +198,8 @@ export const BOARD_TEMPLATE_LABELS: Record<
   "personal-tasks": {
     title: "قالب متابعة مهام شخصية",
     description: "تنظيم مهامك اليومية والتخطيط الأسبوعي والمراجعات السريعة.",
-    accent: "#D97706",
-    softAccent: "#FFF6E5",
+    accent: "#896400",
+    softAccent: "#FFF3CC",
     highlights: ["أولويات يومية", "تخطيط أسبوعي", "مراجعة الإنجاز"],
     modules: ["plan", "tasks", "calendar", "reports"],
     sections: ["completion", "priorities", "attention", "upcoming"],

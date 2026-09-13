@@ -1,4 +1,4 @@
-const CACHE_NAME = "wjh-app-v3";
+const CACHE_NAME = "wjh-brand-v4";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",

@@ -234,12 +234,16 @@ function consentPage(
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>ربط وجهة بالمساعد الذكي</title>
     <style>
-      *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f9fc;color:#26364a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:20px}.card{width:min(460px,100%);background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 12px 40px rgba(38,54,74,.08)}.brand{color:#52769f;font-weight:800;font-size:15px}h1{font-size:24px;margin:10px 0 8px}.muted{color:#718096;font-size:14px;line-height:1.8}.box{margin:20px 0;padding:15px;border-radius:12px;background:#f6f9fc;border:1px solid #e5edf5;font-size:14px;line-height:1.8}.permissions{margin:16px 0 22px;padding:0 20px;color:#52657a;font-size:14px;line-height:2}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{height:44px;border-radius:10px;border:1px solid #d9e2ec;background:#fff;color:#52657a;font-size:14px;font-weight:700;cursor:pointer}.primary{background:#52769f;border-color:#52769f;color:#fff}.primary:hover{background:#46698f}
+      *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f2ee;color:#1f2328;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:20px}.card{width:min(460px,100%);background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 12px 40px rgba(38,54,74,.08)}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;color:#1e3a8a;font-weight:800;font-size:15px}h1{font-size:24px;margin:10px 0 8px}.muted{color:#62635f;font-size:14px;line-height:1.8}.box{margin:20px 0;padding:15px;border-radius:12px;background:#f5f2ee;border:1px solid #e5edf5;font-size:14px;line-height:1.8}.permissions{margin:16px 0 22px;padding:0 20px;color:#4e534e;font-size:14px;line-height:2}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{height:44px;border-radius:10px;border:1px solid #d9e2ec;background:#fff;color:#4e534e;font-size:14px;font-weight:700;cursor:pointer}.primary{background:#1e3a8a;border-color:#1e3a8a;color:#fff}.primary:hover{background:#172e6e}
     </style>
   </head>
   <body>
     <main class="card">
-      <div class="brand">وجهة</div>
+      <div class="brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 300" width="40" height="38" role="img" aria-hidden="true"><path fill="#1E3A8A" d="M0 176V82C0 37 34 6 79 6H173Q190 6 190 23V46C190 112 151 158 81 158H66C40 158 20 166 5 182Q0 187 0 176Z"/>
+<circle fill="#F6B801" cx="262" cy="54" r="54"/>
+<path fill="#A6B69A" d="M57 174H111Q121 174 118 184C111 207 111 227 111 250V284Q111 300 95 300H57C24 300 0 274 0 240C0 204 24 174 57 174Z"/>
+<path fill="#7A2E5C" d="M126 284V246C126 179 178 126 247 126H281C307 126 320 140 320 166V219C320 267 286 300 240 300H142Q126 300 126 284Z"/></svg>
+ <span>وجهة</span></div>
       <h1>ربط حسابك بالمساعد الذكي</h1>
       <p class="muted">يريد <strong>${escapeHtml(clientName)}</strong> الوصول إلى حساب وجهة باسمك.</p>
       <div class="box"><strong>${escapeHtml(user.name || "مستخدم وجهة")}</strong><br>${escapeHtml(user.email || "")}</div>

@@ -1,3 +1,5 @@
+import { BrandJourney, BrandLogo } from "@/components/Brand";
+import { boardTemplates, BOARD_TEMPLATE_LABELS } from "@shared/boardTemplates";
 import { Button } from "@/components/ui/button";
 import { startLogin } from "@/const";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
@@ -12,7 +14,6 @@ import {
   ListChecks,
   ShieldCheck,
   Target,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -47,13 +48,13 @@ const features = [
 const steps = [
   {
     number: "01",
-    title: "أنشئ مساحة العمل",
-    description: "لوحة مستقلة لإدارة أو فريق أو مشروع، بحسب طريقة عملك.",
+    title: "اختر وجهتك",
+    description: "أنشئ لوحة واختر القالب الذي يناسب عملك وطموحك.",
   },
   {
     number: "02",
-    title: "ادعُ فريقك",
-    description: "أرسل رابط الدعوة وحدد دور العضو ببساطة وبدون إعدادات معقدة.",
+    title: "رتّب خطواتك",
+    description: "أضف مهامك وأولوياتك، وادعُ فريقك إذا كانت وجهتكم مشتركة.",
   },
   {
     number: "03",
@@ -67,37 +68,29 @@ export default function Landing() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen overflow-hidden bg-[#F8F6FF] text-[#22273A]"
+      className="min-h-screen overflow-hidden bg-[#F5F2EE] text-[#1F2328]"
     >
-      <header className="app-topbar sticky top-0 z-30 border-b border-slate-200/80 bg-[#F8F6FF]/90 backdrop-blur-xl">
+      <header className="app-topbar sticky top-0 z-30 border-b border-slate-200/80 bg-[#F5F2EE]/90 backdrop-blur-xl">
         <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8 lg:px-10">
           <a
             href="#top"
             className="flex items-center gap-3"
             aria-label="وجهة - الصفحة الرئيسية"
           >
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-[#7A4CCF] text-white shadow-sm">
-              <TrendingUp className="size-5" />
-            </span>
-            <span>
-              <span className="block text-lg font-bold leading-none">وجهة</span>
-              <span className="mt-1 block text-[10px] text-slate-500">
-                إدارة العمل بوضوح
-              </span>
-            </span>
+            <BrandLogo tagline />
           </a>
 
           <nav
             className="hidden items-center gap-8 text-sm text-slate-600 md:flex"
             aria-label="التنقل الرئيسي"
           >
-            <a href="#features" className="transition hover:text-[#7A4CCF]">
+            <a href="#features" className="transition hover:text-[#1E3A8A]">
               المزايا
             </a>
-            <a href="#how-it-works" className="transition hover:text-[#7A4CCF]">
+            <a href="#how-it-works" className="transition hover:text-[#1E3A8A]">
               كيف تعمل؟
             </a>
-            <a href="#about" className="transition hover:text-[#7A4CCF]">
+            <a href="#about" className="transition hover:text-[#1E3A8A]">
               عن وجهة
             </a>
           </nav>
@@ -105,7 +98,7 @@ export default function Landing() {
           <Button
             onClick={startLogin}
             variant="outline"
-            className="h-10 shrink-0 border-[#D9CCF3] bg-white px-3 text-[#5F4FB5] hover:bg-[#F0EAFE] sm:px-4"
+            className="h-10 shrink-0 border-[#CCD4E6] bg-white px-3 text-[#1E3A8A] hover:bg-[#E9EDF7] sm:px-4"
           >
             تسجيل الدخول
           </Button>
@@ -113,44 +106,57 @@ export default function Landing() {
       </header>
 
       <section id="top" className="relative">
-        <div className="absolute inset-x-0 top-0 -z-0 h-[34rem] bg-[radial-gradient(circle_at_76%_20%,rgba(122,76,207,.20),transparent_35%),radial-gradient(circle_at_18%_15%,rgba(218,206,240,.35),transparent_30%)]" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:gap-14 sm:px-8 sm:py-24 lg:grid-cols-[.9fr_1.1fr] lg:px-10 lg:py-28">
+        <div className="absolute inset-x-0 top-0 -z-0 h-[34rem] brand-hero-wash" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:gap-14 sm:px-8 sm:py-24 lg:grid-cols-[1fr_1fr] lg:px-10 lg:py-28">
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#D9CCF3] bg-white/80 px-3.5 py-2 text-xs font-semibold text-[#7A4CCF] shadow-sm">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#CCD4E6] bg-white/80 px-3.5 py-2 text-xs font-semibold text-[#1E3A8A] shadow-sm">
               <CheckCircle2 className="size-4" />
-              من التخطيط إلى الإنجاز في مساحة واحدة
+              لكل طموح، وجهة.
             </span>
             <h1 className="mt-7 text-[2.15rem] font-bold leading-[1.3] tracking-tight sm:text-5xl lg:text-[3.6rem]">
-              كل شغل فريقك،
-              <span className="block text-[#7A4CCF]">من الهدف إلى وجهة.</span>
+              طموحك يستحق
+              <span className="block text-[#1E3A8A]">وجهة واضحة.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-[#655D75] sm:text-lg">
-              «وجهة» منصة عربية لتنظيم الخطط والمشاريع والمهام، تمنح الفريق رؤية
-              مشتركة وتضع ما يحتاج انتباهك أمامك بوضوح.
+            <p className="mt-6 max-w-xl text-base leading-8 text-[#62635F] sm:text-lg">
+              من فكرة تنتظر البداية إلى إنجاز تفتخر فيه. رتّب مهامك، اجمع فريقك،
+              واختر مساحة تناسب طموحك؛ للعمل، لشركتك، لمتجرك أو ليومك.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button
                 onClick={startLogin}
-                className="h-12 gap-2 bg-[#7A4CCF] px-7 text-base hover:bg-[#684CB2]"
+                className="h-12 gap-2 bg-[#1E3A8A] px-7 text-base hover:bg-[#172E6E]"
               >
-                الدخول إلى وجهة
+                ابدأ وجهتك
                 <ArrowLeft className="size-4" />
               </Button>
               <a
                 href="#how-it-works"
-                className="inline-flex h-12 items-center justify-center rounded-md border border-slate-200 bg-white px-7 text-sm font-semibold text-[#5A5570] transition hover:border-[#D9CCF3] hover:bg-[#F8F6FF]"
+                className="inline-flex h-12 items-center justify-center rounded-md border border-slate-200 bg-white px-7 text-sm font-semibold text-[#4E534E] transition hover:border-[#CCD4E6] hover:bg-[#F5F2EE]"
               >
                 تعرّف على طريقة العمل
               </a>
               <PwaInstallButton className="h-12 px-6" />
             </div>
             <p className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-              <ShieldCheck className="size-4 text-[#8570D0]" />
+              <ShieldCheck className="size-4 text-[#7A2E5C]" />
               التسجيل والدخول عبر حساب Google متاحان الآن.
             </p>
           </div>
 
-          <DashboardPreview />
+          <div className="brand-hero-visual">
+            <BrandJourney />
+            <div className="brand-arrival-card" dir="rtl">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#FFF3CC] text-[#896400]">
+                <Check className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-bold">كل خطوة تقرّبك.</p>
+                <p className="mt-1 text-xs text-[#62635F]">
+                  فكرة واضحة. خطوات مرتبة. إنجاز ملموس.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -165,10 +171,58 @@ export default function Landing() {
               key={title}
               className={`px-5 py-3 ${index !== 0 ? "sm:border-r sm:border-slate-200" : ""}`}
             >
-              <p className="text-sm font-bold text-[#22273A]">{title}</p>
+              <p className="text-sm font-bold text-[#1F2328]">{title}</p>
               <p className="mt-1 text-xs text-slate-500">{text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section
+        id="templates"
+        className="mx-auto max-w-7xl px-5 pt-20 sm:px-8 lg:px-10"
+      >
+        <SectionIntro
+          eyebrow="أربع بدايات. واحتمالات كثيرة."
+          title="مساحة تشبه طريقة عملك"
+          description="اختَر قالبك عند إنشاء اللوحة، لتبدأ بتقسيمات ومهام أولية تناسب وجهتك."
+        />
+        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {boardTemplates.map((template, index) => {
+            const config = BOARD_TEMPLATE_LABELS[template];
+            return (
+              <button
+                key={template}
+                onClick={startLogin}
+                className="brand-template-card group text-right"
+                style={{
+                  borderTopColor: ["#1E3A8A", "#7A2E5C", "#A6B69A", "#F6B801"][
+                    index
+                  ],
+                }}
+              >
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: config.accent }}
+                >
+                  0{index + 1}
+                </span>
+                <h3 className="mt-5 text-lg font-bold">
+                  {config.title.replace("قالب ", "")}
+                </h3>
+                <p className="mt-2 min-h-14 text-xs leading-6 text-[#62635F]">
+                  {config.description}
+                </p>
+                <span
+                  className="mt-5 inline-flex items-center gap-2 text-xs font-semibold"
+                  style={{ color: config.accent }}
+                >
+                  ابدأ هنا{" "}
+                  <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -182,16 +236,24 @@ export default function Landing() {
           description="صُممت وجهة لتجمع الصورة الكبيرة والتفاصيل اليومية، بدون أن تصبح إدارة العمل عبئًا إضافيًا."
         />
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map(feature => (
+          {features.map((feature, index) => (
             <article
               key={feature.title}
-              className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_35px_rgba(34,39,58,.05)] transition hover:-translate-y-1 hover:border-[#D9CCF3] hover:shadow-[0_18px_45px_rgba(34,39,58,.10)]"
+              className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_35px_rgba(34,39,58,.05)] transition hover:-translate-y-1 hover:border-[#CCD4E6] hover:shadow-[0_18px_45px_rgba(34,39,58,.10)]"
             >
-              <span className="flex size-11 items-center justify-center rounded-xl bg-[#F0EAFE] text-[#7A4CCF] transition group-hover:bg-[#7A4CCF] group-hover:text-white">
+              <span
+                className="flex size-11 items-center justify-center rounded-xl"
+                style={{
+                  background: ["#E9EDF7", "#F5EAF0", "#E9EDE4", "#FFF3CC"][
+                    index
+                  ],
+                  color: ["#1E3A8A", "#7A2E5C", "#45613F", "#896400"][index],
+                }}
+              >
                 {feature.icon}
               </span>
               <h3 className="mt-6 text-lg font-bold">{feature.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#7B7289]">
+              <p className="mt-3 text-sm leading-7 text-[#62635F]">
                 {feature.description}
               </p>
             </article>
@@ -199,13 +261,22 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="how-it-works" className="bg-[#22273A] text-white">
+      <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 sm:px-8 lg:grid-cols-2 lg:px-10">
+        <SectionIntro
+          eyebrow="خطواتك، في مكانها."
+          title="الصورة الكبيرة، والتفاصيل التي تصنعها."
+          description="مهام ومشاريع وأولويات في لوحة واحدة، لتعرف أين وصلت وما خطوتك التالية. هذه معاينة توضيحية لطريقة عرض العمل."
+        />
+        <DashboardPreview />
+      </section>
+
+      <section id="how-it-works" className="bg-[#1F2328] text-white">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
           <SectionIntro
             dark
             eyebrow="بداية بسيطة"
-            title="ثلاث خطوات، وفريقك جاهز"
-            description="تبدأ مساحة العمل بسرعة، ثم تتوسع مع احتياج الفريق بدون تعقيد في الصلاحيات أو الإعدادات."
+            title="من هنا تبدأ وجهتك"
+            description="ابدأ بحساب Google، وأنشئ لوحتك الخاصة أو انضم إلى لوحة بدعوة من فريقك."
           />
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {steps.map((step, index) => (
@@ -213,7 +284,7 @@ export default function Landing() {
                 key={step.number}
                 className="relative rounded-2xl border border-white/10 bg-white/[.055] p-6"
               >
-                <span className="text-sm font-semibold text-[#C6B7EF]">
+                <span className="text-sm font-semibold text-[#F6B801]">
                   {step.number}
                 </span>
                 <h3 className="mt-8 text-xl font-bold">{step.title}</h3>
@@ -221,7 +292,7 @@ export default function Landing() {
                   {step.description}
                 </p>
                 {index < steps.length - 1 && (
-                  <ArrowLeft className="absolute -left-3 top-10 hidden size-5 text-[#C6B7EF] md:block" />
+                  <ArrowLeft className="absolute -left-3 top-10 hidden size-5 text-[#F6B801] md:block" />
                 )}
               </article>
             ))}
@@ -233,13 +304,13 @@ export default function Landing() {
         id="about"
         className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
       >
-        <div className="grid items-center gap-12 rounded-3xl border border-[#ECE5FB] bg-[#F2EEFF] p-7 sm:p-10 lg:grid-cols-[1fr_.8fr] lg:p-14">
+        <div className="grid items-center gap-12 rounded-3xl border border-[#E4E1DA] bg-[#E9EDE4] p-7 sm:p-10 lg:grid-cols-[1fr_.8fr] lg:p-14">
           <div>
-            <p className="text-xs font-semibold text-[#7A4CCF]">لماذا وجهة؟</p>
+            <p className="text-xs font-semibold text-[#1E3A8A]">لماذا وجهة؟</p>
             <h2 className="mt-3 text-3xl font-bold leading-tight">
               لأن الإنجاز لا يكتمل من دون وجهة واضحة.
             </h2>
-            <p className="mt-5 max-w-2xl text-sm leading-8 text-[#655D75] sm:text-base">
+            <p className="mt-5 max-w-2xl text-sm leading-8 text-[#62635F] sm:text-base">
               تجمع المنصة الأهداف والمشاريع والمهام والمواعيد في سياق واحد؛
               ليعرف كل عضو ما عليه، ويعرف المدير أين يتقدم العمل وأين يحتاج إلى
               تدخل.
@@ -254,7 +325,7 @@ export default function Landing() {
             ].map(item => (
               <div
                 key={item}
-                className="flex items-center gap-3 rounded-xl border border-white bg-white/75 px-4 py-3 text-sm font-medium text-[#4E4860]"
+                className="flex items-center gap-3 rounded-xl border border-white bg-white/75 px-4 py-3 text-sm font-medium text-[#444943]"
               >
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                   <Check className="size-3.5" />
@@ -267,17 +338,16 @@ export default function Landing() {
       </section>
 
       <section className="px-5 pb-20 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl rounded-3xl bg-[#7A4CCF] px-6 py-12 text-center text-white shadow-[0_22px_60px_rgba(122,76,207,.24)] sm:px-10">
+        <div className="mx-auto max-w-7xl rounded-3xl bg-[#1E3A8A] px-6 py-12 text-center text-white shadow-[0_22px_60px_rgba(30,58,138,.24)] sm:px-10">
           <h2 className="text-2xl font-bold sm:text-3xl">
-            جاهز تشوف عمل فريقك بصورة أوضح؟
+            وجهتك القادمة تبدأ بخطوة.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-blue-100">
-            سجّل الدخول إلى مساحة عملك، أو استخدم رابط الدعوة الذي وصلك من مدير
-            الفريق.
+            أنشئ لوحتك، اختر قالبك، وابدأ ترتيب ما تريد الوصول إليه.
           </p>
           <Button
             onClick={startLogin}
-            className="mt-7 h-11 bg-white px-7 text-[#5F4FB5] hover:bg-slate-50"
+            className="mt-7 h-11 bg-white px-7 text-[#1E3A8A] hover:bg-slate-50"
           >
             تسجيل الدخول
           </Button>
@@ -286,19 +356,17 @@ export default function Landing() {
 
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-7 text-xs text-slate-500 sm:flex-row sm:px-8 lg:px-10">
-          <p className="font-semibold text-[#5A5570]">
-            وجهة — إدارة العمل بوضوح
-          </p>
+          <BrandLogo tagline />
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <p>منصة داخلية لتنظيم عمل الفرق وتحويل الخطط إلى نتائج.</p>
+            <p>مساحة عربية تجمع طموحك وخطواتك.</p>
             <a
-              className="font-medium text-[#7A4CCF] hover:underline"
+              className="font-medium text-[#1E3A8A] hover:underline"
               href="/privacy"
             >
               سياسة الخصوصية
             </a>
             <a
-              className="font-medium text-[#7A4CCF] hover:underline"
+              className="font-medium text-[#1E3A8A] hover:underline"
               href="/support"
             >
               الدعم
@@ -314,16 +382,16 @@ function DashboardPreview() {
   const tasks = [
     { title: "اعتماد خطة المشروع", meta: "اليوم", color: "bg-rose-500" },
     { title: "مراجعة المخرجات", meta: "غدًا", color: "bg-amber-400" },
-    { title: "تحديث تقرير التقدم", meta: "هذا الأسبوع", color: "bg-[#8570D0]" },
+    { title: "تحديث تقرير التقدم", meta: "هذا الأسبوع", color: "bg-[#7A2E5C]" },
   ];
 
   return (
     <div className="relative mx-auto w-full max-w-xl lg:mx-0">
-      <div className="absolute -inset-8 -z-10 rounded-full bg-[#8570D0]/10 blur-3xl" />
+      <div className="absolute -inset-8 -z-10 rounded-full bg-[#7A2E5C]/10 blur-3xl" />
       <div className="overflow-hidden rounded-3xl border border-white/80 bg-white shadow-[0_28px_80px_rgba(34,39,58,.14)]">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-[#8570D0]" />
+            <span className="size-2 rounded-full bg-[#7A2E5C]" />
             <p className="text-xs font-semibold">نظرة هذا الأسبوع</p>
           </div>
           <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
@@ -331,16 +399,16 @@ function DashboardPreview() {
           </span>
         </div>
         <div className="grid gap-4 p-5 sm:grid-cols-[1fr_.86fr]">
-          <div className="rounded-2xl bg-[#F8F6FF] p-4">
+          <div className="rounded-2xl bg-[#F5F2EE] p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold">إنجاز المشاريع</p>
-              <FolderKanban className="size-4 text-[#8570D0]" />
+              <FolderKanban className="size-4 text-[#7A2E5C]" />
             </div>
             <div className="mt-8 flex items-end gap-2">
               {[42, 64, 53, 82, 70, 92].map((height, index) => (
                 <span
                   key={index}
-                  className={`flex-1 rounded-t-md ${index === 5 ? "bg-[#7A4CCF]" : "bg-[#DAD1EE]"}`}
+                  className={`flex-1 rounded-t-md ${index === 5 ? "bg-[#1E3A8A]" : "bg-[#A6B69A]"}`}
                   style={{ height }}
                 />
               ))}
@@ -353,10 +421,10 @@ function DashboardPreview() {
           <div className="rounded-2xl border border-slate-100 p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold">التقدم العام</p>
-              <span className="text-sm font-bold text-[#7A4CCF]">76%</span>
+              <span className="text-sm font-bold text-[#1E3A8A]">76%</span>
             </div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-[76%] rounded-full bg-[#8570D0]" />
+              <div className="h-full w-[76%] rounded-full bg-[#7A2E5C]" />
             </div>
             <div className="mt-6 grid grid-cols-2 gap-2">
               <Stat
@@ -409,8 +477,8 @@ function Stat({
   label: string;
 }) {
   return (
-    <div className="rounded-xl bg-[#F8F6FF] p-3">
-      <span className="text-[#8570D0]">{icon}</span>
+    <div className="rounded-xl bg-[#F5F2EE] p-3">
+      <span className="text-[#7A2E5C]">{icon}</span>
       <p className="mt-2 text-lg font-bold">{value}</p>
       <p className="text-[10px] text-slate-500">{label}</p>
     </div>
@@ -431,17 +499,17 @@ function SectionIntro({
   return (
     <div className="max-w-2xl">
       <p
-        className={`text-xs font-semibold ${dark ? "text-[#C6B7EF]" : "text-[#7A4CCF]"}`}
+        className={`text-xs font-semibold ${dark ? "text-[#F6B801]" : "text-[#1E3A8A]"}`}
       >
         {eyebrow}
       </p>
       <h2
-        className={`mt-3 text-3xl font-bold tracking-tight sm:text-4xl ${dark ? "text-white" : "text-[#22273A]"}`}
+        className={`mt-3 text-3xl font-bold tracking-tight sm:text-4xl ${dark ? "text-white" : "text-[#1F2328]"}`}
       >
         {title}
       </h2>
       <p
-        className={`mt-4 text-sm leading-7 sm:text-base ${dark ? "text-slate-300" : "text-[#7B7289]"}`}
+        className={`mt-4 text-sm leading-7 sm:text-base ${dark ? "text-slate-300" : "text-[#62635F]"}`}
       >
         {description}
       </p>

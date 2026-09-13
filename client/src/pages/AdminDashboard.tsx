@@ -94,7 +94,7 @@ export default function AdminDashboard() {
   if (loading)
     return (
       <Centered>
-        <Loader2 className="size-7 animate-spin text-[#8570D0]" />
+        <Loader2 className="size-7 animate-spin text-[#7A2E5C]" />
       </Centered>
     );
   if (!user)
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
   if (isLoading)
     return (
       <Centered>
-        <Loader2 className="size-7 animate-spin text-[#8570D0]" />
+        <Loader2 className="size-7 animate-spin text-[#7A2E5C]" />
       </Centered>
     );
   if (error || !data)
@@ -140,11 +140,11 @@ export default function AdminDashboard() {
     data.boards.find(board => board.id === selectedBoardId) ?? data.boards[0];
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#F8F6FF] text-[#22273A]">
+    <main dir="rtl" className="min-h-screen bg-[#F5F2EE] text-[#1F2328]">
       <header className="app-topbar border-b border-slate-200 bg-white">
         <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8 lg:px-10">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-[#22273A] text-white">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-[#1F2328] text-white">
               <ShieldCheck className="size-5" />
             </span>
             <div>
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           <Button
             variant="outline"
             onClick={() => window.location.assign("/")}
-            className="gap-2 border-slate-200 bg-white text-[#5A5570]"
+            className="gap-2 border-slate-200 bg-white text-[#4E534E]"
           >
             <ArrowRight className="size-4" />
             <span className="hidden sm:inline">لوحة عملي</span>
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-semibold text-[#8570D0]">مدير المنصة</p>
+            <p className="text-xs font-semibold text-[#7A2E5C]">مدير المنصة</p>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
               إدارة المدراء واللوحات
             </h1>
@@ -219,14 +219,14 @@ export default function AdminDashboard() {
               </p>
             </div>
             {data.boards.length > 0 && (
-              <label className="text-xs font-medium text-[#5A5570]">
+              <label className="text-xs font-medium text-[#4E534E]">
                 لوحة القسم
                 <select
                   value={selectedBoard?.id ?? ""}
                   onChange={event =>
                     setSelectedBoardId(Number(event.target.value))
                   }
-                  className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#8570D0] sm:min-w-56"
+                  className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#7A2E5C] sm:min-w-56"
                 >
                   {data.boards.map(board => (
                     <option key={board.id} value={board.id}>
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
             <div className="mt-6 overflow-hidden rounded-xl border border-slate-200">
               <div className="overflow-x-auto">
                 <table className="responsive-data-table w-full min-w-[820px] text-right">
-                  <thead className="border-b border-slate-100 bg-[#FFFDFF] text-[11px] text-slate-500">
+                  <thead className="border-b border-slate-100 bg-[#FDFCFA] text-[11px] text-slate-500">
                     <tr>
                       <th className="px-4 py-3">العضو</th>
                       <th className="px-4 py-3">دوره في القسم</th>
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
                             className="px-4 py-4"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="flex size-9 items-center justify-center rounded-full bg-[#F0EAFE] text-xs font-bold text-[#7A4CCF]">
+                              <span className="flex size-9 items-center justify-center rounded-full bg-[#E9EDF7] text-xs font-bold text-[#1E3A8A]">
                                 {initials(member.name)}
                               </span>
                               <div>
@@ -289,13 +289,13 @@ export default function AdminDashboard() {
                           </td>
                           <td
                             data-label="دوره في القسم"
-                            className="px-4 py-4 text-xs text-[#5A5570]"
+                            className="px-4 py-4 text-xs text-[#4E534E]"
                           >
                             {member.role}
                           </td>
                           <td data-label="صلاحية اللوحة" className="px-4 py-4">
                             {accessLabel ? (
-                              <span className="rounded-full bg-[#F0EAFE] px-2.5 py-1 text-[11px] font-semibold text-[#7A4CCF]">
+                              <span className="rounded-full bg-[#E9EDF7] px-2.5 py-1 text-[11px] font-semibold text-[#1E3A8A]">
                                 {accessLabel}
                               </span>
                             ) : (
@@ -419,7 +419,7 @@ export default function AdminDashboard() {
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[.8fr_1.2fr]">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-[#F0EAFE] text-[#7A4CCF]">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-[#E9EDF7] text-[#1E3A8A]">
                 <MailPlus className="size-5" />
               </span>
               <div>
@@ -461,7 +461,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <form onSubmit={submit} className="mt-6 space-y-4">
-                <label className="block text-sm font-medium text-[#5A5570]">
+                <label className="block text-sm font-medium text-[#4E534E]">
                   اسم المدير
                   <Input
                     value={name}
@@ -472,7 +472,7 @@ export default function AdminDashboard() {
                     className="mt-2"
                   />
                 </label>
-                <label className="block text-sm font-medium text-[#5A5570]">
+                <label className="block text-sm font-medium text-[#4E534E]">
                   البريد الإلكتروني
                   <Input
                     value={email}
@@ -487,7 +487,7 @@ export default function AdminDashboard() {
                 <Button
                   type="submit"
                   disabled={invite.isPending}
-                  className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
+                  className="h-10 w-full bg-[#1E3A8A] hover:bg-[#172E6E]"
                 >
                   {invite.isPending
                     ? "جارٍ إنشاء الدعوة..."
@@ -506,7 +506,7 @@ export default function AdminDashboard() {
                     المدراء الذين فعّلوا حساباتهم.
                   </p>
                 </div>
-                <span className="rounded-full bg-[#F0EAFE] px-3 py-1 text-xs font-semibold text-[#7A4CCF]">
+                <span className="rounded-full bg-[#E9EDF7] px-3 py-1 text-xs font-semibold text-[#1E3A8A]">
                   {data.managers.length}
                 </span>
               </div>
@@ -518,7 +518,7 @@ export default function AdminDashboard() {
                       className="flex flex-col justify-between gap-3 py-4 sm:flex-row sm:items-center"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="flex size-9 items-center justify-center rounded-full bg-[#F0EAFE] text-xs font-bold text-[#7A4CCF]">
+                        <span className="flex size-9 items-center justify-center rounded-full bg-[#E9EDF7] text-xs font-bold text-[#1E3A8A]">
                           {initials(manager.name)}
                         </span>
                         <div>
@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="text-right sm:text-left">
-                        <p className="text-xs font-semibold text-[#5A5570]">
+                        <p className="text-xs font-semibold text-[#4E534E]">
                           {manager.boards.length} لوحة
                         </p>
                         <p className="mt-1 max-w-52 truncate text-xs text-slate-400">
@@ -583,7 +583,7 @@ export default function AdminDashboard() {
                         variant="outline"
                         disabled={reissue.isPending}
                         onClick={() => reissue.mutate({ id: item.id })}
-                        className="gap-1.5 border-[#D9CCF3] text-[#7A4CCF]"
+                        className="gap-1.5 border-[#CCD4E6] text-[#1E3A8A]"
                       >
                         <RefreshCw className="size-3.5" />
                         رابط جديد
@@ -631,7 +631,7 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-[#F0EAFE] text-[#7A4CCF]">
+      <span className="flex size-10 items-center justify-center rounded-xl bg-[#E9EDF7] text-[#1E3A8A]">
         {icon}
       </span>
       <p className="mt-5 text-3xl font-bold">{value}</p>
@@ -676,7 +676,7 @@ function Centered({ children }: { children: React.ReactNode }) {
   return (
     <main
       dir="rtl"
-      className="flex min-h-screen items-center justify-center bg-[#F8F6FF] p-6"
+      className="flex min-h-screen items-center justify-center bg-[#F5F2EE] p-6"
     >
       {children}
     </main>
@@ -693,11 +693,11 @@ function AccessCard({
 }) {
   return (
     <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center">
-      <ShieldCheck className="mx-auto size-8 text-[#8570D0]" />
+      <ShieldCheck className="mx-auto size-8 text-[#7A2E5C]" />
       <h1 className="mt-4 text-xl font-bold">{title}</h1>
       <Button
         onClick={onClick}
-        className="mt-6 bg-[#7A4CCF] hover:bg-[#684CB2]"
+        className="mt-6 bg-[#1E3A8A] hover:bg-[#172E6E]"
       >
         {action}
       </Button>

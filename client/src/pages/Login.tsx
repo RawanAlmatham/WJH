@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
+import { BrandJourney, BrandLogo } from "@/components/Brand";
 import { startGoogleLogin } from "@/const";
-import { Mail } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function Login() {
   useEffect(() => {
     const error = new URLSearchParams(window.location.search).get("error");
-    if (error) toast.error(decodeURIComponent(error));
+    if (error) toast.error(error);
   }, []);
 
   function loginWithGoogle() {
@@ -20,31 +21,67 @@ export default function Login() {
   return (
     <main
       dir="rtl"
-      className="public-shell flex min-h-screen items-center justify-center bg-[#F8F6FF] p-4 sm:p-6"
+      className="public-shell flex min-h-screen items-center justify-center bg-[#F5F2EE] p-4 sm:p-8"
     >
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold text-[#7A4CCF]">وجهة</p>
-        <h1 className="mt-2 text-2xl font-bold text-[#22273A]">تسجيل الدخول</h1>
-        <p className="mt-2 text-sm leading-6 text-[#6D6279]">
-          يمكنك الآن الدخول عبر حساب Google مباشرة.
-        </p>
-
-        <Button
-          type="button"
-          onClick={loginWithGoogle}
-          className="mt-6 h-11 w-full bg-white text-[#22273A] ring-1 ring-slate-200 hover:bg-slate-50"
-        >
-          <Mail className="size-4" />
-          الدخول باستخدام Gmail
-        </Button>
-        <div className="mt-5 flex items-center justify-between text-xs text-slate-500">
-          <a className="hover:text-[#7A4CCF] hover:underline" href="/support">
-            الدعم
+      <div className="brand-login">
+        <section className="brand-login-form">
+          <a
+            href="/"
+            className="self-start"
+            aria-label="وجهة — الصفحة الرئيسية"
+          >
+            <BrandLogo tagline />
           </a>
-          <a className="hover:text-[#7A4CCF] hover:underline" href="/privacy">
-            سياسة الخصوصية
+          <p className="mt-12 text-xs font-semibold text-[#7A2E5C]">
+            خطوتك الأولى
+          </p>
+          <h1 className="mt-3 text-3xl font-bold leading-snug text-[#1F2328]">
+            أهلًا بك في وجهة.
+          </h1>
+          <p className="mt-4 text-sm leading-7 text-[#62635F]">
+            مساحتك لترتيب الأفكار وتحويلها إلى إنجاز. سجّل الدخول أو أنشئ حسابك
+            باستخدام Google.
+          </p>
+          <Button
+            type="button"
+            onClick={loginWithGoogle}
+            className="mt-8 h-12 w-full gap-3 bg-[#1E3A8A] text-white hover:bg-[#172E6E]"
+          >
+            المتابعة باستخدام Google
+          </Button>
+          <p className="mt-5 flex items-center gap-2 text-xs leading-6 text-[#62635F]">
+            <Check className="size-4 shrink-0 text-[#45613F]" />
+            بعد الدخول، أنشئ لوحتك أو انضم إلى لوحة فريقك.
+          </p>
+          <div className="mt-10 flex items-center justify-between border-t border-[#E4E1DA] pt-5 text-xs text-[#62635F]">
+            <a className="hover:text-[#1E3A8A] hover:underline" href="/support">
+              الدعم
+            </a>
+            <a className="hover:text-[#1E3A8A] hover:underline" href="/privacy">
+              سياسة الخصوصية
+            </a>
+          </div>
+          <a
+            href="/"
+            className="mt-5 inline-flex items-center gap-2 self-start text-xs text-[#62635F] hover:text-[#1E3A8A]"
+          >
+            <ArrowRight className="size-3" />
+            العودة للرئيسية
           </a>
-        </div>
+        </section>
+        <aside className="brand-login-story">
+          <BrandJourney />
+          <h2 className="mt-5 text-3xl font-bold leading-relaxed">
+            لكل طموح،
+            <br />
+            <span className="text-[#1E3A8A]">وجهة.</span>
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-[#4E534E]">
+            لفريقك، لشركتك، لمتجرك، أو لنفسك.
+            <br />
+            البدايات مختلفة، والخطوة الأولى هنا.
+          </p>
+        </aside>
       </div>
     </main>
   );

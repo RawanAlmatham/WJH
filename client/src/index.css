@@ -1,13 +1,43 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "Wjh Display";
+  src: url("/brand/fonts/IBMPlexSansArabic-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+.brand-wordmark {
+  font-family: "Wjh Display", "IBM Plex Sans Arabic", sans-serif;
+}
+
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 
 .app-sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #d7d2e5 transparent;
+  scrollbar-color: #d2d3ca transparent;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
@@ -22,20 +52,36 @@
 
 .app-sidebar-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #d7d2e5;
+  background: #d2d3ca;
 }
 
 :root {
-  --background: oklch(0.982 0.003 248);
-  --foreground: oklch(0.31 0.035 251);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.31 0.035 251);
-  --primary: oklch(0.61 0.075 248);
-  --primary-foreground: oklch(1 0 0);
-  --muted: oklch(0.965 0.006 248);
-  --muted-foreground: oklch(0.58 0.025 250);
-  --border: oklch(0.91 0.01 248);
-  --ring: oklch(0.61 0.075 248);
+  --wjh-blue: #1e3a8a;
+  --wjh-blue-hover: #172e6e;
+  --wjh-berry: #7a2e5c;
+  --wjh-sage: #a6b69a;
+  --wjh-yellow: #f6b801;
+  --wjh-ivory: #f5f2ee;
+  --wjh-graphite: #1f2328;
+  --background: var(--wjh-ivory);
+  --foreground: var(--wjh-graphite);
+  --card: #fff;
+  --card-foreground: var(--wjh-graphite);
+  --popover: #fff;
+  --popover-foreground: var(--wjh-graphite);
+  --primary: var(--wjh-blue);
+  --primary-foreground: #fff;
+  --secondary: #e9ede4;
+  --secondary-foreground: #3c513b;
+  --accent: #e9edf7;
+  --accent-foreground: var(--wjh-blue);
+  --muted: #efebe5;
+  --muted-foreground: #62635f;
+  --destructive: #b42335;
+  --destructive-foreground: #fff;
+  --border: #e4e1da;
+  --input: #d2d3ca;
+  --ring: var(--wjh-blue);
   --radius: 0.75rem;
 }
 
@@ -60,8 +106,8 @@ body {
   max-width: 100%;
   min-width: 0;
   overflow-x: hidden;
-  background: #f8f6ff;
-  color: #22273a;
+  background: #f5f2ee;
+  color: #1f2328;
   font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 #root {
@@ -106,13 +152,13 @@ button:active {
   transform: scale(0.98);
 }
 ::selection {
-  background: #f2ecfa;
-  color: #22273a;
+  background: #e9edf7;
+  color: #1f2328;
 }
 .soft-grid {
   background-image: linear-gradient(
     to bottom,
-    rgba(122, 76, 207, 0.055) 1px,
+    rgba(30, 58, 138, 0.055) 1px,
     transparent 1px
   );
   background-size: 100% 64px;
@@ -122,7 +168,7 @@ button:active {
   height: 5px;
 }
 .thin-scroll::-webkit-scrollbar-thumb {
-  background: #d7d2e5;
+  background: #d2d3ca;
   border-radius: 8px;
 }
 .entry {
@@ -166,7 +212,7 @@ button:active {
     display: block;
     width: 100%;
     padding: 0.85rem 1rem;
-    border-bottom: 1px solid #f2ecfa;
+    border-bottom: 1px solid #e9edf7;
   }
   .responsive-data-table td {
     display: grid;
@@ -180,7 +226,7 @@ button:active {
   }
   .responsive-data-table td::before {
     content: attr(data-label);
-    color: #6d6279;
+    color: #62635f;
     font-size: 11px;
     font-weight: 500;
   }
@@ -234,10 +280,10 @@ button:active {
     display: block;
     min-width: 0;
     padding: 1rem;
-    border-bottom: 1px solid #f2ecfa;
+    border-bottom: 1px solid #e9edf7;
   }
   .responsive-data-table-wide tr:nth-child(odd) {
-    border-inline-end: 1px solid #f2ecfa;
+    border-inline-end: 1px solid #e9edf7;
   }
   .responsive-data-table-wide td {
     display: grid;
@@ -251,7 +297,7 @@ button:active {
   }
   .responsive-data-table-wide td::before {
     content: attr(data-label);
-    color: #6d6279;
+    color: #62635f;
     font-size: 11px;
     font-weight: 500;
   }
@@ -350,5 +396,181 @@ button:active {
   .presentation-controls {
     top: max(1rem, env(safe-area-inset-top));
     left: max(1rem, env(safe-area-inset-left));
+  }
+}
+
+/* وجهة — a clear path, warm surfaces, and a yellow point of arrival. */
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--wjh-blue);
+  outline-offset: 4px;
+}
+.brand-hero-wash {
+  background: radial-gradient(ellipse at 10% 40%, #e9ede4 0, transparent 55%);
+}
+.brand-hero-visual {
+  position: relative;
+  min-width: 0;
+  padding: 20px 0 30px;
+}
+.brand-journey {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.15;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+}
+.brand-journey-symbol {
+  position: relative;
+  width: 70%;
+  height: auto;
+  transform: rotate(-5deg);
+  filter: drop-shadow(0 20px 20px rgb(31 35 40 / 6%));
+}
+.brand-journey-orbit {
+  position: absolute;
+  inset: 1% 2%;
+  border: 1px dashed #b7beb0;
+  border-radius: 50%;
+  transform: rotate(-20deg);
+}
+.brand-journey-orbit::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--wjh-yellow);
+  left: 17%;
+  top: 9%;
+}
+.brand-journey-label {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--wjh-ivory);
+  color: #62635f;
+}
+.brand-journey-start {
+  bottom: 9%;
+  left: 2%;
+}
+.brand-journey-finish {
+  top: 3%;
+  right: 2%;
+  color: var(--wjh-blue);
+}
+.brand-arrival-card {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin: -4px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  border: 1px solid #e4e1da;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 15px 40px rgb(31 35 40 / 6%);
+  transform: rotate(2deg);
+}
+.brand-template-card {
+  border: 1px solid #e4e1da;
+  border-top: 5px solid;
+  border-radius: 18px;
+  padding: 24px;
+  background: #fff;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.brand-template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 35px rgb(31 35 40 / 7%);
+}
+.app-sidebar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    #f6b801 0 16%,
+    #a6b69a 16% 40%,
+    #7a2e5c 40% 65%,
+    #1e3a8a 65%
+  );
+}
+.brand-onboarding {
+  background-image:
+    radial-gradient(ellipse at 5% 10%, #e9ede4 0, transparent 45%),
+    radial-gradient(ellipse at 95% 95%, #f5eaf0 0, transparent 35%);
+}
+.brand-login {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(1040px, 100%);
+  border: 1px solid #e4e1da;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 25px 80px rgb(31 35 40 / 6%);
+}
+.brand-login-form {
+  padding: clamp(28px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.brand-login-story {
+  position: relative;
+  padding: 42px;
+  background: #e9ede4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.brand-login-story .brand-journey {
+  max-width: 330px;
+}
+.brand-login-story .brand-journey-label {
+  background: #e9ede4;
+}
+@media (max-width: 767px) {
+  .brand-login {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+  }
+  .brand-login-story {
+    display: none;
+  }
+  .brand-hero-visual {
+    padding-top: 0;
+    max-width: 440px;
+    margin-inline: auto;
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+  .brand-template-card,
+  .brand-template-card svg {
+    transition: none;
   }
 }

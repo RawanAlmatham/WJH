@@ -31,21 +31,21 @@ export default function InviteAccess() {
   return (
     <main
       dir="rtl"
-      className="flex min-h-screen items-center justify-center bg-[#F8F6FF] p-6"
+      className="flex min-h-screen items-center justify-center bg-[#F5F2EE] p-6"
     >
-      <section className="w-full max-w-md rounded-2xl border border-[#EDE6FB] bg-white p-8 text-center shadow-sm">
-        <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#F0EAFE] text-[#7A4CCF]">
+      <section className="w-full max-w-md rounded-2xl border border-[#E9EDF7] bg-white p-8 text-center shadow-sm">
+        <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#E9EDF7] text-[#1E3A8A]">
           <Users className="size-6" />
         </span>
-        <p className="mt-5 text-xs font-semibold text-[#8570D0]">
+        <p className="mt-5 text-xs font-semibold text-[#7A2E5C]">
           وجهة · دعوة فريق
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-[#22273A]">
+        <h1 className="mt-2 text-2xl font-bold text-[#1F2328]">
           الانضمام إلى {data.board?.name ?? "مساحة العمل"}
         </h1>
-        <p className="mt-3 text-sm leading-7 text-[#6D6279]">
+        <p className="mt-3 text-sm leading-7 text-[#62635F]">
           مرحبًا {data.member.name}، تمت دعوتك بدور{" "}
-          <strong className="font-semibold text-[#5A5570]">
+          <strong className="font-semibold text-[#4E534E]">
             {data.member.role}
           </strong>
           .
@@ -58,7 +58,7 @@ export default function InviteAccess() {
         ) : !user ? (
           <Button
             onClick={startLogin}
-            className="mt-7 h-11 w-full gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
+            className="mt-7 h-11 w-full gap-2 bg-[#1E3A8A] hover:bg-[#172E6E]"
           >
             <ShieldCheck className="size-4" />
             تسجيل الدخول أو إنشاء حساب
@@ -67,7 +67,7 @@ export default function InviteAccess() {
           <Button
             disabled={accept.isPending}
             onClick={() => accept.mutate({ token })}
-            className="mt-7 h-11 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
+            className="mt-7 h-11 w-full bg-[#1E3A8A] hover:bg-[#172E6E]"
           >
             {accept.isPending ? (
               <>
@@ -84,7 +84,7 @@ export default function InviteAccess() {
             {accept.error.message}
           </p>
         )}
-        <p className="mt-4 text-[11px] text-[#6D6279]">
+        <p className="mt-4 text-[11px] text-[#62635F]">
           استخدم البريد: {data.invitation.email}
         </p>
       </section>
@@ -96,12 +96,12 @@ function Status({ title, text }: { title?: string; text: string }) {
   return (
     <main
       dir="rtl"
-      className="flex min-h-screen items-center justify-center bg-[#F8F6FF] p-6"
+      className="flex min-h-screen items-center justify-center bg-[#F5F2EE] p-6"
     >
       <section className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center">
-        {title && <h1 className="text-xl font-bold text-[#22273A]">{title}</h1>}
+        {title && <h1 className="text-xl font-bold text-[#1F2328]">{title}</h1>}
         <p
-          className={`${title ? "mt-3" : ""} text-sm leading-6 text-[#6D6279]`}
+          className={`${title ? "mt-3" : ""} text-sm leading-6 text-[#62635F]`}
         >
           {text}
         </p>

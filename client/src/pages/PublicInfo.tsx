@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/Brand";
 import { ArrowRight, Mail, ShieldCheck } from "lucide-react";
 
 const updatedAt = "8 سبتمبر 2026";
@@ -14,17 +15,17 @@ function PageShell({
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-[#F8F6FF] px-5 py-10 text-[#22273A] sm:px-8"
+      className="min-h-screen bg-[#F5F2EE] px-5 py-10 text-[#1F2328] sm:px-8"
     >
       <div className="mx-auto max-w-3xl">
         <a
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#7A4CCF] hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[#1E3A8A] hover:underline"
         >
-          <ArrowRight className="size-4" /> العودة إلى وجهة
+          <BrandLogo /> <span className="mr-3 text-xs">العودة للرئيسية</span>
         </a>
         <article className="mt-6 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F0EAFE] text-[#7A4CCF]">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-[#E9EDF7] text-[#1E3A8A]">
             <ShieldCheck className="size-6" />
           </div>
           <h1 className="mt-5 text-3xl font-bold">{title}</h1>
@@ -48,7 +49,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="text-lg font-bold text-[#4E4860]">{title}</h2>
+      <h2 className="text-lg font-bold text-[#444943]">{title}</h2>
       <div className="mt-2">{children}</div>
     </section>
   );
@@ -99,7 +100,7 @@ export function Privacy() {
         <p>
           للاستفسارات المتعلقة بالخصوصية تواصل عبر{" "}
           <a
-            className="font-semibold text-[#7A4CCF] hover:underline"
+            className="font-semibold text-[#1E3A8A] hover:underline"
             href="mailto:ralmatham@ksaa.gov.sa"
           >
             ralmatham@ksaa.gov.sa
@@ -129,7 +130,7 @@ export function Support() {
       </Section>
       <Section title="التواصل مع الدعم">
         <a
-          className="inline-flex items-center gap-2 rounded-xl bg-[#7A4CCF] px-5 py-3 font-semibold text-white hover:bg-[#684CB2]"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#1E3A8A] px-5 py-3 font-semibold text-white hover:bg-[#172E6E]"
           href="mailto:ralmatham@ksaa.gov.sa?subject=دعم%20منصة%20وجهة"
         >
           <Mail className="size-4" /> ralmatham@ksaa.gov.sa

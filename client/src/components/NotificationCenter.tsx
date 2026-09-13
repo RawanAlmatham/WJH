@@ -50,7 +50,7 @@ export function NotificationCenter({
         <button
           type="button"
           aria-label={`الإشعارات${unreadCount ? `، ${unreadCount} غير مقروء` : ""}`}
-          className="relative flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#5A5570] transition hover:bg-slate-50"
+          className="relative flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#4E534E] transition hover:bg-slate-50"
         >
           <Bell className="size-4.5" />
           {unreadCount > 0 && (
@@ -69,8 +69,8 @@ export function NotificationCenter({
         <div className="border-b border-slate-100 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold text-[#22273A]">الإشعارات</h2>
-              <p className="mt-1 text-[11px] text-[#6D6279]">
+              <h2 className="text-sm font-bold text-[#1F2328]">الإشعارات</h2>
+              <p className="mt-1 text-[11px] text-[#62635F]">
                 {unreadCount
                   ? `${unreadCount} إشعار غير مقروء`
                   : "لا توجد تحديثات جديدة"}
@@ -81,7 +81,7 @@ export function NotificationCenter({
                 type="button"
                 onClick={() => markAll.mutate()}
                 disabled={markAll.isPending}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-[#7A4CCF] disabled:opacity-50"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-[#1E3A8A] disabled:opacity-50"
               >
                 <CheckCheck className="size-4" />
                 تحديد الكل كمقروء
@@ -100,7 +100,7 @@ export function NotificationCenter({
                 className={cn(
                   "rounded-md px-3 py-1.5",
                   unreadOnly === value
-                    ? "bg-white font-semibold text-[#7A4CCF] shadow-sm"
+                    ? "bg-white font-semibold text-[#1E3A8A] shadow-sm"
                     : "text-slate-500"
                 )}
               >
@@ -125,21 +125,21 @@ export function NotificationCenter({
                 }}
                 className={cn(
                   "relative block w-full border-b border-slate-100 px-4 py-3.5 text-right transition last:border-0 hover:bg-slate-50",
-                  !item.readAt && "bg-[#F6F3FF]"
+                  !item.readAt && "bg-[#F3F0EA]"
                 )}
               >
                 {!item.readAt && (
-                  <span className="absolute right-1.5 top-5 size-1.5 rounded-full bg-[#7A4CCF]" />
+                  <span className="absolute right-1.5 top-5 size-1.5 rounded-full bg-[#1E3A8A]" />
                 )}
-                <p className="text-sm font-semibold text-[#3F3A52]">
+                <p className="text-sm font-semibold text-[#343B35]">
                   {item.title}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-[#615A74]">
+                <p className="mt-1 text-xs leading-5 text-[#555A54]">
                   {item.message}
                   {item.occurrenceCount > 1 &&
                     ` · ${item.occurrenceCount} تحديثات`}
                 </p>
-                <p className="mt-2 text-[10px] text-[#9089A2]">
+                <p className="mt-2 text-[10px] text-[#6D716B]">
                   {notificationTime(item.updatedAt)}
                   {item.actorName ? ` · بواسطة ${item.actorName}` : ""}
                 </p>
@@ -148,12 +148,12 @@ export function NotificationCenter({
           ) : (
             <div className="px-6 py-14 text-center">
               <Inbox className="mx-auto size-8 text-slate-300" />
-              <p className="mt-3 text-sm font-semibold text-[#5A5570]">
+              <p className="mt-3 text-sm font-semibold text-[#4E534E]">
                 {unreadOnly
                   ? "لا توجد إشعارات غير مقروءة"
                   : "لا توجد إشعارات بعد"}
               </p>
-              <p className="mt-1 text-xs leading-5 text-[#9089A2]">
+              <p className="mt-1 text-xs leading-5 text-[#6D716B]">
                 ستظهر هنا التحديثات التي تخصك عند حدوثها.
               </p>
             </div>

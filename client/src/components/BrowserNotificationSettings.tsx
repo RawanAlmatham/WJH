@@ -130,7 +130,7 @@ export function BrowserNotificationSettings() {
     <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-[#22273A]">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-[#1F2328]">
             {activeForAccount ? (
               <BellRing className="size-4 text-emerald-600" />
             ) : (
@@ -138,7 +138,7 @@ export function BrowserNotificationSettings() {
             )}
             إشعارات المتصفح
           </h2>
-          <p className="mt-2 max-w-xl text-xs leading-6 text-[#6D6279]">
+          <p className="mt-2 max-w-xl text-xs leading-6 text-[#62635F]">
             إشعارات وجهة الداخلية تعمل دائمًا. يمكنك تفعيل إشعارات المتصفح لتصلك
             التنبيهات حتى عندما لا تكون الصفحة مفتوحة.
           </p>
@@ -160,7 +160,7 @@ export function BrowserNotificationSettings() {
               void enable().catch(error => toast.error(error.message))
             }
             disabled={!supported || config.isLoading || save.isPending}
-            className="h-9 bg-[#7A4CCF] text-xs hover:bg-[#684CB2]"
+            className="h-9 bg-[#1E3A8A] text-xs hover:bg-[#172E6E]"
           >
             تفعيل إشعارات المتصفح
           </Button>
@@ -182,21 +182,21 @@ export function BrowserNotificationSettings() {
       )}
       {activeForAccount && (
         <div className="mt-5 border-t border-slate-100 pt-4">
-          <p className="mb-3 text-xs font-semibold text-[#5A5570]">
+          <p className="mb-3 text-xs font-semibold text-[#4E534E]">
             اختر أنواع إشعارات المتصفح
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {defaultBrowserNotificationTypes.map(type => (
               <label
                 key={type}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-[#FFFDFF] px-3 py-2.5 text-xs text-[#5A5570]"
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-[#FDFCFA] px-3 py-2.5 text-xs text-[#4E534E]"
               >
                 {notificationTypeLabels[type]}
                 <Switch
                   checked={enabledTypes.includes(type)}
                   onCheckedChange={checked => void toggleType(type, checked)}
                   aria-label={`إشعارات ${notificationTypeLabels[type]}`}
-                  className="data-[state=checked]:bg-[#7A4CCF]"
+                  className="data-[state=checked]:bg-[#1E3A8A]"
                 />
               </label>
             ))}

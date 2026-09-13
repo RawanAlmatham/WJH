@@ -82,7 +82,7 @@ jobs:
           DEPLOYED_COMMIT: ${{ github.sha }}
         run: |
           ssh -i ~/.ssh/wjh_deploy deploy@72.61.156.208 \
-            "cd /opt/wjh && docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --remove-orphans && printf '%s\\n' '$DEPLOYED_COMMIT' > .deployed-commit"
+            "cd /opt/wjh && docker compose --env-file .env.production -f docker-compose.prod.yml -f docker-compose.override.yml up -d --build --remove-orphans && printf '%s\\n' '$DEPLOYED_COMMIT' > .deployed-commit"
 
       - name: Check production
         run: |

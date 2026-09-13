@@ -27,9 +27,9 @@ export default function BoardJoin() {
     return (
       <div
         dir="rtl"
-        className="flex min-h-screen items-center justify-center bg-[#F8F6FF]"
+        className="flex min-h-screen items-center justify-center bg-[#F5F2EE]"
       >
-        <Loader2 className="size-6 animate-spin text-[#8570D0]" />
+        <Loader2 className="size-6 animate-spin text-[#7A2E5C]" />
       </div>
     );
   if (!user)
@@ -76,11 +76,11 @@ function JoinCard({
   return (
     <div
       dir="rtl"
-      className="flex min-h-screen items-center justify-center bg-[#F8F6FF] p-5"
+      className="flex min-h-screen items-center justify-center bg-[#F5F2EE] p-5"
     >
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm">
         <span
-          className={`mx-auto flex size-12 items-center justify-center rounded-2xl ${success ? "bg-emerald-50 text-emerald-700" : "bg-[#F0EAFE] text-[#7A4CCF]"}`}
+          className={`mx-auto flex size-12 items-center justify-center rounded-2xl ${success ? "bg-emerald-50 text-emerald-700" : "bg-[#E9EDF7] text-[#1E3A8A]"}`}
         >
           {success ? (
             <CheckCircle2 className="size-6" />
@@ -89,10 +89,10 @@ function JoinCard({
           )}
         </span>
         <h1 className="mt-5 text-xl font-bold">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-[#6D6279]">{description}</p>
+        <p className="mt-2 text-sm leading-6 text-[#62635F]">{description}</p>
         <Button
           onClick={onClick}
-          className="mt-6 h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
+          className="mt-6 h-10 w-full bg-[#1E3A8A] hover:bg-[#172E6E]"
         >
           {action}
         </Button>
