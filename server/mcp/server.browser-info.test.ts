@@ -4,15 +4,15 @@ import {
   shouldShowMcpBrowserInfo,
 } from "./server";
 
-describe("Athr MCP browser information page", () => {
+describe("WJH MCP browser information page", () => {
   it("requests read and write access when an MCP client authenticates", () => {
-    expect(MCP_DEFAULT_AUTHORIZATION_SCOPES).toBe("athr:read athr:write");
+    expect(MCP_DEFAULT_AUTHORIZATION_SCOPES).toBe("wjh:read wjh:write");
   });
 
   it("shows the status page only for unauthenticated browser navigation", () => {
     expect(shouldShowMcpBrowserInfo("GET", "text/html", "")).toBe(true);
     expect(
-      shouldShowMcpBrowserInfo("GET", "text/html", "Bearer athr_at_example")
+      shouldShowMcpBrowserInfo("GET", "text/html", "Bearer wjh_at_example")
     ).toBe(false);
   });
 

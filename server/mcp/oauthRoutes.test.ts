@@ -8,7 +8,7 @@ import {
 } from "./oauthRoutes";
 import { normalizeOAuthScopes } from "./oauthStore";
 
-describe("Athr MCP OAuth validation", () => {
+describe("WJH MCP OAuth validation", () => {
   it("allows HTTPS callbacks and local HTTP callbacks", () => {
     expect(
       isAllowedOAuthRedirectUri(
@@ -37,7 +37,7 @@ describe("Athr MCP OAuth validation", () => {
   });
 
   it("verifies an S256 PKCE challenge", () => {
-    const verifier = "athr-test-verifier-which-is-long-enough-1234567890";
+    const verifier = "wjh-test-verifier-which-is-long-enough-1234567890";
     const challenge = createHash("sha256").update(verifier).digest("base64url");
     expect(verifyPkceChallenge(verifier, challenge)).toBe(true);
     expect(verifyPkceChallenge(verifier, `${challenge}x`)).toBe(false);
@@ -45,11 +45,11 @@ describe("Athr MCP OAuth validation", () => {
   });
 
   it("normalizes supported scopes and rejects unknown access", () => {
-    expect(normalizeOAuthScopes("athr:read athr:write athr:read")).toEqual([
-      "athr:read",
-      "athr:write",
+    expect(normalizeOAuthScopes("wjh:read wjh:write wjh:read")).toEqual([
+      "wjh:read",
+      "wjh:write",
     ]);
-    expect(() => normalizeOAuthScopes("athr:admin")).toThrow(
+    expect(() => normalizeOAuthScopes("wjh:admin")).toThrow(
       "صلاحية OAuth غير مدعومة"
     );
   });

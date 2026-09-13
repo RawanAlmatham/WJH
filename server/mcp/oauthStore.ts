@@ -8,8 +8,8 @@ import {
 } from "../../drizzle/schema";
 import { getDb } from "../db";
 
-export const MCP_READ_SCOPE = "athr:read";
-export const MCP_WRITE_SCOPE = "athr:write";
+export const MCP_READ_SCOPE = "wjh:read";
+export const MCP_WRITE_SCOPE = "wjh:write";
 export const MCP_SCOPES = [MCP_READ_SCOPE, MCP_WRITE_SCOPE] as const;
 
 const AUTHORIZATION_CODE_TTL_MS = 10 * 60 * 1000;
@@ -21,11 +21,11 @@ export function hashOAuthSecret(value: string) {
 }
 
 function accessToken() {
-  return `athr_at_${nanoid(56)}`;
+  return `wjh_at_${nanoid(56)}`;
 }
 
 function refreshToken() {
-  return `athr_rt_${nanoid(64)}`;
+  return `wjh_rt_${nanoid(64)}`;
 }
 
 export function normalizeOAuthScopes(value: unknown) {
@@ -53,7 +53,7 @@ export async function registerOAuthClient(input: {
 }) {
   const database = await getDb();
   if (!database) throw new Error("قاعدة البيانات غير متاحة حاليًا");
-  const clientId = `athr_client_${nanoid(40)}`;
+  const clientId = `wjh_client_${nanoid(40)}`;
   await database.insert(oauthClients).values({
     clientId,
     clientName: input.clientName.trim().slice(0, 180) || "MCP client",
@@ -92,7 +92,7 @@ export async function createAuthorizationCode(input: {
 }) {
   const database = await getDb();
   if (!database) throw new Error("قاعدة البيانات غير متاحة حاليًا");
-  const code = `athr_code_${nanoid(56)}`;
+  const code = `wjh_code_${nanoid(56)}`;
   await database.insert(oauthAuthorizationCodes).values({
     codeHash: hashOAuthSecret(code),
     userId: input.userId,

@@ -97,8 +97,8 @@ export function showMcpBrowserInfo(
         <article class="platform">
           <h2>Gemini</h2>
           <p>استخدم Gemini CLI أو Antigravity الداعم لـRemote MCP.</p>
-          <ol><li>افتح ~/.gemini/settings.json.</li><li>أضف الإعداد التالي وأعد تشغيل Gemini CLI.</li><li>نفّذ /mcp auth athr وأكمل الموافقة.</li></ol>
-          <pre>{"mcpServers":{"athr":{"httpUrl":"${MCP_RESOURCE_URL}"}}}</pre>
+          <ol><li>افتح ~/.gemini/settings.json.</li><li>أضف الإعداد التالي وأعد تشغيل Gemini CLI.</li><li>نفّذ /mcp auth wjh وأكمل الموافقة.</li></ol>
+          <pre>{"mcpServers":{"wjh":{"httpUrl":"${MCP_RESOURCE_URL}"}}}</pre>
           <a class="action" href="https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md" target="_blank" rel="noreferrer">فتح دليل Gemini MCP ←</a>
         </article>
         <article class="platform">
@@ -114,8 +114,8 @@ export function showMcpBrowserInfo(
         <article class="platform">
           <h2>Kimi</h2>
           <p>استخدم Kimi Code CLI الذي يدعم خوادم MCP البعيدة وOAuth.</p>
-          <ol><li>افتح ~/.kimi-code/mcp.json.</li><li>أضف الإعداد التالي وابدأ جلسة جديدة.</li><li>نفّذ /mcp-config login athr وأكمل الموافقة.</li></ol>
-          <pre>{"mcpServers":{"athr":{"url":"${MCP_RESOURCE_URL}"}}}</pre>
+          <ol><li>افتح ~/.kimi-code/mcp.json.</li><li>أضف الإعداد التالي وابدأ جلسة جديدة.</li><li>نفّذ /mcp-config login wjh وأكمل الموافقة.</li></ol>
+          <pre>{"mcpServers":{"wjh":{"url":"${MCP_RESOURCE_URL}"}}}</pre>
           <a class="action" href="https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html" target="_blank" rel="noreferrer">فتح دليل Kimi MCP ←</a>
         </article>
         <article class="platform generic">
@@ -239,7 +239,7 @@ function includesSearch(value: unknown, search: string) {
   );
 }
 
-async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
+async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
   const server = new McpServer(
     { name: "وجهة لإدارة الأعمال", version: "1.0.0" },
     {
@@ -250,7 +250,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   const caller = createCaller(user);
 
   server.registerTool(
-    "athr_get_context",
+    "wjh_get_context",
     {
       title: "عرض سياق حساب وجهة",
       description:
@@ -279,11 +279,11 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_select_board",
+    "wjh_select_board",
     {
       title: "اختيار لوحة وجهة",
       description:
-        "يغيّر اللوحة الحالية التي ستُنفذ عليها بقية أوامر وجهة. استخدم معرفًا من athr_get_context.",
+        "يغيّر اللوحة الحالية التي ستُنفذ عليها بقية أوامر وجهة. استخدم معرفًا من wjh_get_context.",
       inputSchema: { board_id: z.number().int().positive() },
       annotations: {
         readOnlyHint: false,
@@ -304,7 +304,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_team",
+    "wjh_list_team",
     {
       title: "عرض فريق اللوحة",
       description:
@@ -341,7 +341,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_projects",
+    "wjh_list_projects",
     {
       title: "عرض مشاريع وجهة",
       description:
@@ -373,7 +373,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_create_project",
+    "wjh_create_project",
     {
       title: "إنشاء مشروع",
       description:
@@ -424,7 +424,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_update_project",
+    "wjh_update_project",
     {
       title: "تعديل مشروع",
       description:
@@ -483,7 +483,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_delete_project",
+    "wjh_delete_project",
     {
       title: "حذف مشروع",
       description:
@@ -506,7 +506,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_tasks",
+    "wjh_list_tasks",
     {
       title: "عرض مهام وجهة",
       description:
@@ -541,7 +541,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_create_task",
+    "wjh_create_task",
     {
       title: "إنشاء مهمة",
       description:
@@ -589,7 +589,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_update_task",
+    "wjh_update_task",
     {
       title: "تعديل مهمة",
       description:
@@ -658,7 +658,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_delete_task",
+    "wjh_delete_task",
     {
       title: "حذف مهمة",
       description:
@@ -681,7 +681,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_set_task_support",
+    "wjh_set_task_support",
     {
       title: "تحديد احتياج المهمة للدعم",
       description:
@@ -712,7 +712,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_add_task_comment",
+    "wjh_add_task_comment",
     {
       title: "إضافة تعليق على مهمة",
       description: "يضيف تعليقًا باسم المستخدم الحالي إلى مهمة متاحة له.",
@@ -743,7 +743,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_lessons",
+    "wjh_list_lessons",
     {
       title: "عرض الدروس المستفادة",
       description:
@@ -784,7 +784,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_create_lesson",
+    "wjh_create_lesson",
     {
       title: "إضافة درس مستفاد",
       description: "يضيف درسًا مستفادًا ويربطه بمشروع متاح للمستخدم.",
@@ -820,7 +820,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_update_lesson",
+    "wjh_update_lesson",
     {
       title: "تعديل درس مستفاد",
       description:
@@ -863,7 +863,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_delete_lesson",
+    "wjh_delete_lesson",
     {
       title: "حذف درس مستفاد",
       description:
@@ -888,7 +888,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_goals",
+    "wjh_list_goals",
     {
       title: "عرض أهداف الخطة السنوية",
       description: "يعرض أهداف الخطة السنوية في اللوحة الحالية وتقدمها.",
@@ -905,7 +905,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_create_goal",
+    "wjh_create_goal",
     {
       title: "إضافة هدف سنوي",
       description: "يضيف هدفًا للخطة السنوية. متاح لمدير اللوحة فقط.",
@@ -937,7 +937,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_update_goal",
+    "wjh_update_goal",
     {
       title: "تعديل هدف سنوي",
       description: "يعدّل الحقول المحددة في هدف سنوي. متاح لمدير اللوحة فقط.",
@@ -978,7 +978,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_delete_goal",
+    "wjh_delete_goal",
     {
       title: "حذف هدف سنوي",
       description:
@@ -1001,7 +1001,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_calendar",
+    "wjh_list_calendar",
     {
       title: "عرض تقويم وجهة",
       description:
@@ -1035,7 +1035,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_create_calendar_event",
+    "wjh_create_calendar_event",
     {
       title: "إضافة موعد للتقويم",
       description:
@@ -1068,7 +1068,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_delete_calendar_event",
+    "wjh_delete_calendar_event",
     {
       title: "حذف موعد من التقويم",
       description: "يحذف موعدًا متاحًا للمستخدم من التقويم بعد تأكيده.",
@@ -1092,7 +1092,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_get_report_summary",
+    "wjh_get_report_summary",
     {
       title: "عرض ملخص تقارير وجهة",
       description: "يعرض مؤشرات إنجاز وتأخر المهام ضمن نطاق وصول المستخدم.",
@@ -1108,7 +1108,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_list_research_feed",
+    "wjh_list_research_feed",
     {
       title: "عرض الخلاصات البحثية",
       description:
@@ -1143,7 +1143,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_save_research_translations",
+    "wjh_save_research_translations",
     {
       title: "حفظ ترجمات ملخصات الأبحاث",
       description:
@@ -1184,7 +1184,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_create_research_interest",
+    "wjh_create_research_interest",
     {
       title: "إضافة موضوع للخلاصات البحثية",
       description:
@@ -1210,7 +1210,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_update_research_interest",
+    "wjh_update_research_interest",
     {
       title: "تعديل موضوع للخلاصات البحثية",
       description:
@@ -1241,7 +1241,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_delete_research_interest",
+    "wjh_delete_research_interest",
     {
       title: "حذف موضوع من الخلاصات البحثية",
       description:
@@ -1266,7 +1266,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_link_research_item",
+    "wjh_link_research_item",
     {
       title: "ربط خلاصة بحثية بمشروع",
       description:
@@ -1295,7 +1295,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_invite_team_member",
+    "wjh_invite_team_member",
     {
       title: "دعوة عضو إلى فريق اللوحة",
       description:
@@ -1335,7 +1335,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_update_team_member_access",
+    "wjh_update_team_member_access",
     {
       title: "تعديل وصول عضو الفريق",
       description:
@@ -1392,7 +1392,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_reissue_team_invitation",
+    "wjh_reissue_team_invitation",
     {
       title: "إعادة إصدار دعوة عضو",
       description:
@@ -1417,7 +1417,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   );
 
   server.registerTool(
-    "athr_remove_team_member",
+    "wjh_remove_team_member",
     {
       title: "حذف عضو من فريق اللوحة",
       description:
@@ -1507,7 +1507,7 @@ const mcpHandler = createMcpHandler(
       throw new Error("يلزم تسجيل الدخول إلى وجهة");
     const user = await db.getUserById(userId);
     if (!user) throw new Error("حساب وجهة غير موجود");
-    return createAthrMcpServer(user, authInfo);
+    return createWjhMcpServer(user, authInfo);
   },
   {
     responseMode: "json",
