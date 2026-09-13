@@ -222,7 +222,7 @@ async function fetchArxivBatch(keywords: string[]) {
       {
         headers: {
           Accept: "application/atom+xml, application/xml;q=0.9",
-          "User-Agent": "Athr-Research-Feeds/1.0",
+          "User-Agent": "WJH-Research-Feeds/1.0",
         },
         signal: controller.signal,
       }
@@ -274,7 +274,7 @@ async function fetchOpenAlexBatch(keywords: string[]) {
       {
         headers: {
           Accept: "application/json",
-          "User-Agent": "Athr-Research-Feeds/1.0 (https://athr.aidept.io)",
+          "User-Agent": "WJH-Research-Feeds/1.0 (https://wjh.ralmatham.ai)",
           ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         },
         signal: controller.signal,

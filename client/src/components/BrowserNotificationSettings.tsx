@@ -130,7 +130,7 @@ export function BrowserNotificationSettings() {
     <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-[#26364A]">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-[#22273A]">
             {activeForAccount ? (
               <BellRing className="size-4 text-emerald-600" />
             ) : (
@@ -138,8 +138,8 @@ export function BrowserNotificationSettings() {
             )}
             إشعارات المتصفح
           </h2>
-          <p className="mt-2 max-w-xl text-xs leading-6 text-[#7C8A9A]">
-            إشعارات أثر الداخلية تعمل دائمًا. يمكنك تفعيل إشعارات المتصفح لتصلك
+          <p className="mt-2 max-w-xl text-xs leading-6 text-[#6D6279]">
+            إشعارات وجهة الداخلية تعمل دائمًا. يمكنك تفعيل إشعارات المتصفح لتصلك
             التنبيهات حتى عندما لا تكون الصفحة مفتوحة.
           </p>
         </div>
@@ -160,7 +160,7 @@ export function BrowserNotificationSettings() {
               void enable().catch(error => toast.error(error.message))
             }
             disabled={!supported || config.isLoading || save.isPending}
-            className="h-9 bg-[#52769F] text-xs hover:bg-[#46698F]"
+            className="h-9 bg-[#7A4CCF] text-xs hover:bg-[#684CB2]"
           >
             تفعيل إشعارات المتصفح
           </Button>
@@ -170,33 +170,33 @@ export function BrowserNotificationSettings() {
       {!supported && (
         <div className="mt-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800">
           <CircleAlert className="mt-0.5 size-4 shrink-0" />
-          هذا المتصفح لا يدعم Web Push. ستستمر إشعارات أثر الداخلية بالعمل.
+          هذا المتصفح لا يدعم Web Push. ستستمر إشعارات وجهة الداخلية بالعمل.
         </div>
       )}
       {supported && permission === "denied" && (
         <div className="mt-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800">
           <CircleAlert className="mt-0.5 size-4 shrink-0" />
           الإذن مرفوض. افتح إعدادات الموقع في المتصفح، وغيّر «الإشعارات» إلى
-          «سماح»، ثم أعد تحميل الصفحة. لن يطلب أثر الإذن مرة أخرى تلقائيًا.
+          «سماح»، ثم أعد تحميل الصفحة. لن يطلب وجهة الإذن مرة أخرى تلقائيًا.
         </div>
       )}
       {activeForAccount && (
         <div className="mt-5 border-t border-slate-100 pt-4">
-          <p className="mb-3 text-xs font-semibold text-[#52657A]">
+          <p className="mb-3 text-xs font-semibold text-[#5A5570]">
             اختر أنواع إشعارات المتصفح
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {defaultBrowserNotificationTypes.map(type => (
               <label
                 key={type}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-[#FCFDFE] px-3 py-2.5 text-xs text-[#52657A]"
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-[#FFFDFF] px-3 py-2.5 text-xs text-[#5A5570]"
               >
                 {notificationTypeLabels[type]}
                 <Switch
                   checked={enabledTypes.includes(type)}
                   onCheckedChange={checked => void toggleType(type, checked)}
                   aria-label={`إشعارات ${notificationTypeLabels[type]}`}
-                  className="data-[state=checked]:bg-[#52769F]"
+                  className="data-[state=checked]:bg-[#7A4CCF]"
                 />
               </label>
             ))}

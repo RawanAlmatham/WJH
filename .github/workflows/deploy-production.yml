@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: athr-production
+  group: wjh-production
   cancel-in-progress: false
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
         run: pnpm verify
 
   deploy:
-  name: Deploy to wjh.ralmatham.ai
+    name: Deploy to wjh.ralmatham.ai
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -49,12 +49,12 @@ jobs:
 
       - name: Configure deployment SSH key
         env:
-          ATHR_DEPLOY_SSH_KEY: ${{ secrets.ATHR_DEPLOY_SSH_KEY }}
+          WJH_DEPLOY_SSH_KEY: ${{ secrets.WJH_DEPLOY_SSH_KEY }}
         run: |
-          test -n "$ATHR_DEPLOY_SSH_KEY"
+          test -n "$WJH_DEPLOY_SSH_KEY"
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$ATHR_DEPLOY_SSH_KEY" > ~/.ssh/athr_deploy
-          chmod 600 ~/.ssh/athr_deploy
+          printf '%s\n' "$WJH_DEPLOY_SSH_KEY" > ~/.ssh/wjh_deploy
+          chmod 600 ~/.ssh/wjh_deploy
           cp .github/known_hosts ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
@@ -66,6 +66,7 @@ jobs:
             --exclude='.env' \
             --exclude='.env.*' \
             --exclude='.deployed-commit' \
+            --exclude='docker-compose.override.yml' \
             --exclude='node_modules/' \
             --exclude='dist/' \
             --exclude='work/' \
@@ -73,15 +74,15 @@ jobs:
             --exclude='android/' \
             --exclude='ios/' \
             --exclude='*.log' \
-            -e "ssh -i ~/.ssh/athr_deploy" \
-            ./ athrdeploy@148.230.107.106:/opt/athar/
+            -e "ssh -i ~/.ssh/wjh_deploy" \
+            ./ deploy@72.61.156.208:/opt/wjh/
 
       - name: Build and restart production
         env:
           DEPLOYED_COMMIT: ${{ github.sha }}
         run: |
-          ssh -i ~/.ssh/athr_deploy athrdeploy@148.230.107.106 \
-            "cd /opt/athar && docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --remove-orphans && printf '%s\\n' '$DEPLOYED_COMMIT' > .deployed-commit"
+          ssh -i ~/.ssh/wjh_deploy deploy@72.61.156.208 \
+            "cd /opt/wjh && docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --remove-orphans && printf '%s\\n' '$DEPLOYED_COMMIT' > .deployed-commit"
 
       - name: Check production
         run: |

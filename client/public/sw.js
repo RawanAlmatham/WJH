@@ -1,10 +1,10 @@
-const CACHE_NAME = "athr-app-v3";
+const CACHE_NAME = "wjh-app-v3";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
-  "/icons/athr-192.png",
-  "/icons/athr-512.png",
-  "/icons/athr-maskable-512.png",
+  "/icons/wjh-192.png",
+  "/icons/wjh-512.png",
+  "/icons/wjh-maskable-512.png",
 ];
 
 self.addEventListener("install", event => {
@@ -76,16 +76,16 @@ self.addEventListener("push", event => {
   try {
     payload = event.data?.json() ?? {};
   } catch {
-    payload = { title: "تحديث جديد في أثر", body: event.data?.text() ?? "" };
+    payload = { title: "تحديث جديد في وجهة", body: event.data?.text() ?? "" };
   }
   event.waitUntil(
-    self.registration.showNotification(payload.title || "تحديث جديد في أثر", {
+    self.registration.showNotification(payload.title || "تحديث جديد في وجهة", {
       body: payload.body || "لديك تحديث جديد يخص أعمالك.",
-      icon: "/icons/athr-192.png",
-      badge: "/icons/athr-192.png",
+      icon: "/icons/wjh-192.png",
+      badge: "/icons/wjh-192.png",
       dir: "rtl",
       lang: "ar",
-      tag: payload.id ? `athr-notification-${payload.id}` : "athr-notification",
+      tag: payload.id ? `wjh-notification-${payload.id}` : "wjh-notification",
       renotify: false,
       data: { url: payload.url || "/" },
     })

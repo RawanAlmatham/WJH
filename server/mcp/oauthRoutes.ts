@@ -232,17 +232,17 @@ function consentPage(
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>ربط أثر بالمساعد الذكي</title>
+    <title>ربط وجهة بالمساعد الذكي</title>
     <style>
       *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f9fc;color:#26364a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:20px}.card{width:min(460px,100%);background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 12px 40px rgba(38,54,74,.08)}.brand{color:#52769f;font-weight:800;font-size:15px}h1{font-size:24px;margin:10px 0 8px}.muted{color:#718096;font-size:14px;line-height:1.8}.box{margin:20px 0;padding:15px;border-radius:12px;background:#f6f9fc;border:1px solid #e5edf5;font-size:14px;line-height:1.8}.permissions{margin:16px 0 22px;padding:0 20px;color:#52657a;font-size:14px;line-height:2}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{height:44px;border-radius:10px;border:1px solid #d9e2ec;background:#fff;color:#52657a;font-size:14px;font-weight:700;cursor:pointer}.primary{background:#52769f;border-color:#52769f;color:#fff}.primary:hover{background:#46698f}
     </style>
   </head>
   <body>
     <main class="card">
-      <div class="brand">أثر</div>
+      <div class="brand">وجهة</div>
       <h1>ربط حسابك بالمساعد الذكي</h1>
-      <p class="muted">يريد <strong>${escapeHtml(clientName)}</strong> الوصول إلى حساب أثر باسمك.</p>
-      <div class="box"><strong>${escapeHtml(user.name || "مستخدم أثر")}</strong><br>${escapeHtml(user.email || "")}</div>
+      <p class="muted">يريد <strong>${escapeHtml(clientName)}</strong> الوصول إلى حساب وجهة باسمك.</p>
+      <div class="box"><strong>${escapeHtml(user.name || "مستخدم وجهة")}</strong><br>${escapeHtml(user.email || "")}</div>
       <ul class="permissions">
         <li>قراءة اللوحات والمشاريع والمهام المتاحة لحسابك.</li>
         <li>${canWrite ? "تنفيذ الإضافة والتعديل والحذف ضمن صلاحيتك الحالية فقط." : "هذا الربط للقراءة فقط ولا يسمح بتنفيذ الإضافة أو التعديل أو الحذف."}</li>
@@ -299,7 +299,7 @@ export function createOAuthRouter() {
     resource: MCP_RESOURCE_URL,
     authorization_servers: [OAUTH_ISSUER],
     scopes_supported: [...MCP_SCOPES],
-    resource_name: "أثر لإدارة الأعمال",
+    resource_name: "وجهة لإدارة الأعمال",
     resource_documentation: `${OAUTH_ISSUER}/support`,
   };
 
@@ -350,7 +350,7 @@ export function createOAuthRouter() {
           response,
           400,
           "invalid_client_metadata",
-          "يدعم أثر عملاء OAuth العامة باستخدام PKCE"
+          "تدعم وجهة عملاء OAuth العامة باستخدام PKCE"
         );
       const client = await registerOAuthClient({
         clientName:
@@ -416,7 +416,7 @@ export function createOAuthRouter() {
       return response.redirect(
         redirectWithOAuthResult(input.redirectUri, {
           error: "access_denied",
-          error_description: "ألغى المستخدم ربط حساب أثر",
+          error_description: "ألغى المستخدم ربط حساب وجهة",
           state: input.state,
           iss: OAUTH_ISSUER,
         })
@@ -427,7 +427,7 @@ export function createOAuthRouter() {
         response,
         401,
         "login_required",
-        "انتهت جلسة أثر. أعد بدء الربط وسجل الدخول"
+        "انتهت جلسة وجهة. أعد بدء الربط وسجل الدخول"
       );
     try {
       const code = await createAuthorizationCode({

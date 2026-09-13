@@ -7,7 +7,7 @@
 
 .app-sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: #d7d2e5 transparent;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
@@ -22,7 +22,7 @@
 
 .app-sidebar-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #cbd5e1;
+  background: #d7d2e5;
 }
 
 :root {
@@ -60,8 +60,8 @@ body {
   max-width: 100%;
   min-width: 0;
   overflow-x: hidden;
-  background: #f7f9fc;
-  color: #26364a;
+  background: #f8f6ff;
+  color: #22273a;
   font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 #root {
@@ -106,13 +106,13 @@ button:active {
   transform: scale(0.98);
 }
 ::selection {
-  background: #dce9f5;
-  color: #26364a;
+  background: #f2ecfa;
+  color: #22273a;
 }
 .soft-grid {
   background-image: linear-gradient(
     to bottom,
-    rgba(108, 143, 184, 0.035) 1px,
+    rgba(122, 76, 207, 0.055) 1px,
     transparent 1px
   );
   background-size: 100% 64px;
@@ -122,7 +122,7 @@ button:active {
   height: 5px;
 }
 .thin-scroll::-webkit-scrollbar-thumb {
-  background: #d7e0e9;
+  background: #d7d2e5;
   border-radius: 8px;
 }
 .entry {
@@ -166,7 +166,7 @@ button:active {
     display: block;
     width: 100%;
     padding: 0.85rem 1rem;
-    border-bottom: 1px solid #eef2f6;
+    border-bottom: 1px solid #f2ecfa;
   }
   .responsive-data-table td {
     display: grid;
@@ -180,7 +180,7 @@ button:active {
   }
   .responsive-data-table td::before {
     content: attr(data-label);
-    color: #7c8a9a;
+    color: #6d6279;
     font-size: 11px;
     font-weight: 500;
   }
@@ -234,10 +234,10 @@ button:active {
     display: block;
     min-width: 0;
     padding: 1rem;
-    border-bottom: 1px solid #eef2f6;
+    border-bottom: 1px solid #f2ecfa;
   }
   .responsive-data-table-wide tr:nth-child(odd) {
-    border-inline-end: 1px solid #eef2f6;
+    border-inline-end: 1px solid #f2ecfa;
   }
   .responsive-data-table-wide td {
     display: grid;
@@ -251,7 +251,7 @@ button:active {
   }
   .responsive-data-table-wide td::before {
     content: attr(data-label);
-    color: #7c8a9a;
+    color: #6d6279;
     font-size: 11px;
     font-weight: 500;
   }

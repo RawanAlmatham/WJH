@@ -15,6 +15,7 @@ import { ENV } from "./_core/env";
 import { hashPassword, verifyPassword } from "./_core/password";
 import { boardModules } from "@shared/boardModules";
 import { presentationSections } from "@shared/presentationSections";
+import { boardTemplates } from "@shared/boardTemplates";
 import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
 import {
@@ -170,34 +171,23 @@ export const appRouter = router({
           name: z.string().trim().min(2).max(160),
           email: z.string().trim().email().max(320),
           password: z.string().min(8).max(200),
-          invitationToken: z.string().min(12).max(64),
         })
       )
       .mutation(async ({ input, ctx }) => {
         const email = input.email.toLowerCase();
-        const [teamInvitation, managerInvitation] = await Promise.all([
-          db.getPendingInvitationForSignup(input.invitationToken, email),
-          db.getPendingManagerInvitationForSignup(input.invitationToken, email),
-        ]);
-        if (!teamInvitation && !managerInvitation)
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "إنشاء الحساب متاح من خلال دعوة صالحة فقط",
-          });
-        const openId = db.localUserId(email);
-        const existing = await db.getUserByOpenId(openId);
+        const existing = await db.getUserByOpenId(db.localUserId(email));
         if (existing?.passwordHash)
           throw new TRPCError({
             code: "CONFLICT",
             message: "يوجد حساب مسجل بهذا البريد",
           });
+        const openId = db.localUserId(email);
         await db.upsertUser({
           openId,
           name: input.name,
           email,
           passwordHash: await hashPassword(input.password),
           loginMethod: "local",
-          role: managerInvitation ? "manager" : undefined,
           lastSignedIn: new Date(),
         });
         const user = await db.getUserByOpenId(openId);
@@ -331,10 +321,15 @@ export const appRouter = router({
   }),
   boards: router({
     mine: protectedProcedure.query(({ ctx }) => db.listUserBoards(ctx.user.id)),
-    create: platformManagerProcedure
-      .input(z.object({ name: z.string().trim().min(2).max(180) }))
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().trim().min(2).max(180),
+          template: z.enum(boardTemplates),
+        })
+      )
       .mutation(({ input, ctx }) =>
-        db.createManagementBoard(input.name, ctx.user.id)
+        db.createManagementBoard(input.name, ctx.user.id, input.template)
       ),
     select: protectedProcedure
       .input(z.object({ boardId: z.number().int().positive() }))

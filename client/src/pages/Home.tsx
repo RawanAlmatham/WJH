@@ -45,6 +45,10 @@ import {
   DEFAULT_PRESENTATION_SECTIONS,
   type PresentationSection,
 } from "@shared/presentationSections";
+import {
+  BOARD_TEMPLATE_LABELS,
+  type BoardTemplate,
+} from "@shared/boardTemplates";
 import { toast } from "sonner";
 import {
   BarChart3,
@@ -259,6 +263,9 @@ const priorityLabel: Record<string, string> = {
   medium: "متوسطة",
   low: "منخفضة",
 };
+const templateLabel = (template?: BoardTemplate) =>
+  BOARD_TEMPLATE_LABELS[template ?? "work"]?.title ??
+  BOARD_TEMPLATE_LABELS.work.title;
 const priorityClass: Record<string, string> = {
   urgent: "bg-rose-50 text-rose-700 ring-rose-100",
   high: "bg-orange-50 text-orange-700 ring-orange-100",
@@ -432,7 +439,7 @@ function MentionTextarea({
           if (event.key === "Escape") setMention(null);
         }}
         placeholder={placeholder}
-        className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+        className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#8570D0]"
       />
       {mention && (
         <div className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
@@ -443,7 +450,7 @@ function MentionTextarea({
                 type="button"
                 onMouseDown={event => event.preventDefault()}
                 onClick={() => selectMember(member)}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-right hover:bg-[#EDF4FA]"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-right hover:bg-[#F0EAFE]"
               >
                 <Avatar
                   initials={member.avatarInitials}
@@ -451,11 +458,11 @@ function MentionTextarea({
                   className="size-7 text-[9px]"
                 />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm text-[#40556D]">
+                  <span className="block truncate text-sm text-[#4E4961]">
                     {member.name}
                   </span>
                   {member.email && (
-                    <span className="block truncate text-[10px] text-[#7C8A9A]">
+                    <span className="block truncate text-[10px] text-[#6D6279]">
                       {member.email}
                     </span>
                   )}
@@ -463,7 +470,7 @@ function MentionTextarea({
               </button>
             ))
           ) : (
-            <p className="px-3 py-3 text-xs text-[#7C8A9A]">
+            <p className="px-3 py-3 text-xs text-[#6D6279]">
               لا يوجد عضو مطابق في هذه اللوحة.
             </p>
           )}
@@ -475,12 +482,12 @@ function MentionTextarea({
 
 function CommentBody({ body }: { body: string }) {
   return (
-    <p className="whitespace-pre-wrap text-sm leading-7 text-[#40556D]">
+    <p className="whitespace-pre-wrap text-sm leading-7 text-[#4E4961]">
       {body.split(/(@\[[^\]]+\])/g).map((part, index) =>
         part.startsWith("@[") && part.endsWith("]") ? (
           <span
             key={`${part}-${index}`}
-            className="rounded bg-[#E8F1F9] px-1 font-semibold text-[#46698F]"
+            className="rounded bg-[#E8F1F9] px-1 font-semibold text-[#684CB2]"
           >
             @{part.slice(2, -1)}
           </span>
@@ -619,28 +626,28 @@ function printLessonsReport({
         <style>
           :root { color-scheme: light; }
           * { box-sizing: border-box; }
-          body { margin: 0; background: #eef3f8; color: #26364a; font-family: Tahoma, Arial, sans-serif; line-height: 1.75; }
-          .toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px; background: #26364a; color: white; }
-          .toolbar button { border: 0; border-radius: 8px; padding: 9px 20px; background: white; color: #26364a; font: inherit; font-weight: 700; cursor: pointer; }
-          .report { width: min(210mm, calc(100% - 32px)); margin: 24px auto; background: white; padding: 18mm 16mm; box-shadow: 0 14px 42px rgba(38,54,74,.12); }
-          .cover { position: relative; overflow: hidden; min-height: 180px; padding: 30px; border-radius: 18px; background: linear-gradient(135deg,#26364a,#52769f); color: white; }
+          body { margin: 0; background: #eef3f8; color: #22273A; font-family: Tahoma, Arial, sans-serif; line-height: 1.75; }
+          .toolbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px; background: #22273A; color: white; }
+          .toolbar button { border: 0; border-radius: 8px; padding: 9px 20px; background: white; color: #22273A; font: inherit; font-weight: 700; cursor: pointer; }
+          .report { width: min(210mm, calc(100% - 32px)); margin: 24px auto; background: white; padding: 18mm 16mm; box-shadow: 0 14px 42px rgba(34,39,58,.12); }
+          .cover { position: relative; overflow: hidden; min-height: 180px; padding: 30px; border-radius: 18px; background: linear-gradient(135deg,#22273A,#7A4CCF); color: white; }
           .cover::after { content: ""; position: absolute; left: -55px; bottom: -75px; width: 210px; height: 210px; border: 34px solid rgba(255,255,255,.08); border-radius: 50%; }
           .brand { color: #cfe0ef; font-weight: 700; letter-spacing: .03em; }
           h1 { margin: 24px 0 5px; font-size: 30px; line-height: 1.35; }
           .subtitle { margin: 0; color: #dbe7f1; }
           .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 22px 0; }
-          .filter { padding: 13px 15px; border: 1px solid #dce7f2; border-radius: 12px; background: #fbfdff; }
-          .filter span { display: block; color: #7c8a9a; font-size: 11px; }
+          .filter { padding: 13px 15px; border: 1px solid #ECE5FB; border-radius: 12px; background: #FFFDFF; }
+          .filter span { display: block; color: #6D6279; font-size: 11px; }
           .filter strong { display: block; margin-top: 3px; font-size: 13px; }
           .summary { display: grid; grid-template-columns: repeat(${Math.min(categoryCounts.length + 1, 5)},1fr); gap: 10px; margin-bottom: 24px; }
-          .stat { padding: 13px; border: 1px solid #e4eaf0; border-radius: 12px; text-align: center; }
-          .stat strong { display: block; color: #52769f; font-size: 22px; line-height: 1.3; }
-          .stat span { color: #647487; font-size: 10px; }
+          .stat { padding: 13px; border: 1px solid #F1ECFA; border-radius: 12px; text-align: center; }
+          .stat strong { display: block; color: #7A4CCF; font-size: 22px; line-height: 1.3; }
+          .stat span { color: #615A74; font-size: 10px; }
           .lesson { margin: 0 0 16px; padding: 18px; border: 1px solid #dfe7ee; border-radius: 14px; page-break-inside: avoid; break-inside: avoid; }
           .lesson-head, .lesson-head > div { display: flex; align-items: center; gap: 10px; }
           .lesson-head { justify-content: space-between; }
           .lesson h2 { margin: 0; font-size: 17px; }
-          .number { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px; background: #edf4fa; color: #52769f; font-size: 11px; font-weight: 700; }
+          .number { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px; background: #edf4fa; color: #7A4CCF; font-size: 11px; font-weight: 700; }
           .category { border-radius: 999px; padding: 4px 9px; font-size: 9px; font-weight: 700; white-space: nowrap; }
           .category-success { background: #ecfdf5; color: #047857; }
           .category-challenge { background: #fffbeb; color: #b45309; }
@@ -649,10 +656,10 @@ function printLessonsReport({
           .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 13px 0; padding-bottom: 12px; border-bottom: 1px solid #edf1f5; color: #708092; font-size: 10px; }
           .meta b { color: #52657a; }
           .lesson section { margin-top: 10px; }
-          .lesson h3 { margin: 0 0 3px; color: #52769f; font-size: 11px; }
+          .lesson h3 { margin: 0 0 3px; color: #7A4CCF; font-size: 11px; }
           .lesson p { margin: 0; color: #3d4d60; font-size: 12px; }
-          .recommendation { padding: 10px 12px; border-right: 3px solid #6c8fb8; background: #f7f9fc; }
-          .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e4eaf0; color: #8492a1; font-size: 9px; text-align: center; }
+          .recommendation { padding: 10px 12px; border-right: 3px solid #6c8fb8; background: #F8F6FF; }
+          .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #F1ECFA; color: #8492a1; font-size: 9px; text-align: center; }
           @page { size: A4; margin: 11mm; }
           @media print {
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -665,7 +672,7 @@ function printLessonsReport({
         <div class="toolbar"><span>التقرير جاهز</span><button onclick="window.print()">حفظ بصيغة PDF</button></div>
         <main class="report">
           <header class="cover">
-            <div class="brand">أثر · ${escapeReportHtml(workspaceName)}</div>
+            <div class="brand">وجهة · ${escapeReportHtml(workspaceName)}</div>
             <h1>تقرير الدروس المستفادة</h1>
             <p class="subtitle">معرفة متراكمة تساعد الفريق على تحسين قرارات المشاريع القادمة.</p>
           </header>
@@ -678,7 +685,7 @@ function printLessonsReport({
             ${categorySummary}
           </div>
           ${cards}
-          <footer class="footer">صدر من منصة أثر بتاريخ ${escapeReportHtml(fullDateText(new Date()))}</footer>
+          <footer class="footer">صدر من منصة وجهة بتاريخ ${escapeReportHtml(fullDateText(new Date()))}</footer>
         </main>
       </body>
     </html>`);
@@ -757,7 +764,7 @@ function Avatar({
         "flex shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white",
         className
       )}
-      style={{ backgroundColor: color ?? "#6C8FB8" }}
+      style={{ backgroundColor: color ?? "#8570D0" }}
     >
       {initials}
     </span>
@@ -776,7 +783,7 @@ function PeriodSelect({
       <select
         value={value}
         onChange={e => onChange(e.target.value as Period)}
-        className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pr-3 pl-8 text-sm font-medium text-[#52657A] outline-none transition focus:border-[#6C8FB8] focus:ring-2 focus:ring-[#6C8FB8]/10"
+        className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pr-3 pl-8 text-sm font-medium text-[#5A5570] outline-none transition focus:border-[#8570D0] focus:ring-2 focus:ring-[#8570D0]/10"
       >
         <option value="day">اليوم</option>
         <option value="week">الأسبوع</option>
@@ -798,7 +805,7 @@ function SectionTitle({
 }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <h2 className="text-sm font-semibold text-[#26364A]">{children}</h2>
+      <h2 className="text-sm font-semibold text-[#22273A]">{children}</h2>
       {action}
     </div>
   );
@@ -1083,7 +1090,7 @@ export default function Home() {
     return (
       <div
         dir="rtl"
-        className="flex min-h-screen items-center justify-center bg-[#F7F9FC] p-8 text-center"
+        className="flex min-h-screen items-center justify-center bg-[#F8F6FF] p-8 text-center"
       >
         <div>
           <AlertTriangle className="mx-auto mb-3 size-7 text-amber-600" />
@@ -1146,7 +1153,7 @@ export default function Home() {
     openInvite: () => requireManager(() => setInviteDrawer(true)),
   };
   return (
-    <div dir="rtl" className="min-h-screen bg-[#F7F9FC] text-[#26364A]">
+    <div dir="rtl" className="min-h-screen bg-[#F8F6FF] text-[#22273A]">
       <Sidebar
         workspaceName={workspaceName}
         user={user}
@@ -1174,13 +1181,13 @@ export default function Home() {
             >
               <Menu className="size-5" />
             </button>
-            <span className="font-semibold text-[#52769F]">أثر</span>
+            <span className="font-semibold text-[#7A4CCF]">وجهة</span>
           </div>
           <div className="hidden xl:block">
-            <p className="text-xs font-medium text-[#7C8A9A]">
+            <p className="text-xs font-medium text-[#6D6279]">
               {workspaceName}
             </p>
-            <p className="mt-1 text-sm text-[#52657A]">{headerDateText()}</p>
+            <p className="mt-1 text-sm text-[#5A5570]">{headerDateText()}</p>
           </div>
           <div className="mr-auto flex items-center gap-2">
             <NotificationCenter
@@ -1210,7 +1217,7 @@ export default function Home() {
             <Button
               variant="outline"
               onClick={() => setPresentation(true)}
-              className="hidden h-9 gap-2 border-slate-200 bg-white px-3 text-xs text-[#52657A] md:inline-flex"
+              className="hidden h-9 gap-2 border-slate-200 bg-white px-3 text-xs text-[#5A5570] md:inline-flex"
             >
               <Presentation className="size-4" />
               وضع العرض
@@ -1320,7 +1327,12 @@ function Sidebar({
   workspaceName: string;
   user: { name?: string | null; role?: string | null };
   membershipRole?: string;
-  boards: { id: number; name: string; isActive: boolean }[];
+  boards: {
+    id: number;
+    name: string;
+    template: BoardTemplate;
+    isActive: boolean;
+  }[];
   activeBoardId?: number;
   switchingBoard: boolean;
   enabledModules: BoardModule[];
@@ -1330,7 +1342,7 @@ function Sidebar({
   open: boolean;
   close: () => void;
 }) {
-  const userName = user.name?.trim() || "مستخدم أثر";
+  const userName = user.name?.trim() || "مستخدم وجهة";
   const userInitials =
     userName
       .split(/\s+/)
@@ -1413,15 +1425,20 @@ function Sidebar({
       >
         <div className="mb-4 flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#EDF4FA] text-[#52769F]">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-[#F0EAFE] text-[#7A4CCF]">
               <Target className="size-5" />
             </span>
             <div>
-              <p className="text-sm font-bold tracking-tight text-[#26364A]">
-                أثر
+              <p className="text-sm font-bold tracking-tight text-[#22273A]">
+                وجهة
               </p>
-              <p className="max-w-36 truncate text-[11px] text-[#7C8A9A]">
+              <p className="max-w-36 truncate text-[11px] text-[#6D6279]">
                 {workspaceName}
+              </p>
+              <p className="mt-1 max-w-36 truncate text-[11px] font-medium text-[#7A4CCF]">
+                {templateLabel(
+                  boards.find(board => board.id === activeBoardId)?.template
+                )}
               </p>
             </div>
           </div>
@@ -1430,14 +1447,14 @@ function Sidebar({
           </button>
         </div>
         <div className="mb-6 px-2">
-          <label className="text-[10px] font-semibold text-[#7C8A9A]">
+          <label className="text-[10px] font-semibold text-[#6D6279]">
             اللوحة الحالية
             <span className="relative mt-2 flex items-center">
               <select
                 value={activeBoardId ?? ""}
                 disabled={switchingBoard}
                 onChange={event => onSelectBoard(Number(event.target.value))}
-                className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-[#FBFDFF] pr-3 pl-8 text-xs font-semibold text-[#52657A] outline-none transition focus:border-[#6C8FB8]"
+                className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-[#FFFDFF] pr-3 pl-8 text-xs font-semibold text-[#5A5570] outline-none transition focus:border-[#8570D0]"
                 aria-label="اختيار لوحة العمل"
               >
                 {boards.map(board => (
@@ -1452,7 +1469,7 @@ function Sidebar({
           {(user.role === "manager" || user.role === "admin") && (
             <button
               onClick={() => window.location.assign("/boards/new")}
-              className="mt-2 flex w-full items-center gap-2 px-1 text-[11px] font-semibold text-[#52769F] hover:text-[#46698F]"
+              className="mt-2 flex w-full items-center gap-2 px-1 text-[11px] font-semibold text-[#7A4CCF] hover:text-[#684CB2]"
             >
               <Plus className="size-3.5" />
               إنشاء لوحة جديدة
@@ -1471,8 +1488,8 @@ function Sidebar({
                   className={cn(
                     "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-right text-sm transition-colors",
                     active
-                      ? "bg-[#EDF4FA] font-semibold text-[#52769F]"
-                      : "text-[#647487] hover:bg-slate-50 hover:text-[#52657A]"
+                      ? "bg-[#F0EAFE] font-semibold text-[#7A4CCF]"
+                      : "text-[#615A74] hover:bg-slate-50 hover:text-[#5A5570]"
                   )}
                 >
                   <entry.icon className="size-[18px]" />
@@ -1492,8 +1509,8 @@ function Sidebar({
               className={cn(
                 "mb-2 flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-right text-xs transition-colors",
                 page === "mcp"
-                  ? "border-[#BFD3E7] bg-[#EDF4FA] font-semibold text-[#52769F]"
-                  : "border-[#BFD3E7] bg-white text-[#45698F] hover:bg-slate-50"
+                  ? "border-[#D9CCF3] bg-[#F0EAFE] font-semibold text-[#7A4CCF]"
+                  : "border-[#D9CCF3] bg-white text-[#5F4FB5] hover:bg-slate-50"
               )}
             >
               <Link2 className="size-4" />
@@ -1502,7 +1519,7 @@ function Sidebar({
             {user.role === "admin" && (
               <button
                 onClick={() => window.location.assign("/admin")}
-                className="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[#647487] hover:bg-slate-50"
+                className="flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[#615A74] hover:bg-slate-50"
               >
                 <ShieldCheck className="size-[18px]" />
                 إدارة المنصة
@@ -1513,8 +1530,8 @@ function Sidebar({
               className={cn(
                 "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm",
                 page === "settings"
-                  ? "bg-[#EDF4FA] font-semibold text-[#52769F]"
-                  : "text-[#647487] hover:bg-slate-50"
+                  ? "bg-[#F0EAFE] font-semibold text-[#7A4CCF]"
+                  : "text-[#615A74] hover:bg-slate-50"
               )}
             >
               <Settings className="size-[18px]" />
@@ -1523,12 +1540,12 @@ function Sidebar({
             <div className="mt-5 flex items-center gap-2 px-3">
               <Avatar
                 initials={userInitials}
-                color="#52769F"
+                color="#7A4CCF"
                 className="size-8"
               />
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold">{userName}</p>
-                <p className="text-[10px] text-[#7C8A9A]">{roleLabel}</p>
+                <p className="text-[10px] text-[#6D6279]">{roleLabel}</p>
               </div>
             </div>
           </div>
@@ -1553,13 +1570,13 @@ function PageHeading({
     <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="mb-2 text-xs font-semibold text-[#6C8FB8]">{eyebrow}</p>
+          <p className="mb-2 text-xs font-semibold text-[#8570D0]">{eyebrow}</p>
         )}
-        <h1 className="break-words text-2xl font-bold tracking-tight text-[#26364A] md:text-[28px]">
+        <h1 className="break-words text-2xl font-bold tracking-tight text-[#22273A] md:text-[28px]">
           {title}
         </h1>
         {description && (
-          <p className="mt-2 text-sm text-[#7C8A9A]">{description}</p>
+          <p className="mt-2 text-sm text-[#6D6279]">{description}</p>
         )}
       </div>
       {action && (
@@ -1648,7 +1665,7 @@ function OverviewPage({
         action={
           <Button
             onClick={() => openTask()}
-            className="h-10 gap-2 bg-[#52769F] px-4 hover:bg-[#46698F]"
+            className="h-10 gap-2 bg-[#7A4CCF] px-4 hover:bg-[#684CB2]"
           >
             <Plus className="size-4" />
             مهمة جديدة
@@ -1659,26 +1676,26 @@ function OverviewPage({
         type="button"
         onClick={() => setCompletionDetailsOpen(true)}
         aria-label={`عرض المهام المحسوبة في إنجاز ${periodLabels[period as Period]}`}
-        className="group mb-9 block w-full max-w-xl rounded-xl border border-[#E8EEF5] bg-white px-5 py-4 text-right transition hover:border-[#BFD3E7] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6C8FB8]/20"
+        className="group mb-9 block w-full max-w-xl rounded-xl border border-[#E8EEF5] bg-white px-5 py-4 text-right transition hover:border-[#D9CCF3] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8570D0]/20"
       >
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-semibold">
             إنجاز {periodLabels[period as Period]}
           </span>
-          <span className="text-sm font-bold text-[#52769F]">
+          <span className="text-sm font-bold text-[#7A4CCF]">
             {completion.total ? `${completion.percentage}%` : "—"}
           </span>
         </div>
         <Progress
           value={completion.percentage}
-          className="h-2 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
+          className="h-2 bg-[#F0EAFE] [&>div]:bg-[#8570D0]"
         />
-        <p className="mt-3 text-xs text-[#7C8A9A]">
+        <p className="mt-3 text-xs text-[#6D6279]">
           {completion.total
             ? `${completion.completed} من ${completion.total} مهمة مستحقة مكتملة خلال ${periodLabels[period as Period]}`
             : `لا توجد مهام مستحقة خلال ${periodLabels[period as Period]}`}
         </p>
-        <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#52769F]">
+        <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#7A4CCF]">
           عرض المهام المحسوبة
           <ChevronLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
         </span>
@@ -1703,9 +1720,9 @@ function OverviewPage({
           </SheetHeader>
           <div className="px-4 pb-6">
             <div className="mb-4 grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-[#EDF4FA] px-4 py-3">
+              <div className="rounded-lg bg-[#F0EAFE] px-4 py-3">
                 <p className="text-xs text-[#60758D]">إجمالي المهام</p>
-                <p className="mt-1 text-xl font-bold text-[#52769F]">
+                <p className="mt-1 text-xl font-bold text-[#7A4CCF]">
                   {completion.total}
                 </p>
               </div>
@@ -1736,17 +1753,17 @@ function OverviewPage({
                         setCompletionDetailsOpen(false);
                         openTaskDetail(task.id);
                       }}
-                      className="flex w-full items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 text-right transition last:border-0 hover:bg-[#F8FAFC]"
+                      className="flex w-full items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 text-right transition last:border-0 hover:bg-[#F9F8FF]"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-[#26364A]">
+                        <p className="font-medium text-[#22273A]">
                           {task.title}
                         </p>
-                        <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
+                        <p className="mt-1 text-xs leading-5 text-[#6D6279]">
                           {project?.title ?? "بدون مشروع"} ·{" "}
                           {assignee?.name ?? "غير مسند"}
                         </p>
-                        <p className="mt-1 text-xs text-[#7C8A9A]">
+                        <p className="mt-1 text-xs text-[#6D6279]">
                           الاستحقاق: {fullDateText(task.dueDate)}
                         </p>
                       </div>
@@ -1761,7 +1778,7 @@ function OverviewPage({
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center">
                 <ListChecks className="mx-auto size-7 text-slate-300" />
-                <p className="mt-3 text-sm text-[#7C8A9A]">
+                <p className="mt-3 text-sm text-[#6D6279]">
                   لا توجد مهام مستحقة خلال هذه الفترة.
                 </p>
               </div>
@@ -1772,12 +1789,12 @@ function OverviewPage({
       <section className="mb-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold text-[#26364A]">مهامي</h2>
-            <p className="mt-1 text-xs text-[#7C8A9A]">
+            <h2 className="font-semibold text-[#22273A]">مهامي</h2>
+            <p className="mt-1 text-xs text-[#6D6279]">
               المهام المسندة لك حسب تاريخ الاستحقاق.
             </p>
           </div>
-          <div className="grid grid-cols-4 rounded-lg bg-[#F1F5F9] p-1">
+          <div className="grid grid-cols-4 rounded-lg bg-[#F5F1FF] p-1">
             {(
               [
                 ["day", "اليوم"],
@@ -1793,8 +1810,8 @@ function OverviewPage({
                 className={cn(
                   "whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px] transition sm:px-3",
                   myTasksPeriod === value
-                    ? "bg-white font-semibold text-[#40556D] shadow-sm"
-                    : "text-[#7C8A9A]"
+                    ? "bg-white font-semibold text-[#4E4961] shadow-sm"
+                    : "text-[#6D6279]"
                 )}
               >
                 {label}
@@ -1813,19 +1830,19 @@ function OverviewPage({
                   key={task.id}
                   type="button"
                   onClick={() => openTaskDetail(task.id)}
-                  className="flex w-full flex-col gap-3 px-5 py-4 text-right transition hover:bg-[#FBFCFE] sm:flex-row sm:items-center"
+                  className="flex w-full flex-col gap-3 px-5 py-4 text-right transition hover:bg-[#FFFDFF] sm:flex-row sm:items-center"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-[#26364A]">
+                    <p className="truncate text-sm font-medium text-[#22273A]">
                       {task.title}
                     </p>
-                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                    <p className="mt-1 text-xs text-[#6D6279]">
                       {project?.title ?? "بدون مشروع"}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusPill status={task.status} />
-                    <span className="text-xs text-[#7C8A9A]">
+                    <span className="text-xs text-[#6D6279]">
                       {task.dueDate
                         ? fullDateText(task.dueDate)
                         : "بدون موعد استحقاق"}
@@ -1839,7 +1856,7 @@ function OverviewPage({
         ) : (
           <div className="px-5 py-10 text-center">
             <ListChecks className="mx-auto size-6 text-slate-300" />
-            <p className="mt-3 text-sm text-[#7C8A9A]">
+            <p className="mt-3 text-sm text-[#6D6279]">
               {currentMember
                 ? "لا توجد مهام مسندة لك في هذه الفترة."
                 : "حسابك غير مرتبط بعضو في فريق هذه اللوحة."}
@@ -1851,7 +1868,7 @@ function OverviewPage({
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle
             action={
-              <span className="text-xs text-[#7C8A9A]">
+              <span className="text-xs text-[#6D6279]">
                 {attention.length} عناصر
               </span>
             }
@@ -1878,7 +1895,7 @@ function OverviewPage({
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.title}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#7C8A9A]">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#6D6279]">
                       <span>{item.assignee?.name ?? "غير مسند"}</span>
                       <span>·</span>
                       <span>{item.project?.title ?? "بدون مشروع"}</span>
@@ -1900,7 +1917,7 @@ function OverviewPage({
                       </span>
                     </div>
                   </div>
-                  <span className="text-xs text-[#7C8A9A]">
+                  <span className="text-xs text-[#6D6279]">
                     {item.dueDate ? dateText(item.dueDate) : "بدون موعد"}
                   </span>
                 </button>
@@ -1915,7 +1932,7 @@ function OverviewPage({
             action={
               <button
                 onClick={() => setPage("tasks")}
-                className="text-xs font-medium text-[#52769F]"
+                className="text-xs font-medium text-[#7A4CCF]"
               >
                 عرض الكل
               </button>
@@ -1947,7 +1964,7 @@ function OverviewPage({
                       "flex size-5 shrink-0 items-center justify-center rounded-md border transition",
                       task.status === "complete"
                         ? "border-emerald-500 bg-emerald-500 text-white"
-                        : "border-slate-300 text-transparent hover:border-[#6C8FB8]"
+                        : "border-slate-300 text-transparent hover:border-[#8570D0]"
                     )}
                   >
                     <Check className="size-3" />
@@ -1962,7 +1979,7 @@ function OverviewPage({
                     >
                       {task.title}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-[#7C8A9A]">
+                    <p className="mt-0.5 text-[11px] text-[#6D6279]">
                       {member?.name ?? "غير مسند"} · {dateText(task.dueDate)}
                     </p>
                   </div>
@@ -1977,13 +1994,13 @@ function OverviewPage({
         <SectionTitle
           action={
             <div className="flex items-center gap-3">
-              <span className="text-xs text-[#7C8A9A]">
+              <span className="text-xs text-[#6D6279]">
                 {allBlockedTasks.length} مهام
               </span>
               <button
                 type="button"
                 onClick={() => setPage("tasks")}
-                className="text-xs font-medium text-[#52769F]"
+                className="text-xs font-medium text-[#7A4CCF]"
               >
                 عرض كل المهام
               </button>
@@ -2014,14 +2031,14 @@ function OverviewPage({
                   <span className="size-2 shrink-0 rounded-full bg-rose-500" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{task.title}</p>
-                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                    <p className="mt-1 text-xs text-[#6D6279]">
                       {assignee?.name ?? "غير مسند"} ·{" "}
                       {project?.title ?? "بدون مشروع"}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusPill status={task.status} />
-                    <span className="text-xs text-[#7C8A9A]">
+                    <span className="text-xs text-[#6D6279]">
                       {task.dueDate ? dateText(task.dueDate) : "بدون موعد"}
                     </span>
                     <ChevronLeft className="size-4 text-slate-400" />
@@ -2036,9 +2053,9 @@ function OverviewPage({
       </section>
       <div className="mt-5 rounded-xl border border-[#E5ECF3] bg-[#FDFEFF] px-5 py-4">
         <div className="flex items-center gap-3">
-          <Clock3 className="size-4 text-[#6C8FB8]" />
-          <p className="text-sm text-[#52657A]">
-            <strong className="font-semibold text-[#26364A]">القادم:</strong>{" "}
+          <Clock3 className="size-4 text-[#8570D0]" />
+          <p className="text-sm text-[#5A5570]">
+            <strong className="font-semibold text-[#22273A]">القادم:</strong>{" "}
             أضف المهام والمواعيد الفعلية لتظهر متابعتها هنا.
           </p>
         </div>
@@ -2059,7 +2076,7 @@ function AnnualPlanPage({
     { q: "Q1", theme: "تأسيس الأولويات", progress: 100 },
     { q: "Q2", theme: "بناء الحلول", progress: 88 },
     { q: "Q3", theme: "التنفيذ والتسليم", progress: 67 },
-    { q: "Q4", theme: "قياس الأثر", progress: 0 },
+    { q: "Q4", theme: "قياس وجهة", progress: 0 },
   ];
   const planProgress = data.goals.length
     ? Math.round(
@@ -2080,7 +2097,7 @@ function AnnualPlanPage({
               {canManagePlan && (
                 <Button
                   onClick={openGoal}
-                  className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+                  className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
                 >
                   <Plus className="size-4" />
                   إضافة هدف
@@ -2090,15 +2107,15 @@ function AnnualPlanPage({
           }
         />
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <Target className="mx-auto size-7 text-[#6C8FB8]" />
+          <Target className="mx-auto size-7 text-[#8570D0]" />
           <h2 className="mt-3 font-semibold">ابدأ بإضافة أهداف القسم</h2>
-          <p className="mt-2 text-sm text-[#7C8A9A]">
+          <p className="mt-2 text-sm text-[#6D6279]">
             ستظهر هنا خارطة العام ومؤشرات الإنجاز بعد إدخال أول هدف فعلي.
           </p>
           {canManagePlan ? (
             <Button
               onClick={openGoal}
-              className="mt-5 h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+              className="mt-5 h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               <Plus className="size-4" />
               إضافة أول هدف
@@ -2123,7 +2140,7 @@ function AnnualPlanPage({
             {canManagePlan && (
               <Button
                 onClick={openGoal}
-                className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+                className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
               >
                 <Plus className="size-4" />
                 هدف جديد
@@ -2135,11 +2152,11 @@ function AnnualPlanPage({
       <section className="mb-8 max-w-xl rounded-xl border border-slate-200 bg-white p-5">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-semibold">إنجاز الخطة</span>
-          <span className="font-bold text-[#52769F]">{planProgress}%</span>
+          <span className="font-bold text-[#7A4CCF]">{planProgress}%</span>
         </div>
         <Progress
           value={planProgress}
-          className="h-2 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
+          className="h-2 bg-[#F0EAFE] [&>div]:bg-[#8570D0]"
         />
       </section>
       <section className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
@@ -2157,17 +2174,17 @@ function AnnualPlanPage({
               className="group rounded-lg border border-slate-100 p-4 text-right transition hover:border-[#C9DBEC] hover:bg-[#FAFCFE]"
             >
               <div className="mb-5 flex items-center justify-between">
-                <span className="text-xs font-bold tracking-wide text-[#6C8FB8]">
+                <span className="text-xs font-bold tracking-wide text-[#8570D0]">
                   {quarter.q}
                 </span>
-                <span className="text-xs font-semibold text-[#52657A]">
+                <span className="text-xs font-semibold text-[#5A5570]">
                   {quarter.progress}%
                 </span>
               </div>
               <p className="text-sm font-medium">{quarter.theme}</p>
               <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full bg-[#6C8FB8]"
+                  className="h-full bg-[#8570D0]"
                   style={{ width: `${quarter.progress}%` }}
                 />
               </div>
@@ -2182,15 +2199,15 @@ function AnnualPlanPage({
             <div key={goal.id} className="flex items-center gap-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{goal.title}</p>
-                <p className="mt-1 text-xs text-[#7C8A9A]">{goal.theme}</p>
+                <p className="mt-1 text-xs text-[#6D6279]">{goal.theme}</p>
               </div>
-              <span className="text-sm font-semibold text-[#52657A]">
+              <span className="text-sm font-semibold text-[#5A5570]">
                 {goal.progress}%
               </span>
               <div className="w-20">
                 <Progress
                   value={goal.progress}
-                  className="h-1.5 bg-slate-100 [&>div]:bg-[#6C8FB8]"
+                  className="h-1.5 bg-slate-100 [&>div]:bg-[#8570D0]"
                 />
               </div>
             </div>
@@ -2263,15 +2280,15 @@ function TemporalPage({
                 ? "اليوم"
                 : "الأسبوع"}
           </span>
-          <strong className="text-[#52769F]">
+          <strong className="text-[#7A4CCF]">
             {completion.total ? `${completion.percentage}%` : "—"}
           </strong>
         </div>
         <Progress
           value={completion.percentage}
-          className="h-2 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
+          className="h-2 bg-[#F0EAFE] [&>div]:bg-[#8570D0]"
         />
-        <p className="mt-3 text-xs text-[#7C8A9A]">
+        <p className="mt-3 text-xs text-[#6D6279]">
           {completion.total
             ? `${completion.completed} من ${completion.total} مهمة مستحقة مكتملة`
             : `لا توجد مهام مستحقة خلال ${periodLabels[period as Period]}`}
@@ -2307,14 +2324,14 @@ function TemporalPage({
                       "flex size-5 items-center justify-center rounded-md border",
                       task.status === "complete"
                         ? "border-emerald-500 bg-emerald-500 text-white"
-                        : "border-slate-300 text-transparent hover:border-[#6C8FB8]"
+                        : "border-slate-300 text-transparent hover:border-[#8570D0]"
                     )}
                   >
                     <Check className="size-3" />
                   </button>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{task.title}</p>
-                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                    <p className="mt-1 text-xs text-[#6D6279]">
                       {member?.name} · {dateText(task.dueDate)}
                     </p>
                   </div>
@@ -2331,10 +2348,10 @@ function TemporalPage({
           <div className="space-y-4">
             {data.events.slice(0, 3).map((event: any) => (
               <div key={event.id} className="flex items-start gap-3">
-                <div className="mt-1 h-2 w-2 rounded-full bg-[#6C8FB8]" />
+                <div className="mt-1 h-2 w-2 rounded-full bg-[#8570D0]" />
                 <div>
                   <p className="text-sm font-medium">{event.title}</p>
-                  <p className="mt-1 text-xs text-[#7C8A9A]">
+                  <p className="mt-1 text-xs text-[#6D6279]">
                     {dateText(event.eventDate, false)}
                   </p>
                 </div>
@@ -2366,15 +2383,15 @@ function MonthView({ data, period, goPeriod }: any) {
           {weeks.map((week, index) => (
             <div
               key={week}
-              className="min-h-36 rounded-lg border border-slate-100 bg-[#FCFDFE] p-3"
+              className="min-h-36 rounded-lg border border-slate-100 bg-[#FFFDFF] p-3"
             >
-              <p className="mb-4 text-xs font-semibold text-[#7C8A9A]">
+              <p className="mb-4 text-xs font-semibold text-[#6D6279]">
                 {week}
               </p>
               {mainDeliveries[index] && (
-                <div className="rounded-md border-r-2 border-[#6C8FB8] bg-[#EDF4FA]/60 px-2 py-2 text-xs leading-5 text-[#3E5C7D]">
+                <div className="rounded-md border-r-2 border-[#8570D0] bg-[#F0EAFE]/60 px-2 py-2 text-xs leading-5 text-[#3E5C7D]">
                   {mainDeliveries[index].title}
-                  <span className="mt-1 block text-[10px] text-[#7C8A9A]">
+                  <span className="mt-1 block text-[10px] text-[#6D6279]">
                     {dateText(mainDeliveries[index].eventDate)}
                   </span>
                 </div>
@@ -2422,12 +2439,12 @@ function MobileTableFilters({
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="h-9 shrink-0 gap-2 border-slate-200 bg-white px-3 text-[#52657A]"
+        className="h-9 shrink-0 gap-2 border-slate-200 bg-white px-3 text-[#5A5570]"
       >
         <SlidersHorizontal className="size-4" />
         <span className="hidden sm:inline">تصفية</span>
         {activeCount > 0 && (
-          <span className="flex size-5 items-center justify-center rounded-full bg-[#52769F] text-[10px] text-white">
+          <span className="flex size-5 items-center justify-center rounded-full bg-[#7A4CCF] text-[10px] text-white">
             {activeCount}
           </span>
         )}
@@ -2436,7 +2453,7 @@ function MobileTableFilters({
         <SheetContent
           side="bottom"
           dir="rtl"
-          className="max-h-[85dvh] overflow-y-auto rounded-t-3xl border-slate-200 bg-[#F8FAFC] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          className="max-h-[85dvh] overflow-y-auto rounded-t-3xl border-slate-200 bg-[#F9F8FF] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
           <SheetHeader className="px-0 text-right">
             <SheetTitle>تصفية النتائج</SheetTitle>
@@ -2458,7 +2475,7 @@ function MobileTableFilters({
             <Button
               type="button"
               onClick={() => setOpen(false)}
-              className="bg-[#52769F] hover:bg-[#46698F]"
+              className="bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               عرض النتائج
             </Button>
@@ -2498,7 +2515,7 @@ function ProjectsPage({
         action={
           <Button
             onClick={openProject}
-            className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             <Plus className="size-4" />
             مشروع جديد
@@ -2525,7 +2542,7 @@ function ProjectsPage({
               setResponsible("all");
             }}
           >
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               الحالة
               <select
                 value={status}
@@ -2540,7 +2557,7 @@ function ProjectsPage({
                 ))}
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               المسؤول
               <select
                 value={responsible}
@@ -2561,7 +2578,7 @@ function ProjectsPage({
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="responsive-data-table w-full min-w-[720px] text-right">
-            <thead className="border-b border-slate-100 bg-[#FCFDFE] text-[11px] font-medium text-[#7C8A9A]">
+            <thead className="border-b border-slate-100 bg-[#FFFDFF] text-[11px] font-medium text-[#6D6279]">
               <tr>
                 <th className="px-5 py-3.5">المشروع</th>
                 <th className="px-5 py-3.5">
@@ -2571,7 +2588,7 @@ function ProjectsPage({
                       value={responsible}
                       onChange={e => setResponsible(e.target.value)}
                       aria-label="تصفية المشاريع حسب المسؤول"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل المسؤولين</option>
                       {data.members.map((member: any) => (
@@ -2589,7 +2606,7 @@ function ProjectsPage({
                       value={status}
                       onChange={e => setStatus(e.target.value)}
                       aria-label="تصفية المشاريع حسب الحالة"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل الحالات</option>
                       {Object.entries(projectStatusLabel).map(
@@ -2620,7 +2637,7 @@ function ProjectsPage({
                       setProjectId(project.id);
                       setPage("project");
                     }}
-                    className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]"
+                    className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-[#FFFDFF]"
                   >
                     <td
                       data-mobile-primary
@@ -2628,7 +2645,7 @@ function ProjectsPage({
                       className="px-5 py-4"
                     >
                       <p className="text-sm font-medium">{project.title}</p>
-                      <p className="mt-1 max-w-60 truncate text-xs text-[#7C8A9A]">
+                      <p className="mt-1 max-w-60 truncate text-xs text-[#6D6279]">
                         {project.summary}
                       </p>
                     </td>
@@ -2651,7 +2668,7 @@ function ProjectsPage({
                           {responsibleNames || "غير مسند"}
                         </span>
                         {responsibles.length > 3 && (
-                          <span className="text-[10px] text-[#7C8A9A]">
+                          <span className="text-[10px] text-[#6D6279]">
                             +{responsibles.length - 3}
                           </span>
                         )}
@@ -2662,18 +2679,18 @@ function ProjectsPage({
                     </td>
                     <td data-label="التقدم" className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#52657A]">
+                        <span className="text-xs text-[#5A5570]">
                           {project.progress}%
                         </span>
                         <Progress
                           value={project.progress}
-                          className="h-1.5 w-16 bg-slate-100 [&>div]:bg-[#6C8FB8]"
+                          className="h-1.5 w-16 bg-slate-100 [&>div]:bg-[#8570D0]"
                         />
                       </div>
                     </td>
                     <td
                       data-label="الموعد"
-                      className="px-5 py-4 text-xs text-[#7C8A9A]"
+                      className="px-5 py-4 text-xs text-[#6D6279]"
                     >
                       {project.endDate ? dateText(project.endDate) : "مستمر"}
                     </td>
@@ -2689,7 +2706,7 @@ function ProjectsPage({
                             type="button"
                             onClick={() => editProject(project)}
                             aria-label={`تعديل ${project.title}`}
-                            className="rounded-md p-2 text-[#647487] hover:bg-[#EDF4FA] hover:text-[#52769F]"
+                            className="rounded-md p-2 text-[#615A74] hover:bg-[#F0EAFE] hover:text-[#7A4CCF]"
                           >
                             <Pencil className="size-4" />
                           </button>
@@ -2712,7 +2729,7 @@ function ProjectsPage({
                   <td
                     data-mobile-empty
                     colSpan={6}
-                    className="px-5 py-12 text-center text-sm text-[#7C8A9A]"
+                    className="px-5 py-12 text-center text-sm text-[#6D6279]"
                   >
                     لا توجد مشاريع مطابقة
                   </td>
@@ -2751,16 +2768,16 @@ function ProjectDetail({
     <div className="entry max-w-5xl">
       <button
         onClick={() => setPage("projects")}
-        className="mb-5 flex items-center gap-1 text-sm text-[#647487] hover:text-[#52769F]"
+        className="mb-5 flex items-center gap-1 text-sm text-[#615A74] hover:text-[#7A4CCF]"
       >
         <ArrowRight className="size-4" />
         كل المشاريع
       </button>
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-start">
         <div>
-          <p className="mb-2 text-xs font-semibold text-[#6C8FB8]">مشروع</p>
+          <p className="mb-2 text-xs font-semibold text-[#8570D0]">مشروع</p>
           <h1 className="text-2xl font-bold">{project.title}</h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[#7C8A9A]">
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#6D6279]">
             {project.summary}
           </p>
         </div>
@@ -2770,7 +2787,7 @@ function ProjectDetail({
               <Button
                 variant="outline"
                 onClick={() => editProject(project)}
-                className="h-9 gap-2 border-slate-200 bg-white text-[#52657A]"
+                className="h-9 gap-2 border-slate-200 bg-white text-[#5A5570]"
               >
                 <Pencil className="size-4" />
                 تعديل
@@ -2786,7 +2803,7 @@ function ProjectDetail({
           )}
           <Button
             onClick={() => openTask(project.id)}
-            className="h-9 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+            className="h-9 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             <Plus className="size-4" />
             إضافة مهمة
@@ -2795,7 +2812,7 @@ function ProjectDetail({
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-[#7C8A9A]">المسؤولون:</span>
+          <span className="text-[#6D6279]">المسؤولون:</span>
           <div className="flex -space-x-1.5 space-x-reverse">
             {responsibles.map((member: any) => (
               <Avatar
@@ -2810,15 +2827,15 @@ function ProjectDetail({
             {responsibles.map((member: any) => member.name).join("، ")}
           </span>
         </div>
-        <span className="text-[#7C8A9A]">
+        <span className="text-[#6D6279]">
           {project.endDate ? "الموعد:" : "المدة:"}{" "}
-          <b className="mr-1 font-medium text-[#52657A]">
+          <b className="mr-1 font-medium text-[#5A5570]">
             {project.endDate ? dateText(project.endDate, false) : "مشروع مستمر"}
           </b>
         </span>
-        <span className="text-[#7C8A9A]">
+        <span className="text-[#6D6279]">
           التقدم:{" "}
-          <b className="mr-1 font-medium text-[#52657A]">{project.progress}%</b>
+          <b className="mr-1 font-medium text-[#5A5570]">{project.progress}%</b>
         </span>
         <StatusPill status={project.status} project />
       </div>
@@ -2828,8 +2845,8 @@ function ProjectDetail({
           className={cn(
             "border-b-2 px-1 pb-3 text-sm",
             tab === "work"
-              ? "border-[#6C8FB8] font-semibold text-[#52769F]"
-              : "border-transparent text-[#7C8A9A]"
+              ? "border-[#8570D0] font-semibold text-[#7A4CCF]"
+              : "border-transparent text-[#6D6279]"
           )}
         >
           العمل
@@ -2839,8 +2856,8 @@ function ProjectDetail({
           className={cn(
             "border-b-2 px-1 pb-3 text-sm",
             tab === "activity"
-              ? "border-[#6C8FB8] font-semibold text-[#52769F]"
-              : "border-transparent text-[#7C8A9A]"
+              ? "border-[#8570D0] font-semibold text-[#7A4CCF]"
+              : "border-transparent text-[#6D6279]"
           )}
         >
           النشاط والملفات
@@ -2868,11 +2885,11 @@ function ProjectDetail({
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">{output.title}</p>
-                    <p className="text-[11px] text-[#7C8A9A]">
+                    <p className="text-[11px] text-[#6D6279]">
                       {dateText(output.dueDate)}
                     </p>
                   </div>
-                  <span className="text-xs text-[#52657A]">
+                  <span className="text-xs text-[#5A5570]">
                     {output.progress}%
                   </span>
                 </div>
@@ -2897,7 +2914,7 @@ function ProjectDetail({
           </section>
         </div>
       ) : (
-        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-[#7C8A9A]">
+        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-[#6D6279]">
           تظهر هنا الملفات والتعليقات والنشاط المرتبط بالمشروع عند إضافتها.
         </div>
       )}
@@ -2945,7 +2962,7 @@ function ProjectDetailWithComments({
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-sm font-semibold">حالة المشروع</h2>
-              <p className="mt-1 text-xs text-[#7C8A9A]">
+              <p className="mt-1 text-xs text-[#6D6279]">
                 يستطيع أي عضو فريق تحديث حالة العمل الجماعية.
               </p>
             </div>
@@ -2958,7 +2975,7 @@ function ProjectDetailWithComments({
                   event.target.value as ProjectStatus
                 )
               }
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-[#52657A]"
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-[#5A5570]"
             >
               {Object.entries(projectStatusLabel).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -2975,14 +2992,14 @@ function ProjectDetailWithComments({
             <h2 className="text-sm font-semibold">
               ملاحظات الفريق على التسليمات
             </h2>
-            <p className="mt-1 text-xs text-[#7C8A9A]">
+            <p className="mt-1 text-xs text-[#6D6279]">
               تظهر الملاحظات للموظف المسؤول ضمن متابعة التسليم.
             </p>
           </div>
           <select
             value={deliverableId}
             onChange={event => setDeliverableId(Number(event.target.value))}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-[#52657A]"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-[#5A5570]"
           >
             {outputs.map((output: any) => (
               <option key={output.id} value={output.id}>
@@ -2996,18 +3013,18 @@ function ProjectDetailWithComments({
             comments.map((comment: any) => (
               <div
                 key={comment.id}
-                className="rounded-lg bg-[#F7F9FC] px-4 py-3"
+                className="rounded-lg bg-[#F8F6FF] px-4 py-3"
               >
-                <p className="text-sm leading-6 text-[#52657A]">
+                <p className="text-sm leading-6 text-[#5A5570]">
                   {comment.body}
                 </p>
-                <p className="mt-2 text-[11px] text-[#7C8A9A]">
+                <p className="mt-2 text-[11px] text-[#6D6279]">
                   {comment.authorName} · {dateText(comment.createdAt)}
                 </p>
               </div>
             ))
           ) : (
-            <p className="rounded-lg border border-dashed border-slate-200 py-5 text-center text-xs text-[#7C8A9A]">
+            <p className="rounded-lg border border-dashed border-slate-200 py-5 text-center text-xs text-[#6D6279]">
               لا توجد ملاحظات على هذا التسليم بعد.
             </p>
           )}
@@ -3030,7 +3047,7 @@ function ProjectDetailWithComments({
             <Button
               disabled={addComment.isPending}
               type="submit"
-              className="h-10 bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               {addComment.isPending ? "جارٍ الإضافة..." : "إضافة ملاحظة"}
             </Button>
@@ -3146,7 +3163,7 @@ function TaskDetailPage({
       <div className="entry max-w-5xl">
         <button
           onClick={() => setPage("tasks")}
-          className="mb-5 flex items-center gap-1 text-sm text-[#647487] hover:text-[#52769F]"
+          className="mb-5 flex items-center gap-1 text-sm text-[#615A74] hover:text-[#7A4CCF]"
         >
           <ArrowRight className="size-4" />
           كل المهام
@@ -3169,7 +3186,7 @@ function TaskDetailPage({
     <div className="entry max-w-5xl">
       <button
         onClick={() => setPage("tasks")}
-        className="mb-5 flex items-center gap-1 text-sm text-[#647487] hover:text-[#52769F]"
+        className="mb-5 flex items-center gap-1 text-sm text-[#615A74] hover:text-[#7A4CCF]"
       >
         <ArrowRight className="size-4" />
         كل المهام
@@ -3178,13 +3195,13 @@ function TaskDetailPage({
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
           <div className="min-w-0">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-[#6C8FB8]">مهمة</span>
+              <span className="text-xs font-semibold text-[#8570D0]">مهمة</span>
               <PriorityPill priority={task.priority} />
               <StatusPill status={task.status} />
               {task.needsSupport && <SupportPill />}
             </div>
             <h1 className="text-2xl font-bold leading-9">{task.title}</h1>
-            <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-7 text-[#647487]">
+            <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-7 text-[#615A74]">
               {task.description?.trim() || "لم يُضف وصف لهذه المهمة بعد."}
             </p>
           </div>
@@ -3229,14 +3246,14 @@ function TaskDetailPage({
               task.dueDate ? fullDateText(task.dueDate) : "غير محدد",
             ],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-lg bg-[#F7F9FC] px-4 py-3">
-              <p className="text-[11px] text-[#7C8A9A]">{label}</p>
-              <p className="mt-1 text-sm font-medium text-[#40556D]">{value}</p>
+            <div key={label} className="rounded-lg bg-[#F8F6FF] px-4 py-3">
+              <p className="text-[11px] text-[#6D6279]">{label}</p>
+              <p className="mt-1 text-sm font-medium text-[#4E4961]">{value}</p>
             </div>
           ))}
         </div>
         {canEditWork && (
-          <div className="mt-5 flex flex-col gap-3 rounded-lg border border-slate-200 bg-[#FBFDFF] p-4 sm:flex-row sm:items-end">
+          <div className="mt-5 flex flex-col gap-3 rounded-lg border border-slate-200 bg-[#FFFDFF] p-4 sm:flex-row sm:items-end">
             <Field label="تحديث الحالة">
               <select
                 value={task.status}
@@ -3271,21 +3288,21 @@ function TaskDetailPage({
       <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-7">
         <SectionTitle
           action={
-            <span className="text-xs text-[#7C8A9A]">
+            <span className="text-xs text-[#6D6279]">
               {completedChecklistItems} من {checklistItems.length} مكتملة
             </span>
           }
         >
           قائمة المهام الفرعية
         </SectionTitle>
-        <p className="mb-4 text-xs leading-6 text-[#7C8A9A]">
+        <p className="mb-4 text-xs leading-6 text-[#6D6279]">
           حوّل المهمة إلى خطوات قابلة للإنجاز، وحدد مسؤولًا مستقلًا لكل خطوة.
         </p>
         <div className="space-y-2">
           {checklistItems.map((item: any) => (
             <div
               key={item.id}
-              className="flex flex-col gap-3 rounded-lg border border-slate-100 bg-[#FBFCFE] p-3 sm:flex-row sm:items-center"
+              className="flex flex-col gap-3 rounded-lg border border-slate-100 bg-[#FFFDFF] p-3 sm:flex-row sm:items-center"
             >
               <Checkbox
                 checked={item.isComplete}
@@ -3314,7 +3331,7 @@ function TaskDetailPage({
               ) : (
                 <span
                   className={cn(
-                    "min-w-0 flex-1 text-sm text-[#40556D]",
+                    "min-w-0 flex-1 text-sm text-[#4E4961]",
                     item.isComplete && "text-slate-400 line-through"
                   )}
                 >
@@ -3334,7 +3351,7 @@ function TaskDetailPage({
                   })
                 }
                 aria-label={`مسؤول البند ${item.title}`}
-                className="h-9 min-w-36 rounded-md border border-slate-200 bg-white px-2 text-xs text-[#52657A]"
+                className="h-9 min-w-36 rounded-md border border-slate-200 bg-white px-2 text-xs text-[#5A5570]"
               >
                 <option value="">غير مسند</option>
                 {data.members.map((member: any) => (
@@ -3371,7 +3388,7 @@ function TaskDetailPage({
                         setEditingChecklistTitle(item.title);
                       }}
                       aria-label="تعديل البند"
-                      className="rounded-md p-2 text-[#52769F] hover:bg-[#EDF4FA]"
+                      className="rounded-md p-2 text-[#7A4CCF] hover:bg-[#F0EAFE]"
                     >
                       <Pencil className="size-4" />
                     </button>
@@ -3394,7 +3411,7 @@ function TaskDetailPage({
             </div>
           ))}
           {!checklistItems.length && (
-            <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-[#7C8A9A]">
+            <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-[#6D6279]">
               لا توجد مهام فرعية بعد.
             </p>
           )}
@@ -3436,7 +3453,7 @@ function TaskDetailPage({
               disabled={
                 createChecklistItem.isPending || !newChecklistTitle.trim()
               }
-              className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               <Plus className="size-4" />
               إضافة
@@ -3447,11 +3464,11 @@ function TaskDetailPage({
       <section className="mt-5 rounded-xl border border-violet-100 bg-white p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-[#26364A]">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-[#22273A]">
               <CircleHelp className="size-4 text-violet-600" />
               طلب دعم للمهمة
             </h2>
-            <p className="mt-1 text-xs leading-6 text-[#7C8A9A]">
+            <p className="mt-1 text-xs leading-6 text-[#6D6279]">
               فعّل العلامة واكتب ما يحتاجه صاحب المهمة ليظهر الطلب للفريق في
               تبويب «تحتاج دعم».
             </p>
@@ -3514,7 +3531,7 @@ function TaskDetailPage({
       <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-7">
         <SectionTitle
           action={
-            <span className="text-xs text-[#7C8A9A]">
+            <span className="text-xs text-[#6D6279]">
               {comments.length} تعليق
             </span>
           }
@@ -3534,7 +3551,7 @@ function TaskDetailPage({
                 )}
               >
                 {comment.replyToCommentId && (
-                  <p className="mb-2 text-[10px] font-semibold text-[#6C8FB8]">
+                  <p className="mb-2 text-[10px] font-semibold text-[#8570D0]">
                     رد على تعليق سابق
                   </p>
                 )}
@@ -3566,7 +3583,7 @@ function TaskDetailPage({
                         disabled={
                           updateComment.isPending || !editingCommentBody.trim()
                         }
-                        className="h-8 bg-[#52769F] px-3 text-xs hover:bg-[#46698F]"
+                        className="h-8 bg-[#7A4CCF] px-3 text-xs hover:bg-[#684CB2]"
                       >
                         {updateComment.isPending
                           ? "جارٍ الحفظ..."
@@ -3589,7 +3606,7 @@ function TaskDetailPage({
                 ) : (
                   <CommentBody body={comment.body} />
                 )}
-                <p className="mt-2 text-[11px] text-[#7C8A9A]">
+                <p className="mt-2 text-[11px] text-[#6D6279]">
                   {comment.authorName} · {fullDateText(comment.createdAt)}
                 </p>
                 {editingComment?.id !== comment.id &&
@@ -3601,7 +3618,7 @@ function TaskDetailPage({
                         <button
                           type="button"
                           onClick={() => setReplyingTo(comment)}
-                          className="text-[11px] font-semibold text-[#52769F]"
+                          className="text-[11px] font-semibold text-[#7A4CCF]"
                         >
                           رد
                         </button>
@@ -3614,7 +3631,7 @@ function TaskDetailPage({
                             setEditingComment(comment);
                             setEditingCommentBody(comment.body);
                           }}
-                          className="text-[11px] font-semibold text-[#52769F]"
+                          className="text-[11px] font-semibold text-[#7A4CCF]"
                         >
                           تعديل
                         </button>
@@ -3624,7 +3641,7 @@ function TaskDetailPage({
               </article>
             ))
           ) : (
-            <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-[#7C8A9A]">
+            <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-[#6D6279]">
               لا توجد تعليقات على هذه المهمة بعد.
             </p>
           )}
@@ -3643,7 +3660,7 @@ function TaskDetailPage({
             className="mt-4"
           >
             {replyingTo && (
-              <div className="mb-2 flex items-center justify-between rounded-lg bg-[#EDF4FA] px-3 py-2 text-xs text-[#52657A]">
+              <div className="mb-2 flex items-center justify-between rounded-lg bg-[#F0EAFE] px-3 py-2 text-xs text-[#5A5570]">
                 <span>رد على {replyingTo.authorName}</span>
                 <button
                   type="button"
@@ -3665,7 +3682,7 @@ function TaskDetailPage({
             <Button
               disabled={addComment.isPending || !body.trim()}
               type="submit"
-              className="mt-2 h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+              className="mt-2 h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               <Send className="size-4" />
               {addComment.isPending ? "جارٍ الإضافة..." : "إضافة تعليق"}
@@ -3815,7 +3832,7 @@ function WeeklyUpdatePage({ data, user, isBoardManager, openTaskDetail }: any) {
             : "مهامك الجارية أو المنجزة هذا الأسبوع، مصنفة حسب المشاريع."
         }
       />
-      <div className="mb-5 rounded-lg border border-[#DCE7F2] bg-[#F5F9FD] px-4 py-3 text-xs leading-6 text-[#52657A]">
+      <div className="mb-5 rounded-lg border border-[#ECE5FB] bg-[#F6F3FF] px-4 py-3 text-xs leading-6 text-[#5A5570]">
         يعرض هذا التحديث الأعمال المستمرة حاليًا، والأعمال التي اكتملت خلال
         الأسبوع. لا يغيّر هذا التبويب قائمة المهام الأصلية.
       </div>
@@ -3829,12 +3846,12 @@ function WeeklyUpdatePage({ data, user, isBoardManager, openTaskDetail }: any) {
               key={group.project.id}
               className="overflow-hidden rounded-xl border border-slate-200 bg-white"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-[#FBFCFE] px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-[#FFFDFF] px-5 py-4">
                 <div>
-                  <h2 className="font-semibold text-[#334A63]">
+                  <h2 className="font-semibold text-[#3F3A52]">
                     {group.project.title}
                   </h2>
-                  <p className="mt-1 text-xs text-[#7C8A9A]">
+                  <p className="mt-1 text-xs text-[#6D6279]">
                     {group.tasks.length} مهام · {completed} مكتملة
                   </p>
                 </div>
@@ -3849,20 +3866,20 @@ function WeeklyUpdatePage({ data, user, isBoardManager, openTaskDetail }: any) {
                       type="button"
                       key={task.id}
                       onClick={() => openTaskDetail(task.id)}
-                      className="flex w-full flex-col gap-3 px-5 py-4 text-right transition hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
+                      className="flex w-full flex-col gap-3 px-5 py-4 text-right transition hover:bg-[#F9F8FF] sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
-                        <p className="font-medium text-[#334A63]">
+                        <p className="font-medium text-[#3F3A52]">
                           {task.title}
                         </p>
-                        <p className="mt-1 text-xs text-[#7C8A9A]">
+                        <p className="mt-1 text-xs text-[#6D6279]">
                           {names || "غير مسند"}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill status={task.status} />
                         {task.dueDate && (
-                          <span className="text-xs text-[#7C8A9A]">
+                          <span className="text-xs text-[#6D6279]">
                             {dateText(task.dueDate)}
                           </span>
                         )}
@@ -3929,7 +3946,7 @@ function TasksPage({
         action={
           <Button
             onClick={() => openTask()}
-            className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             <Plus className="size-4" />
             مهمة جديدة
@@ -3943,8 +3960,8 @@ function TasksPage({
           className={cn(
             "flex-1 rounded-md px-3 py-2 text-sm transition sm:flex-none sm:px-4",
             scope === "all"
-              ? "bg-[#EDF4FA] font-semibold text-[#46698F]"
-              : "text-[#647487] hover:bg-slate-50"
+              ? "bg-[#F0EAFE] font-semibold text-[#684CB2]"
+              : "text-[#615A74] hover:bg-slate-50"
           )}
         >
           كل المهام
@@ -3956,7 +3973,7 @@ function TasksPage({
             "flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm transition sm:flex-none sm:px-4",
             scope === "support"
               ? "bg-violet-50 font-semibold text-violet-700"
-              : "text-[#647487] hover:bg-slate-50"
+              : "text-[#615A74] hover:bg-slate-50"
           )}
         >
           <CircleHelp className="size-4" />
@@ -3993,7 +4010,7 @@ function TasksPage({
               setDue("all");
             }}
           >
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               المسؤول
               <select
                 value={assignee}
@@ -4009,7 +4026,7 @@ function TasksPage({
                 ))}
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               المشروع
               <select
                 value={project}
@@ -4025,7 +4042,7 @@ function TasksPage({
                 ))}
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               الأولوية
               <select
                 value={priority}
@@ -4040,7 +4057,7 @@ function TasksPage({
                 ))}
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               الموعد
               <select
                 value={due}
@@ -4055,7 +4072,7 @@ function TasksPage({
                 <option value="none">بدون موعد</option>
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#52657A]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#5A5570]">
               الحالة
               <select
                 value={state}
@@ -4076,7 +4093,7 @@ function TasksPage({
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="responsive-data-table w-full min-w-[760px] text-right">
-            <thead className="border-b border-slate-100 bg-[#FCFDFE] text-[11px] text-[#7C8A9A]">
+            <thead className="border-b border-slate-100 bg-[#FFFDFF] text-[11px] text-[#6D6279]">
               <tr>
                 <th className="w-12 px-4 py-3" />
                 <th className="px-4 py-3">المهمة</th>
@@ -4087,7 +4104,7 @@ function TasksPage({
                       value={assignee}
                       onChange={e => setAssignee(e.target.value)}
                       aria-label="تصفية المهام حسب المسؤول"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل المسؤولين</option>
                       <option value="none">غير مسندة</option>
@@ -4106,7 +4123,7 @@ function TasksPage({
                       value={project}
                       onChange={e => setProject(e.target.value)}
                       aria-label="تصفية المهام حسب المشروع"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل المشاريع</option>
                       <option value="none">بدون مشروع</option>
@@ -4125,7 +4142,7 @@ function TasksPage({
                       value={priority}
                       onChange={e => setPriority(e.target.value)}
                       aria-label="تصفية المهام حسب الأولوية"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل الأولويات</option>
                       {Object.entries(priorityLabel).map(([value, label]) => (
@@ -4143,7 +4160,7 @@ function TasksPage({
                       value={due}
                       onChange={e => setDue(e.target.value as TaskDueFilter)}
                       aria-label="تصفية المهام حسب الموعد"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل المواعيد</option>
                       <option value="overdue">متأخرة</option>
@@ -4161,7 +4178,7 @@ function TasksPage({
                       value={state}
                       onChange={e => setState(e.target.value)}
                       aria-label="تصفية المهام حسب الحالة"
-                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#52657A]"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-normal text-[#5A5570]"
                     >
                       <option value="all">كل الحالات</option>
                       {Object.entries(taskStatusLabel).map(([value, label]) => (
@@ -4183,7 +4200,7 @@ function TasksPage({
                 return (
                   <tr
                     key={task.id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]"
+                    className="border-b border-slate-100 last:border-0 hover:bg-[#FFFDFF]"
                   >
                     <td data-label="إنجاز" className="px-4 py-3.5">
                       <button
@@ -4198,7 +4215,7 @@ function TasksPage({
                           "flex size-5 items-center justify-center rounded-md border disabled:cursor-not-allowed disabled:opacity-50",
                           task.status === "complete"
                             ? "border-emerald-500 bg-emerald-500 text-white"
-                            : "border-slate-300 text-transparent hover:border-[#6C8FB8]"
+                            : "border-slate-300 text-transparent hover:border-[#8570D0]"
                         )}
                       >
                         <Check className="size-3" />
@@ -4212,12 +4229,12 @@ function TasksPage({
                       <button
                         type="button"
                         onClick={() => openTaskDetail(task.id)}
-                        className="text-right hover:text-[#52769F] hover:underline"
+                        className="text-right hover:text-[#7A4CCF] hover:underline"
                       >
                         {task.title}
                       </button>
                       {task.parentTaskId && (
-                        <span className="mr-2 text-[10px] text-[#7C8A9A]">
+                        <span className="mr-2 text-[10px] text-[#6D6279]">
                           مهمة فرعية
                         </span>
                       )}
@@ -4233,7 +4250,7 @@ function TasksPage({
                       )}
                     </td>
                     <td data-label="المسؤول" className="px-4 py-3.5">
-                      <span className="block max-w-48 text-xs leading-5 text-[#52657A]">
+                      <span className="block max-w-48 text-xs leading-5 text-[#5A5570]">
                         {taskAssignees(task, data.members)
                           .map((member: any) => member.name)
                           .join("، ") || "غير مسند"}
@@ -4241,7 +4258,7 @@ function TasksPage({
                     </td>
                     <td
                       data-label="المشروع"
-                      className="px-4 py-3.5 text-xs text-[#7C8A9A]"
+                      className="px-4 py-3.5 text-xs text-[#6D6279]"
                     >
                       {project?.title ?? "غير مرتبط"}
                     </td>
@@ -4250,7 +4267,7 @@ function TasksPage({
                     </td>
                     <td
                       data-label="الموعد"
-                      className="px-4 py-3.5 text-xs text-[#7C8A9A]"
+                      className="px-4 py-3.5 text-xs text-[#6D6279]"
                     >
                       {task.dueDate ? dateText(task.dueDate) : "غير محدد"}
                     </td>
@@ -4265,7 +4282,7 @@ function TasksPage({
                               event.target.value as TaskStatus
                             )
                           }
-                          className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-[#52657A]"
+                          className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-[#5A5570]"
                         >
                           {Object.entries(taskStatusLabel).map(
                             ([value, label]) => (
@@ -4290,7 +4307,7 @@ function TasksPage({
                             type="button"
                             onClick={() => editTask(task)}
                             aria-label={`تعديل ${task.title}`}
-                            className="rounded-md p-2 text-[#647487] hover:bg-[#EDF4FA] hover:text-[#52769F]"
+                            className="rounded-md p-2 text-[#615A74] hover:bg-[#F0EAFE] hover:text-[#7A4CCF]"
                           >
                             <Pencil className="size-4" />
                           </button>
@@ -4311,7 +4328,7 @@ function TasksPage({
                   <td
                     data-mobile-empty
                     colSpan={8}
-                    className="px-5 py-12 text-center text-sm text-[#7C8A9A]"
+                    className="px-5 py-12 text-center text-sm text-[#6D6279]"
                   >
                     {scope === "support"
                       ? "لا توجد مهام تحتاج دعم حاليًا"
@@ -4380,7 +4397,7 @@ function TeamPage({
           canManageTeam && (
             <Button
               onClick={openInvite}
-              className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               <UserRound className="size-4" />
               دعوة عضو
@@ -4436,7 +4453,7 @@ function TeamPage({
               showManagement ? "min-w-[1180px]" : "min-w-[700px]"
             )}
           >
-            <thead className="border-b border-slate-100 bg-[#FCFDFE] text-[11px] text-[#7C8A9A]">
+            <thead className="border-b border-slate-100 bg-[#FFFDFF] text-[11px] text-[#6D6279]">
               <tr>
                 <th className="px-5 py-3.5">العضو</th>
                 <th className="px-5 py-3.5">الدور</th>
@@ -4480,7 +4497,7 @@ function TeamPage({
                       setPage("member");
                     }}
                     className={cn(
-                      "border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]",
+                      "border-b border-slate-100 last:border-0 hover:bg-[#FFFDFF]",
                       navigable && "cursor-pointer"
                     )}
                   >
@@ -4502,7 +4519,7 @@ function TeamPage({
                           {showManagement && member.email && (
                             <p
                               dir="ltr"
-                              className="mt-1 break-all text-right text-[11px] text-[#7C8A9A]"
+                              className="mt-1 break-all text-right text-[11px] text-[#6D6279]"
                             >
                               {member.email}
                             </p>
@@ -4512,7 +4529,7 @@ function TeamPage({
                     </td>
                     <td
                       data-label="الدور"
-                      className="px-5 py-4 text-xs text-[#7C8A9A]"
+                      className="px-5 py-4 text-xs text-[#6D6279]"
                     >
                       {member.role}
                     </td>
@@ -4523,7 +4540,7 @@ function TeamPage({
                         onClick={event => event.stopPropagation()}
                       >
                         {accessLabel ? (
-                          <span className="rounded-full bg-[#EDF4FA] px-2.5 py-1 text-[11px] font-semibold text-[#52769F]">
+                          <span className="rounded-full bg-[#F0EAFE] px-2.5 py-1 text-[11px] font-semibold text-[#7A4CCF]">
                             {accessLabel}
                           </span>
                         ) : active ? (
@@ -4541,7 +4558,7 @@ function TeamPage({
                             <option value="viewer">مشاهد</option>
                           </select>
                         ) : (
-                          <span className="text-xs text-[#52657A]">
+                          <span className="text-xs text-[#5A5570]">
                             {boardAccessLabel[member.accessRole] ?? "عضو"}
                           </span>
                         )}
@@ -4570,7 +4587,7 @@ function TeamPage({
                             }
                           />
                         ) : (
-                          <span className="text-xs text-[#52657A]">
+                          <span className="text-xs text-[#5A5570]">
                             كل المشاريع
                           </span>
                         )}
@@ -4632,7 +4649,7 @@ function TeamPage({
                               variant="outline"
                               disabled={updating}
                               onClick={() => reissueInvitation(member.id)}
-                              className="gap-1.5 border-[#B8CBE0] text-[#52769F]"
+                              className="gap-1.5 border-[#D7C9F2] text-[#7A4CCF]"
                             >
                               <Send className="size-3.5" />
                               إعادة إرسال
@@ -4667,7 +4684,7 @@ function TeamPage({
                               size="sm"
                               variant="outline"
                               onClick={openInvite}
-                              className="border-slate-200 text-[#52657A]"
+                              className="border-slate-200 text-[#5A5570]"
                             >
                               دعوة جديدة
                             </Button>
@@ -4709,7 +4726,7 @@ function TeamPage({
                 />
                 <p className="flex-1 text-sm">
                   <b className="font-medium">{member.name}</b>
-                  <span className="mr-2 text-[#7C8A9A]">
+                  <span className="mr-2 text-[#6D6279]">
                     لديه عبء مرتفع أو مهام متأخرة
                   </span>
                 </p>
@@ -4772,7 +4789,7 @@ function ProjectAccessDialog({ member, projects, updating, onConfirm }: any) {
           size="sm"
           variant="outline"
           disabled={updating}
-          className="h-9 border-[#B8CBE0] text-xs text-[#52769F]"
+          className="h-9 border-[#D7C9F2] text-xs text-[#7A4CCF]"
         >
           {member.projectAccess === "selected"
             ? `${selectedCount} مشروع محدد`
@@ -4857,7 +4874,7 @@ function ProjectAccessDialog({ member, projects, updating, onConfirm }: any) {
           <AlertDialogCancel>تراجع</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => onConfirm(projectAccess, allowedProjectIds)}
-            className="bg-[#52769F] text-white hover:bg-[#46698F]"
+            className="bg-[#7A4CCF] text-white hover:bg-[#684CB2]"
           >
             حفظ النطاق
           </AlertDialogAction>
@@ -5000,7 +5017,7 @@ function MemberDetail({ data, memberId, setPage }: any) {
     <div className="entry max-w-4xl">
       <button
         onClick={() => setPage("team")}
-        className="mb-5 flex items-center gap-1 text-sm text-[#647487]"
+        className="mb-5 flex items-center gap-1 text-sm text-[#615A74]"
       >
         <ArrowRight className="size-4" />
         الفريق
@@ -5014,7 +5031,7 @@ function MemberDetail({ data, memberId, setPage }: any) {
           />
           <div>
             <h1 className="text-xl font-bold">{member.name}</h1>
-            <p className="mt-1 text-sm text-[#7C8A9A]">{member.role}</p>
+            <p className="mt-1 text-sm text-[#6D6279]">{member.role}</p>
           </div>
           <span
             className={cn(
@@ -5051,9 +5068,9 @@ function MemberDetail({ data, memberId, setPage }: any) {
           <SectionTitle>هذا الأسبوع</SectionTitle>
           {current.slice(0, 4).map((task: any) => (
             <div key={task.id} className="flex items-center gap-3 py-3">
-              <span className="size-1.5 rounded-full bg-[#6C8FB8]" />
+              <span className="size-1.5 rounded-full bg-[#8570D0]" />
               <p className="flex-1 text-sm">{task.title}</p>
-              <span className="text-xs text-[#7C8A9A]">
+              <span className="text-xs text-[#6D6279]">
                 {dateText(task.dueDate)}
               </span>
             </div>
@@ -5157,7 +5174,7 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
           canEditWork ? (
             <Button
               onClick={openCreate}
-              className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               <Plus className="size-4" />
               إطلاق جديد
@@ -5169,7 +5186,7 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
         {launches.length ? (
           <div className="overflow-x-auto">
             <table className="responsive-data-table w-full min-w-[680px] text-right">
-              <thead className="border-b border-slate-100 bg-[#FCFDFE] text-[11px] text-[#7C8A9A]">
+              <thead className="border-b border-slate-100 bg-[#FFFDFF] text-[11px] text-[#6D6279]">
                 <tr>
                   <th className="px-5 py-3">الإطلاق</th>
                   <th className="px-5 py-3">المشروع المرتبط</th>
@@ -5189,9 +5206,9 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
                       key={launch.id}
                       id={`launch-${launch.id}`}
                       className={cn(
-                        "scroll-mt-6 border-b border-slate-100 last:border-0 hover:bg-[#FBFCFE]",
+                        "scroll-mt-6 border-b border-slate-100 last:border-0 hover:bg-[#FFFDFF]",
                         requestedEventId === launch.id &&
-                          "bg-[#F2F7FC] ring-2 ring-inset ring-[#BFD3E7]"
+                          "bg-[#F2F7FC] ring-2 ring-inset ring-[#D9CCF3]"
                       )}
                     >
                       <td
@@ -5216,12 +5233,12 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
                               setProjectId(project.id);
                               setPage("project");
                             }}
-                            className="text-[#52769F] hover:underline"
+                            className="text-[#7A4CCF] hover:underline"
                           >
                             {project.title}
                           </button>
                         ) : (
-                          <span className="text-[#7C8A9A]">بدون مشروع</span>
+                          <span className="text-[#6D6279]">بدون مشروع</span>
                         )}
                       </td>
                       <td data-label="الموعد" className="px-5 py-4 text-sm">
@@ -5250,7 +5267,7 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
                               type="button"
                               onClick={() => openEdit(launch)}
                               aria-label={`تعديل ${launch.title}`}
-                              className="rounded-md p-2 text-[#647487] hover:bg-[#EDF4FA] hover:text-[#52769F]"
+                              className="rounded-md p-2 text-[#615A74] hover:bg-[#F0EAFE] hover:text-[#7A4CCF]"
                             >
                               <Pencil className="size-4" />
                             </button>
@@ -5275,13 +5292,13 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
           <div className="px-6 py-16 text-center">
             <Rocket className="mx-auto size-7 text-violet-300" />
             <h2 className="mt-3 font-semibold">لا توجد إطلاقات بعد</h2>
-            <p className="mt-2 text-sm text-[#7C8A9A]">
+            <p className="mt-2 text-sm text-[#6D6279]">
               أضف أول إطلاق وسيظهر موعده تلقائيًا في التقويم.
             </p>
             {canEditWork && (
               <Button
                 onClick={openCreate}
-                className="mt-5 bg-[#52769F] hover:bg-[#46698F]"
+                className="mt-5 bg-[#7A4CCF] hover:bg-[#684CB2]"
               >
                 إضافة أول إطلاق
               </Button>
@@ -5338,7 +5355,7 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
             <Button
               type="submit"
               disabled={createLaunch.isPending || updateLaunch.isPending}
-              className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               {createLaunch.isPending || updateLaunch.isPending
                 ? "جارٍ الحفظ..."
@@ -5445,7 +5462,7 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
       ? "border-rose-500 bg-rose-50 text-rose-700"
       : event.calendarKind === "launch"
         ? "border-violet-500 bg-violet-50 text-violet-700"
-        : "border-[#6C8FB8] bg-[#EDF4FA] text-[#46698F]";
+        : "border-[#8570D0] bg-[#F0EAFE] text-[#684CB2]";
   const openCalendarItem = (event: any) => {
     if (event.calendarKind === "task") openTaskDetail(event.taskId);
     if (event.calendarKind === "launch") setPage("launches");
@@ -5474,7 +5491,7 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                 type="button"
                 aria-label="الشهر السابق"
                 onClick={() => setMonthCursor(new Date(year, month - 1, 1))}
-                className="rounded-lg border border-slate-200 p-2 text-[#647487] hover:bg-slate-50"
+                className="rounded-lg border border-slate-200 p-2 text-[#615A74] hover:bg-slate-50"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -5482,7 +5499,7 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                 type="button"
                 aria-label="الشهر التالي"
                 onClick={() => setMonthCursor(new Date(year, month + 1, 1))}
-                className="rounded-lg border border-slate-200 p-2 text-[#647487] hover:bg-slate-50"
+                className="rounded-lg border border-slate-200 p-2 text-[#615A74] hover:bg-slate-50"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -5490,20 +5507,20 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                 <h2 className="font-semibold">
                   {calendarSystem === "gregory" ? gregorianTitle : hijriTitle}
                 </h2>
-                <p className="mt-0.5 text-[11px] text-[#7C8A9A]">
+                <p className="mt-0.5 text-[11px] text-[#6D6279]">
                   {calendarSystem === "gregory" ? hijriTitle : gregorianTitle}
                 </p>
               </div>
             </div>
-            <div className="inline-flex w-fit rounded-lg bg-[#F1F5F9] p-1">
+            <div className="inline-flex w-fit rounded-lg bg-[#F5F1FF] p-1">
               <button
                 type="button"
                 onClick={() => setCalendarSystem("gregory")}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs transition",
                   calendarSystem === "gregory"
-                    ? "bg-white font-semibold text-[#40556D] shadow-sm"
-                    : "text-[#7C8A9A]"
+                    ? "bg-white font-semibold text-[#4E4961] shadow-sm"
+                    : "text-[#6D6279]"
                 )}
               >
                 ميلادي
@@ -5514,15 +5531,15 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs transition",
                   calendarSystem === "islamic"
-                    ? "bg-white font-semibold text-[#40556D] shadow-sm"
-                    : "text-[#7C8A9A]"
+                    ? "bg-white font-semibold text-[#4E4961] shadow-sm"
+                    : "text-[#6D6279]"
                 )}
               >
                 هجري
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap gap-4 border-b border-slate-100 px-5 py-3 text-[11px] text-[#647487]">
+          <div className="flex flex-wrap gap-4 border-b border-slate-100 px-5 py-3 text-[11px] text-[#615A74]">
             <span className="inline-flex items-center gap-2">
               <span className="size-2.5 rounded-full bg-rose-500" />
               موعد نهائي لمهمة
@@ -5532,13 +5549,13 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
               موعد إطلاق
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-[#6C8FB8]" />
+              <span className="size-2.5 rounded-full bg-[#8570D0]" />
               موعد آخر
             </span>
           </div>
           <div className="overflow-x-auto">
             <div className="min-w-[700px]">
-              <div className="grid grid-cols-7 border-b border-slate-100 text-center text-[11px] text-[#7C8A9A]">
+              <div className="grid grid-cols-7 border-b border-slate-100 text-center text-[11px] text-[#6D6279]">
                 {[
                   "أحد",
                   "اثنين",
@@ -5559,7 +5576,7 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                     return (
                       <div
                         key={`blank-${index}`}
-                        className="min-h-24 border-b border-l border-slate-100 bg-[#FCFDFE]"
+                        className="min-h-24 border-b border-l border-slate-100 bg-[#FFFDFF]"
                       />
                     );
                   const key = dateKey(date);
@@ -5576,14 +5593,14 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                       key={key}
                       className={cn(
                         "min-h-24 border-b border-l border-slate-100 p-2",
-                        isToday && "bg-[#EDF4FA]/45"
+                        isToday && "bg-[#F0EAFE]/45"
                       )}
                     >
                       <div className="flex items-start justify-between">
                         <span
                           className={cn(
                             "flex size-6 items-center justify-center rounded-full text-xs",
-                            isToday && "bg-[#6C8FB8] text-white"
+                            isToday && "bg-[#8570D0] text-white"
                           )}
                         >
                           {calendarSystem === "gregory"
@@ -5640,14 +5657,14 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                         ? "text-rose-600"
                         : event.calendarKind === "launch"
                           ? "text-violet-700"
-                          : "text-[#52769F]"
+                          : "text-[#7A4CCF]"
                     )}
                   >
                     {new Intl.NumberFormat("ar-SA").format(
                       new Date(event.eventDate).getDate()
                     )}
                   </p>
-                  <p className="text-[9px] text-[#7C8A9A]">
+                  <p className="text-[9px] text-[#6D6279]">
                     {new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {
                       month: "short",
                     }).format(new Date(event.eventDate))}
@@ -5655,7 +5672,7 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                 </div>
                 <div className="min-w-0 border-r border-slate-100 pr-3">
                   <p className="truncate text-sm font-medium">{event.title}</p>
-                  <p className="mt-1 text-[11px] text-[#7C8A9A]">
+                  <p className="mt-1 text-[11px] text-[#6D6279]">
                     {eventTypeLabel[event.type] ?? event.type}
                   </p>
                 </div>
@@ -5846,7 +5863,7 @@ function ResearchFeedsPage({
                   variant="outline"
                   onClick={() => refreshAll.mutate()}
                   disabled={refreshAll.isPending || !activeInterests.length}
-                  className="h-10 gap-2 border-slate-200 bg-white text-[#52657A]"
+                  className="h-10 gap-2 border-slate-200 bg-white text-[#5A5570]"
                 >
                   <RefreshCw
                     className={cn(
@@ -5859,7 +5876,7 @@ function ResearchFeedsPage({
               )}
               <Button
                 onClick={() => setShowManagement(current => !current)}
-                className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+                className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
               >
                 {canManageFeeds ? (
                   <SlidersHorizontal className="size-4" />
@@ -5874,7 +5891,7 @@ function ResearchFeedsPage({
       />
 
       {canAddFeeds && showManagement && (
-        <section className="mb-6 rounded-xl border border-[#DCE7F2] bg-white p-5">
+        <section className="mb-6 rounded-xl border border-[#ECE5FB] bg-white p-5">
           <SectionTitle>
             {editingId ? "تعديل موضوع بحثي" : "إضافة موضوع بحثي"}
           </SectionTitle>
@@ -5913,15 +5930,15 @@ function ResearchFeedsPage({
               <Button
                 type="submit"
                 disabled={createInterest.isPending || updateInterest.isPending}
-                className="h-10 bg-[#52769F] hover:bg-[#46698F]"
+                className="h-10 bg-[#7A4CCF] hover:bg-[#684CB2]"
               >
                 {editingId ? "حفظ" : "إضافة"}
               </Button>
             </div>
           </form>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] leading-5">
-            <p className="text-[#7C8A9A]">
-              افصل بين الكلمات بفاصلة أو سطر جديد. يُحدّث أثر النتائج تلقائيًا
+            <p className="text-[#6D6279]">
+              افصل بين الكلمات بفاصلة أو سطر جديد. يُحدّث وجهة النتائج تلقائيًا
               كل 6 ساعات من arXiv وOpenAlex دون تكلفة ذكاء اصطناعي.
             </p>
             <p
@@ -5929,7 +5946,7 @@ function ResearchFeedsPage({
                 "font-semibold",
                 parsedKeywords.length > MAX_RESEARCH_KEYWORDS
                   ? "text-rose-600"
-                  : "text-[#52769F]"
+                  : "text-[#7A4CCF]"
               )}
             >
               {parsedKeywords.length} / {MAX_RESEARCH_KEYWORDS} كلمة
@@ -5957,7 +5974,7 @@ function ResearchFeedsPage({
                         {interest.lastFetchMessage ?? "بانتظار أول تحديث"}
                       </span>
                     </div>
-                    <p className="mt-1 truncate text-xs text-[#7C8A9A]">
+                    <p className="mt-1 truncate text-xs text-[#6D6279]">
                       {(interest.keywords ?? []).join(" · ")}
                     </p>
                   </div>
@@ -5968,7 +5985,7 @@ function ResearchFeedsPage({
                         setInterestActive.mutate({ id: interest.id, active })
                       }
                       aria-label={`تفعيل ${interest.name}`}
-                      className="ml-2 data-[state=checked]:bg-[#52769F]"
+                      className="ml-2 data-[state=checked]:bg-[#7A4CCF]"
                     />
                     <button
                       type="button"
@@ -5977,7 +5994,7 @@ function ResearchFeedsPage({
                       }
                       disabled={refreshInterest.isPending || !interest.isActive}
                       aria-label={`تحديث ${interest.name}`}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-[#52769F] disabled:opacity-40"
+                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-[#7A4CCF] disabled:opacity-40"
                     >
                       <RefreshCw className="size-4" />
                     </button>
@@ -5985,7 +6002,7 @@ function ResearchFeedsPage({
                       type="button"
                       onClick={() => edit(interest)}
                       aria-label={`تعديل ${interest.name}`}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-[#52769F]"
+                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-[#7A4CCF]"
                     >
                       <Pencil className="size-4" />
                     </button>
@@ -6030,7 +6047,7 @@ function ResearchFeedsPage({
 
       <section className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <label className="flex flex-col items-stretch gap-2 text-xs font-medium text-[#52657A] sm:flex-row sm:items-center">
+          <label className="flex flex-col items-stretch gap-2 text-xs font-medium text-[#5A5570] sm:flex-row sm:items-center">
             <span>الموضوع</span>
             <select
               value={selectedInterest}
@@ -6056,20 +6073,20 @@ function ResearchFeedsPage({
             />
           </label>
         </div>
-        <p className="mt-3 text-[11px] text-[#7C8A9A]">
+        <p className="mt-3 text-[11px] text-[#6D6279]">
           المصادر الحالية: arXiv وOpenAlex · آخر تحديث:{" "}
           {fullDateText(latestRefresh)}
         </p>
         {canAddFeeds && (
-          <p className="mt-1 text-[11px] leading-5 text-[#6C8FB8]">
+          <p className="mt-1 text-[11px] leading-5 text-[#8570D0]">
             لترجمة النتائج غير المترجمة، اطلب من ChatGPT أو Claude بعد ربطه
-            بأثر: «ترجم ملخصات الخلاصات الجديدة إلى العربية واحفظها».
+            وجهة: «ترجم ملخصات الخلاصات الجديدة إلى العربية واحفظها».
           </p>
         )}
       </section>
 
       {isLoading ? (
-        <div className="rounded-xl border border-slate-200 bg-white py-16 text-center text-sm text-[#7C8A9A]">
+        <div className="rounded-xl border border-slate-200 bg-white py-16 text-center text-sm text-[#6D6279]">
           جارٍ تحميل الخلاصات...
         </div>
       ) : error ? (
@@ -6080,7 +6097,7 @@ function ResearchFeedsPage({
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
           <Rss className="mx-auto size-8 text-slate-300" />
           <p className="mt-4 text-sm font-semibold">لا توجد اهتمامات مفعلة</p>
-          <p className="mt-2 text-xs text-[#7C8A9A]">
+          <p className="mt-2 text-xs text-[#6D6279]">
             {canAddFeeds
               ? "أضف أول موضوع وحدد الكلمات التي تهم الفريق."
               : "لم يضف الفريق موضوعات بحثية حتى الآن."}
@@ -6102,13 +6119,13 @@ function ResearchFeedsPage({
                     {itemInterests.map((interest: any) => (
                       <span
                         key={interest.id}
-                        className="rounded-full bg-[#EDF4FA] px-2 py-1 text-[10px] font-medium text-[#52769F]"
+                        className="rounded-full bg-[#F0EAFE] px-2 py-1 text-[10px] font-medium text-[#7A4CCF]"
                       >
                         {interest.name}
                       </span>
                     ))}
                   </div>
-                  <span className="shrink-0 text-[10px] text-[#7C8A9A]">
+                  <span className="shrink-0 text-[10px] text-[#6D6279]">
                     {fullDateText(item.publishedAt)}
                   </span>
                 </div>
@@ -6116,25 +6133,25 @@ function ResearchFeedsPage({
                   href={item.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex items-start gap-2 text-base font-bold leading-7 text-[#26364A] hover:text-[#52769F]"
+                  className="group flex items-start gap-2 text-base font-bold leading-7 text-[#22273A] hover:text-[#7A4CCF]"
                   dir="auto"
                 >
                   <span className="flex-1">{item.title}</span>
-                  <ExternalLink className="mt-1 size-4 shrink-0 text-slate-300 group-hover:text-[#52769F]" />
+                  <ExternalLink className="mt-1 size-4 shrink-0 text-slate-300 group-hover:text-[#7A4CCF]" />
                 </a>
-                <p className="mt-2 text-xs text-[#7C8A9A]" dir="auto">
+                <p className="mt-2 text-xs text-[#6D6279]" dir="auto">
                   {(item.authors ?? []).slice(0, 4).join("، ") ||
                     "باحثون متعددون"}
                   {(item.authors ?? []).length > 4 ? " وآخرون" : ""}
                 </p>
-                <div className="mt-4 flex-1 rounded-lg bg-[#F8FAFC] p-3">
-                  <p className="mb-1 text-[10px] font-semibold text-[#52769F]">
+                <div className="mt-4 flex-1 rounded-lg bg-[#F9F8FF] p-3">
+                  <p className="mb-1 text-[10px] font-semibold text-[#7A4CCF]">
                     {item.translationIsCurrent
                       ? "الملخص بالعربية"
                       : "ملخص الباحثين الأصلي"}
                   </p>
                   <p
-                    className="line-clamp-5 text-xs leading-6 text-[#52657A]"
+                    className="line-clamp-5 text-xs leading-6 text-[#5A5570]"
                     dir={item.translationIsCurrent ? "rtl" : "auto"}
                   >
                     {(item.translationIsCurrent && item.abstractArabic) ||
@@ -6142,8 +6159,8 @@ function ResearchFeedsPage({
                       "لا يتوفر ملخص لهذا البحث."}
                   </p>
                   {item.translationIsCurrent && item.abstract && (
-                    <details className="mt-2 border-t border-slate-200 pt-2 text-[11px] text-[#647487]">
-                      <summary className="cursor-pointer font-medium text-[#52769F]">
+                    <details className="mt-2 border-t border-slate-200 pt-2 text-[11px] text-[#615A74]">
+                      <summary className="cursor-pointer font-medium text-[#7A4CCF]">
                         عرض الملخص الإنجليزي الأصلي
                       </summary>
                       <p className="mt-2 leading-5" dir="ltr">
@@ -6159,10 +6176,10 @@ function ResearchFeedsPage({
                   )}
                 </div>
                 <div className="mt-4 flex flex-col justify-between gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
-                  <span className="text-[10px] font-bold tracking-wide text-[#6C8FB8]">
+                  <span className="text-[10px] font-bold tracking-wide text-[#8570D0]">
                     {item.source === "openalex" ? "OpenAlex" : "arXiv"}
                   </span>
-                  <label className="flex min-w-0 items-center gap-2 text-xs text-[#647487]">
+                  <label className="flex min-w-0 items-center gap-2 text-xs text-[#615A74]">
                     <Link2 className="size-3.5 shrink-0" />
                     <select
                       value={item.projectId ?? ""}
@@ -6195,10 +6212,10 @@ function ResearchFeedsPage({
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center">
           <Search className="mx-auto size-8 text-slate-300" />
           <p className="mt-4 text-sm font-semibold">لا توجد نتائج مطابقة</p>
-          <p className="mt-2 text-xs text-[#7C8A9A]">
+          <p className="mt-2 text-xs text-[#6D6279]">
             {search
               ? "غيّر عبارة البحث أو اعرض كل الاهتمامات."
-              : "سيجلب أثر النتائج تلقائيًا، ويمكن للمدير تشغيل التحديث الآن."}
+              : "سيجلب وجهة النتائج تلقائيًا، ويمكن للمدير تشغيل التحديث الآن."}
           </p>
         </div>
       )}
@@ -6264,7 +6281,7 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
               }
               openLesson();
             }}
-            className="h-10 gap-2 bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 gap-2 bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             <Plus className="size-4" />
             إضافة درس
@@ -6276,7 +6293,7 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold">نطاق التقرير</h2>
-            <p className="mt-1 text-xs text-[#7C8A9A]">
+            <p className="mt-1 text-xs text-[#6D6279]">
               صفِّ الدروس حسب المشروع أو الفترة ثم صدّر النتيجة بصيغة PDF.
             </p>
           </div>
@@ -6285,7 +6302,7 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
               <Button
                 variant="ghost"
                 onClick={resetFilters}
-                className="h-9 text-xs text-[#647487]"
+                className="h-9 text-xs text-[#615A74]"
               >
                 مسح الفلاتر
               </Button>
@@ -6294,7 +6311,7 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
               variant="outline"
               onClick={exportReport}
               disabled={!lessons.length || invalidRange}
-              className="h-9 gap-2 border-[#B8CBE0] text-[#52769F]"
+              className="h-9 gap-2 border-[#D7C9F2] text-[#7A4CCF]"
             >
               <Download className="size-4" />
               تصدير PDF
@@ -6350,8 +6367,8 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
               key={category}
               className="rounded-xl border border-slate-200 bg-white px-4 py-3.5"
             >
-              <p className="text-[11px] text-[#7C8A9A]">{label}</p>
-              <p className="mt-1.5 text-xl font-bold text-[#52657A]">{count}</p>
+              <p className="text-[11px] text-[#6D6279]">{label}</p>
+              <p className="mt-1.5 text-xl font-bold text-[#5A5570]">{count}</p>
             </div>
           );
         })}
@@ -6361,12 +6378,12 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
             <h2 className="text-sm font-semibold">سجل الدروس</h2>
-            <p className="mt-1 text-[11px] text-[#7C8A9A]">
+            <p className="mt-1 text-[11px] text-[#6D6279]">
               {lessons.length} {lessons.length === 1 ? "درس" : "دروس"} ضمن
               النطاق الحالي
             </p>
           </div>
-          <span className="rounded-full bg-[#EDF4FA] px-3 py-1 text-xs font-semibold text-[#52769F]">
+          <span className="rounded-full bg-[#F0EAFE] px-3 py-1 text-xs font-semibold text-[#7A4CCF]">
             {projectLabel}
           </span>
         </div>
@@ -6385,34 +6402,34 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
                       >
                         {lessonCategoryLabel[item.category] ?? item.category}
                       </span>
-                      <span className="text-[11px] text-[#7C8A9A]">
+                      <span className="text-[11px] text-[#6D6279]">
                         {item.projectTitle}
                       </span>
                     </div>
-                    <h3 className="text-base font-semibold text-[#26364A]">
+                    <h3 className="text-base font-semibold text-[#22273A]">
                       {item.title}
                     </h3>
                   </div>
-                  <div className="text-left text-[11px] leading-5 text-[#7C8A9A]">
+                  <div className="text-left text-[11px] leading-5 text-[#6D6279]">
                     <p>{fullDateText(item.lessonDate)}</p>
                     <p>{item.authorName}</p>
                   </div>
                 </div>
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
                   <div>
-                    <p className="mb-1 text-[11px] font-semibold text-[#52769F]">
+                    <p className="mb-1 text-[11px] font-semibold text-[#7A4CCF]">
                       الدرس المستفاد
                     </p>
-                    <p className="whitespace-pre-wrap text-sm leading-7 text-[#52657A]">
+                    <p className="whitespace-pre-wrap text-sm leading-7 text-[#5A5570]">
                       {item.lesson}
                     </p>
                   </div>
                   {item.recommendation && (
-                    <div className="rounded-lg border-r-2 border-[#6C8FB8] bg-[#F7F9FC] px-4 py-3">
-                      <p className="mb-1 text-[11px] font-semibold text-[#52769F]">
+                    <div className="rounded-lg border-r-2 border-[#8570D0] bg-[#F8F6FF] px-4 py-3">
+                      <p className="mb-1 text-[11px] font-semibold text-[#7A4CCF]">
                         التوصية للمشاريع القادمة
                       </p>
-                      <p className="whitespace-pre-wrap text-sm leading-7 text-[#52657A]">
+                      <p className="whitespace-pre-wrap text-sm leading-7 text-[#5A5570]">
                         {item.recommendation}
                       </p>
                     </div>
@@ -6423,7 +6440,7 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
           </div>
         ) : (
           <div className="px-6 py-14 text-center">
-            <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#EDF4FA] text-[#52769F]">
+            <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#F0EAFE] text-[#7A4CCF]">
               <Lightbulb className="size-6" />
             </span>
             <h3 className="mt-4 text-sm font-semibold">
@@ -6431,7 +6448,7 @@ function LessonsLearnedPage({ data, workspaceName, openLesson }: any) {
                 ? "لا توجد دروس ضمن النطاق المحدد"
                 : "ابدأ بتوثيق أول درس مستفاد"}
             </h3>
-            <p className="mx-auto mt-2 max-w-md text-xs leading-6 text-[#7C8A9A]">
+            <p className="mx-auto mt-2 max-w-md text-xs leading-6 text-[#6D6279]">
               سجّل ما نجح وما يمكن تحسينه ليكون مرجعًا عمليًا لكل المشاريع
               القادمة.
             </p>
@@ -6474,7 +6491,7 @@ function ReportsPage({ data, period, goPeriod }: any) {
           {
             label: "الإنجاز",
             value: tasksInPeriod.length ? `${achievement}%` : "—",
-            tone: "text-[#52769F]",
+            tone: "text-[#7A4CCF]",
           },
           { label: "المتأخر", value: overdue, tone: "text-rose-700" },
           { label: "المكتمل", value: completed, tone: "text-emerald-700" },
@@ -6483,7 +6500,7 @@ function ReportsPage({ data, period, goPeriod }: any) {
             key={item.label}
             className="rounded-xl border border-slate-200 bg-white px-5 py-4"
           >
-            <p className="text-xs text-[#7C8A9A]">{item.label}</p>
+            <p className="text-xs text-[#6D6279]">{item.label}</p>
             <p className={cn("mt-2 text-2xl font-bold", item.tone)}>
               {item.value}
             </p>
@@ -6502,12 +6519,12 @@ function ReportsPage({ data, period, goPeriod }: any) {
                 dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#7C8A9A", fontSize: 11 }}
+                tick={{ fill: "#6D6279", fontSize: 11 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#7C8A9A", fontSize: 11 }}
+                tick={{ fill: "#6D6279", fontSize: 11 }}
                 width={28}
               />
               <Tooltip
@@ -6520,9 +6537,9 @@ function ReportsPage({ data, period, goPeriod }: any) {
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke="#6C8FB8"
+                stroke="#8570D0"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: "#6C8FB8" }}
+                dot={{ r: 3, fill: "#8570D0" }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -6530,7 +6547,7 @@ function ReportsPage({ data, period, goPeriod }: any) {
       </section>
       <section className="mt-5 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
         <SectionTitle>ملخص</SectionTitle>
-        <div className="space-y-3 text-sm leading-6 text-[#52657A]">
+        <div className="space-y-3 text-sm leading-6 text-[#5A5570]">
           <p>
             ستظهر استنتاجات الأداء تلقائيًا بعد إدخال أعمال القسم وبياناتها
             الفعلية.
@@ -6550,7 +6567,7 @@ function McpPage() {
   const revokeMcpConnections = trpc.auth.revokeMcpConnections.useMutation({
     onSuccess: async () => {
       await utils.auth.mcpConnections.invalidate();
-      toast.success("تم فصل المساعدات الذكية عن حساب أثر");
+      toast.success("تم فصل المساعدات الذكية عن حساب وجهة");
     },
     onError: issue => toast.error(issue.message),
   });
@@ -6569,8 +6586,8 @@ function McpPage() {
         "أضف الرابط من Settings ثم Connectors واختر إضافة موصل مخصص.",
       steps: [
         "افتح Settings ثم Connectors.",
-        "اختر Add custom connector واكتب الاسم «أثر».",
-        "الصق رابط MCP، ثم سجّل الدخول إلى أثر ووافق على الصلاحيات.",
+        "اختر Add custom connector واكتب الاسم «وجهة».",
+        "الصق رابط MCP، ثم سجّل الدخول إلى وجهة ووافق على الصلاحيات.",
       ],
       href: "https://claude.ai/settings/connectors",
       action: "فتح موصلات Claude",
@@ -6578,11 +6595,11 @@ function McpPage() {
     {
       name: "ChatGPT",
       description:
-        "أنشئ تطبيقًا مخصصًا باسم أثر، ثم استخدم الرابط نفسه كخادم MCP.",
+        "أنشئ تطبيقًا مخصصًا باسم وجهة، ثم استخدم الرابط نفسه كخادم MCP.",
       steps: [
         "افتح إعدادات التطبيقات والموصلات في ChatGPT.",
-        "أنشئ تطبيقًا مخصصًا باسم «أثر» وأضف رابط MCP.",
-        "اختر OAuth وأكمل تسجيل الدخول والموافقة من صفحة أثر.",
+        "أنشئ تطبيقًا مخصصًا باسم «وجهة» وأضف رابط MCP.",
+        "اختر OAuth وأكمل تسجيل الدخول والموافقة من صفحة وجهة.",
       ],
       href: "https://chatgpt.com/plugins",
       action: "فتح تطبيقات ChatGPT",
@@ -6593,7 +6610,7 @@ function McpPage() {
         "الربط متاح عبر Gemini CLI أو Antigravity الداعم لـRemote MCP، وليس من محادثة Gemini العادية.",
       steps: [
         "افتح ملف ~/.gemini/settings.json.",
-        "أضف إعداد أثر الموضح أدناه ثم أعد تشغيل Gemini CLI.",
+        "أضف إعداد وجهة الموضح أدناه ثم أعد تشغيل Gemini CLI.",
         "نفّذ ‎/mcp auth wjh‎ وأكمل تسجيل الدخول إلى wjh.",
       ],
       config: JSON.stringify(
@@ -6607,11 +6624,11 @@ function McpPage() {
     {
       name: "Manus",
       description:
-        "أضف أثر كموصل MCP مخصص ليتمكن Manus من استخدامه داخل المحادثات.",
+        "أضف وجهة كموصل MCP مخصص ليتمكن Manus من استخدامه داخل المحادثات.",
       steps: [
         "افتح Settings ثم Connectors واضغط + Connect.",
-        "اختر إنشاء Custom MCP connector باسم «أثر».",
-        "الصق رابط MCP وأكمل تسجيل الدخول والموافقة في أثر.",
+        "اختر إنشاء Custom MCP connector باسم «وجهة».",
+        "الصق رابط MCP وأكمل تسجيل الدخول والموافقة في وجهة.",
       ],
       href: "https://manus.im/docs/integrations/mcp-connectors",
       action: "فتح دليل موصلات Manus",
@@ -6619,11 +6636,11 @@ function McpPage() {
     {
       name: "Lovable",
       description:
-        "استخدم Personal connectors لإضافة أثر كخادم MCP مخصص داخل مساحة عمل Lovable.",
+        "استخدم Personal connectors لإضافة وجهة كخادم MCP مخصص داخل مساحة عمل Lovable.",
       steps: [
         "افتح Connectors ثم Personal connectors في Lovable.",
-        "اختر Add custom MCP server واكتب الاسم «أثر».",
-        "الصق رابط MCP ثم أكمل تسجيل الدخول والموافقة في أثر.",
+        "اختر Add custom MCP server واكتب الاسم «وجهة».",
+        "الصق رابط MCP ثم أكمل تسجيل الدخول والموافقة في وجهة.",
       ],
       href: "https://docs.lovable.dev/integrations/lovable-mcp-server",
       action: "فتح دليل Lovable MCP",
@@ -6634,7 +6651,7 @@ function McpPage() {
         "الربط متاح عبر Kimi Code CLI الذي يدعم خوادم MCP البعيدة وOAuth.",
       steps: [
         "افتح ملف ~/.kimi-code/mcp.json.",
-        "أضف إعداد أثر الموضح أدناه، ثم ابدأ جلسة Kimi Code جديدة.",
+        "أضف إعداد وجهة الموضح أدناه، ثم ابدأ جلسة Kimi Code جديدة.",
         "نفّذ ‎/mcp-config login wjh‎ وأكمل تسجيل الدخول إلى wjh.",
       ],
       config: JSON.stringify(
@@ -6651,42 +6668,42 @@ function McpPage() {
     <div className="entry max-w-5xl">
       <PageHeading
         title="ربط المساعد الذكي"
-        description="اربط أثر بالمساعد الذي تستخدمه، وأدر أعمالك بالمحادثة دون مغادرة حسابك."
+        description="اربط وجهة بالمساعد الذي تستخدمه، وأدر أعمالك بالمحادثة دون مغادرة حسابك."
       />
 
-      <section className="rounded-xl border border-[#DCE7F2] bg-[#FBFDFF] p-5 sm:p-6">
+      <section className="rounded-xl border border-[#ECE5FB] bg-[#FFFDFF] p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E9F2FA] text-[#52769F]">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E9F2FA] text-[#7A4CCF]">
               <Link2 className="size-5" />
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-semibold text-[#26364A]">
-                  رابط أثر الموحّد
+                <h2 className="font-semibold text-[#22273A]">
+                  رابط وجهة الموحّد
                 </h2>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                   <span className="size-1.5 rounded-full bg-emerald-500" />
                   جاهز للربط
                 </span>
               </div>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7C8A9A]">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6D6279]">
                 يعمل الرابط مع Claude وChatGPT وGemini CLI وManus وLovable وKimi
                 Code وأي مساعد يدعم Remote MCP وOAuth. بعد إضافته، سجّل الدخول
-                إلى أثر ووافق على الصلاحيات المطلوبة.
+                إلى وجهة ووافق على الصلاحيات المطلوبة.
               </p>
             </div>
           </div>
         </div>
         <div className="mt-5">
           <SettingsCopyField
-            label="رابط MCP الخاص بأثر"
+            label="رابط MCP الخاص بـ وجهة"
             value={endpoint}
             onCopy={copyEndpoint}
           />
         </div>
-        <p className="mt-3 text-xs leading-5 text-[#7C8A9A]">
-          يلتزم المساعد بدورك داخل أثر؛ لا يمكنه الوصول إلى لوحة أو مشروع غير
+        <p className="mt-3 text-xs leading-5 text-[#6D6279]">
+          يلتزم المساعد بدورك داخل وجهة؛ لا يمكنه الوصول إلى لوحة أو مشروع غير
           متاح لك، وتعمل الإضافة والتعديل والحذف ضمن صلاحيات حسابك.
         </p>
       </section>
@@ -6704,10 +6721,10 @@ function McpPage() {
             className="flex flex-col rounded-xl border border-slate-200 bg-white p-5"
           >
             <h2 className="text-lg font-semibold">{option.name}</h2>
-            <p className="mt-2 text-sm leading-6 text-[#7C8A9A]">
+            <p className="mt-2 text-sm leading-6 text-[#6D6279]">
               {option.description}
             </p>
-            <ol className="mt-4 flex-1 space-y-2 pr-5 text-sm leading-6 text-[#52657A] [list-style:decimal]">
+            <ol className="mt-4 flex-1 space-y-2 pr-5 text-sm leading-6 text-[#5A5570] [list-style:decimal]">
               {option.steps.map(step => (
                 <li key={step}>{step}</li>
               ))}
@@ -6734,7 +6751,7 @@ function McpPage() {
             <Button
               asChild
               variant="outline"
-              className="mt-5 w-fit gap-2 border-[#BFD3E7] text-[#45698F]"
+              className="mt-5 w-fit gap-2 border-[#D9CCF3] text-[#5F4FB5]"
             >
               <a href={option.href} target="_blank" rel="noreferrer">
                 {option.action}
@@ -6747,9 +6764,9 @@ function McpPage() {
 
       <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
         <SectionTitle>الاتصالات الحالية</SectionTitle>
-        <div className="mt-4 rounded-lg border border-slate-100 bg-[#FCFDFE] px-4">
+        <div className="mt-4 rounded-lg border border-slate-100 bg-[#FFFDFF] px-4">
           {mcpConnections.isLoading ? (
-            <p className="py-5 text-sm text-[#7C8A9A]">
+            <p className="py-5 text-sm text-[#6D6279]">
               جارٍ التحقق من الاتصالات…
             </p>
           ) : (mcpConnections.data?.length ?? 0) > 0 ? (
@@ -6763,7 +6780,7 @@ function McpPage() {
                     <p className="text-sm font-semibold">
                       {connection.clientName}
                     </p>
-                    <p className="mt-1 text-xs text-[#7C8A9A]">
+                    <p className="mt-1 text-xs text-[#6D6279]">
                       آخر استخدام: {fullDateText(connection.lastUsedAt)}
                     </p>
                   </div>
@@ -6774,7 +6791,7 @@ function McpPage() {
               ))}
             </div>
           ) : (
-            <p className="py-5 text-sm text-[#7C8A9A]">
+            <p className="py-5 text-sm text-[#6D6279]">
               لا يوجد مساعد ذكي مرتبط بهذا الحساب حاليًا.
             </p>
           )}
@@ -6825,6 +6842,7 @@ function SettingsPage({
     name: string;
     joinCode: string;
     inviteToken: string;
+    template: BoardTemplate;
     membershipRole: string;
     enabledModules?: BoardModule[] | null;
     presentationSections?: PresentationSection[] | null;
@@ -6950,8 +6968,22 @@ function SettingsPage({
       />
       {board && canManage && (
         <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
+          <SectionTitle>قالب اللوحة</SectionTitle>
+          <p className="text-sm font-semibold text-[#22273A]">
+            {templateLabel(board?.template)}
+          </p>
+          <p className="mt-2 text-xs leading-6 text-[#6D6279]">
+            القالب يحدد الأقسام المبدئية والوحدات المتاحة عند إنشاء اللوحة.
+          </p>
+          <p className="mt-2 text-xs text-[#7A4CCF]">
+            لتغيير النمط، أنشئ لوحة جديدة واختر القالب المطلوب.
+          </p>
+        </section>
+      )}
+      {board && canManage && (
+        <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle>تخصيص القائمة الجانبية</SectionTitle>
-          <p className="mb-5 text-sm leading-6 text-[#7C8A9A]">
+          <p className="mb-5 text-sm leading-6 text-[#6D6279]">
             اختر الأقسام التي يحتاجها فريق هذه اللوحة. الرئيسية والإعدادات
             تبقيان ظاهرتين دائمًا.
           </p>
@@ -6959,14 +6991,14 @@ function SettingsPage({
             {moduleOptions.map(option => (
               <div
                 key={option.id}
-                className="flex items-start gap-3 rounded-lg border border-slate-100 bg-[#FCFDFE] p-4"
+                className="flex items-start gap-3 rounded-lg border border-slate-100 bg-[#FFFDFF] p-4"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#EDF4FA] text-[#52769F]">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F0EAFE] text-[#7A4CCF]">
                   <option.icon className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">{option.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
+                  <p className="mt-1 text-xs leading-5 text-[#6D6279]">
                     {option.description}
                   </p>
                 </div>
@@ -6974,13 +7006,13 @@ function SettingsPage({
                   checked={selectedModules.includes(option.id)}
                   onCheckedChange={checked => toggleModule(option.id, checked)}
                   aria-label={`إظهار ${option.label}`}
-                  className="mt-1 data-[state=checked]:bg-[#52769F]"
+                  className="mt-1 data-[state=checked]:bg-[#7A4CCF]"
                 />
               </div>
             ))}
           </div>
           <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-            <p className="text-xs text-[#7C8A9A]">
+            <p className="text-xs text-[#6D6279]">
               ستُطبق التغييرات على جميع أعضاء هذه اللوحة.
             </p>
             <Button
@@ -6988,7 +7020,7 @@ function SettingsPage({
                 updateModules.mutate({ enabledModules: selectedModules })
               }
               disabled={updateModules.isPending}
-              className="h-9 shrink-0 bg-[#52769F] px-5 hover:bg-[#46698F]"
+              className="h-9 shrink-0 bg-[#7A4CCF] px-5 hover:bg-[#684CB2]"
             >
               {updateModules.isPending ? "جارٍ الحفظ..." : "حفظ التغييرات"}
             </Button>
@@ -6998,7 +7030,7 @@ function SettingsPage({
       {board && canManage && (
         <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle>تخصيص وضع العرض</SectionTitle>
-          <p className="mb-5 text-sm leading-6 text-[#7C8A9A]">
+          <p className="mb-5 text-sm leading-6 text-[#6D6279]">
             اختر البطاقات التي تريد إظهارها عند فتح وضع العرض لهذه اللوحة. يمكنك
             إضافة أي بطاقة أو إخفائها مع إبقاء بطاقة واحدة على الأقل.
           </p>
@@ -7008,14 +7040,14 @@ function SettingsPage({
               return (
                 <div
                   key={option.id}
-                  className="flex items-start gap-3 rounded-lg border border-slate-100 bg-[#FCFDFE] p-4"
+                  className="flex items-start gap-3 rounded-lg border border-slate-100 bg-[#FFFDFF] p-4"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#EDF4FA] text-[#52769F]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F0EAFE] text-[#7A4CCF]">
                     <option.icon className="size-4" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{option.label}</p>
-                    <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
+                    <p className="mt-1 text-xs leading-5 text-[#6D6279]">
                       {option.description}
                     </p>
                   </div>
@@ -7028,14 +7060,14 @@ function SettingsPage({
                       togglePresentationSection(option.id, checked)
                     }
                     aria-label={`إظهار ${option.label} في وضع العرض`}
-                    className="mt-1 data-[state=checked]:bg-[#52769F]"
+                    className="mt-1 data-[state=checked]:bg-[#7A4CCF]"
                   />
                 </div>
               );
             })}
           </div>
           <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-            <p className="text-xs text-[#7C8A9A]">
+            <p className="text-xs text-[#6D6279]">
               المختار حاليًا: {selectedPresentationSections.length} بطاقات
             </p>
             <Button
@@ -7045,7 +7077,7 @@ function SettingsPage({
                 })
               }
               disabled={updatePresentationSections.isPending}
-              className="h-9 shrink-0 bg-[#52769F] px-5 hover:bg-[#46698F]"
+              className="h-9 shrink-0 bg-[#7A4CCF] px-5 hover:bg-[#684CB2]"
             >
               {updatePresentationSections.isPending
                 ? "جارٍ الحفظ..."
@@ -7056,9 +7088,9 @@ function SettingsPage({
       )}
       <BrowserNotificationSettings />
       {SHOW_BOARD_JOIN_LINKS && board && canManage && (
-        <div className="mb-5 rounded-xl border border-[#DCE7F2] bg-[#FBFDFF] p-5">
+        <div className="mb-5 rounded-xl border border-[#ECE5FB] bg-[#FFFDFF] p-5">
           <SectionTitle>مشاركة لوحة الإدارة</SectionTitle>
-          <p className="mb-4 text-sm text-[#7C8A9A]">
+          <p className="mb-4 text-sm text-[#6D6279]">
             شارك رمزًا أو رابطًا مع فريقك للانضمام إلى «{board.name}».
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -7085,19 +7117,19 @@ function SettingsPage({
         <div className="divide-y divide-slate-100">
           <div className="py-4">
             <p className="text-sm font-semibold">مدير اللوحة</p>
-            <p className="mt-1 text-sm text-[#7C8A9A]">
+            <p className="mt-1 text-sm text-[#6D6279]">
               يدير دعوات الموظفين وإعدادات اللوحة.
             </p>
           </div>
           <div className="py-4">
             <p className="text-sm font-semibold">عضو الفريق</p>
-            <p className="mt-1 text-sm text-[#7C8A9A]">
+            <p className="mt-1 text-sm text-[#6D6279]">
               يتعاون في المشاريع والمهام والتعليقات وإسناد العمل داخل اللوحة.
             </p>
           </div>
           <div className="py-4">
             <p className="text-sm font-semibold">المشاهد</p>
-            <p className="mt-1 text-sm text-[#7C8A9A]">
+            <p className="mt-1 text-sm text-[#6D6279]">
               يطّلع على بيانات اللوحة دون إنشاء أو تعديل أو إسناد.
             </p>
           </div>
@@ -7118,7 +7150,7 @@ function SettingsCopyField({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-medium text-[#52657A]">{label}</p>
+      <p className="mb-2 text-xs font-medium text-[#5A5570]">{label}</p>
       <div className="flex gap-2">
         <Input
           readOnly
@@ -7128,7 +7160,7 @@ function SettingsCopyField({
         <Button
           onClick={onCopy}
           variant="outline"
-          className="h-9 border-slate-200 px-3 text-xs text-[#52769F]"
+          className="h-9 border-slate-200 px-3 text-xs text-[#7A4CCF]"
         >
           نسخ
         </Button>
@@ -7253,21 +7285,21 @@ function PresentationMode({
   const cardClass =
     "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7";
   const empty = (message: string) => (
-    <p className="py-6 text-center text-sm text-[#7C8A9A]">{message}</p>
+    <p className="py-6 text-center text-sm text-[#6D6279]">{message}</p>
   );
   const renderSection = (section: PresentationSection) => {
     if (section === "completion")
       return (
         <section key={section} className={cardClass}>
-          <p className="text-sm text-[#7C8A9A]">إنجاز مهام الفترة</p>
-          <p className="mt-4 text-6xl font-bold text-[#52769F]">
+          <p className="text-sm text-[#6D6279]">إنجاز مهام الفترة</p>
+          <p className="mt-4 text-6xl font-bold text-[#7A4CCF]">
             {completion.total ? `${completion.percentage}%` : "—"}
           </p>
           <Progress
             value={completion.percentage}
-            className="mt-6 h-2.5 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
+            className="mt-6 h-2.5 bg-[#F0EAFE] [&>div]:bg-[#8570D0]"
           />
-          <p className="mt-4 text-sm leading-6 text-[#7C8A9A]">
+          <p className="mt-4 text-sm leading-6 text-[#6D6279]">
             {completion.total
               ? `${completion.completed} من ${completion.total} مهمة مكتملة حسب تاريخ الاستحقاق`
               : `لا توجد مهام مستحقة خلال ${periodLabels[completionPeriod]}`}
@@ -7321,7 +7353,7 @@ function PresentationMode({
                         ]
                       }
                     </span>
-                    <span className="text-xs text-[#7C8A9A]">
+                    <span className="text-xs text-[#6D6279]">
                       {task.dueDate ? dateText(task.dueDate) : "بدون موعد"}
                     </span>
                   </div>
@@ -7345,10 +7377,10 @@ function PresentationMode({
                     className="border-b border-slate-100 py-3 last:border-0"
                   >
                     <div className="flex items-start gap-2">
-                      <Rocket className="mt-0.5 size-4 shrink-0 text-[#52769F]" />
+                      <Rocket className="mt-0.5 size-4 shrink-0 text-[#7A4CCF]" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">{event.title}</p>
-                        <p className="mt-1 text-xs text-[#7C8A9A]">
+                        <p className="mt-1 text-xs text-[#6D6279]">
                           {dateText(event.eventDate)} ·{" "}
                           {project?.title ?? "بدون مشروع"}
                         </p>
@@ -7372,13 +7404,13 @@ function PresentationMode({
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium">{project.title}</p>
-                    <span className="text-xs font-semibold text-[#52769F]">
+                    <span className="text-xs font-semibold text-[#7A4CCF]">
                       {project.progress}%
                     </span>
                   </div>
                   <Progress
                     value={project.progress}
-                    className="mt-2 h-1.5 bg-[#EDF4FA] [&>div]:bg-[#6C8FB8]"
+                    className="mt-2 h-1.5 bg-[#F0EAFE] [&>div]:bg-[#8570D0]"
                   />
                 </div>
               ))
@@ -7396,7 +7428,7 @@ function PresentationMode({
                   className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-0"
                 >
                   <p className="text-sm font-medium">{goal.title}</p>
-                  <span className="text-xs font-semibold text-[#52769F]">
+                  <span className="text-xs font-semibold text-[#7A4CCF]">
                     {goal.progress}%
                   </span>
                 </div>
@@ -7422,7 +7454,7 @@ function PresentationMode({
                     />
                     <p className="text-sm font-medium">{member.name}</p>
                   </div>
-                  <span className="text-xs text-[#7C8A9A]">
+                  <span className="text-xs text-[#6D6279]">
                     {member.activeTaskCount} مهام
                   </span>
                 </div>
@@ -7441,7 +7473,7 @@ function PresentationMode({
                   className="border-b border-slate-100 py-3 last:border-0"
                 >
                   <p className="text-sm font-medium">{task.title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-[#7C8A9A]">
+                  <p className="mt-1 line-clamp-2 text-xs text-[#6D6279]">
                     {task.supportRequest || "طلب دعم دون تفاصيل"}
                   </p>
                 </div>
@@ -7460,7 +7492,7 @@ function PresentationMode({
                   className="border-b border-slate-100 py-3 last:border-0"
                 >
                   <p className="text-sm font-medium">{lesson.title}</p>
-                  <p className="mt-1 text-xs text-[#7C8A9A]">
+                  <p className="mt-1 text-xs text-[#6D6279]">
                     {lesson.projectTitle}
                   </p>
                 </div>
@@ -7479,7 +7511,7 @@ function PresentationMode({
                   href={item.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="block border-b border-slate-100 py-3 text-sm font-medium transition hover:text-[#52769F] last:border-0"
+                  className="block border-b border-slate-100 py-3 text-sm font-medium transition hover:text-[#7A4CCF] last:border-0"
                 >
                   {item.title}
                 </a>
@@ -7493,7 +7525,7 @@ function PresentationMode({
     <>
       <div
         dir="rtl"
-        className="presentation-shell min-h-screen bg-[#F7F9FC] p-4 pt-20 sm:p-7 sm:pt-20 md:p-12"
+        className="presentation-shell min-h-screen bg-[#F8F6FF] p-4 pt-20 sm:p-7 sm:pt-20 md:p-12"
       >
         <div
           dir="ltr"
@@ -7511,7 +7543,7 @@ function PresentationMode({
               dir="rtl"
               variant="outline"
               onClick={() => changeCustomizerOpen(true)}
-              className="h-10 gap-2 border-slate-200 bg-white px-3 text-[#52657A] shadow-sm hover:bg-slate-50"
+              className="h-10 gap-2 border-slate-200 bg-white px-3 text-[#5A5570] shadow-sm hover:bg-slate-50"
             >
               <SlidersHorizontal className="size-4" />
               <span className="hidden sm:inline">إدارة البطاقات</span>
@@ -7519,14 +7551,14 @@ function PresentationMode({
           )}
         </div>
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-semibold text-[#6C8FB8]">
+          <p className="text-sm font-semibold text-[#8570D0]">
             وضع العرض · {periodLabels[completionPeriod]}
           </p>
           <h1 className="mt-3 break-words text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             لوحة {workspaceName}
           </h1>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium text-[#52657A]">
+            <span className="text-sm font-medium text-[#5A5570]">
               فترة قياس الإنجاز
             </span>
             <PeriodSelect
@@ -7559,14 +7591,14 @@ function PresentationMode({
                 return (
                   <div
                     key={option.id}
-                    className="flex items-start gap-3 rounded-xl border border-slate-200 bg-[#FCFDFE] p-4"
+                    className="flex items-start gap-3 rounded-xl border border-slate-200 bg-[#FFFDFF] p-4"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#EDF4FA] text-[#52769F]">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F0EAFE] text-[#7A4CCF]">
                       <option.icon className="size-4" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold">{option.label}</p>
-                      <p className="mt-1 text-xs leading-5 text-[#7C8A9A]">
+                      <p className="mt-1 text-xs leading-5 text-[#6D6279]">
                         {option.description}
                       </p>
                     </div>
@@ -7577,14 +7609,14 @@ function PresentationMode({
                         togglePresentationSection(option.id, checked)
                       }
                       aria-label={`إظهار ${option.label} في وضع العرض`}
-                      className="mt-1 data-[state=checked]:bg-[#52769F]"
+                      className="mt-1 data-[state=checked]:bg-[#7A4CCF]"
                     />
                   </div>
                 );
               })}
             </div>
             <div className="sticky bottom-0 mt-6 flex items-center justify-between gap-3 border-t border-slate-100 bg-white py-4">
-              <p className="text-xs text-[#7C8A9A]">
+              <p className="text-xs text-[#6D6279]">
                 المختار: {draftSections.length} بطاقات
               </p>
               <Button
@@ -7594,7 +7626,7 @@ function PresentationMode({
                   })
                 }
                 disabled={updatePresentationSections.isPending}
-                className="h-10 bg-[#52769F] px-5 hover:bg-[#46698F]"
+                className="h-10 bg-[#7A4CCF] px-5 hover:bg-[#684CB2]"
               >
                 {updatePresentationSections.isPending
                   ? "جارٍ الحفظ..."
@@ -7617,10 +7649,10 @@ function TaskAssigneeSelector({
   return (
     <fieldset>
       <div className="flex items-center justify-between gap-3">
-        <legend className="text-sm font-medium text-[#52657A]">
+        <legend className="text-sm font-medium text-[#5A5570]">
           مسؤولو المهمة
         </legend>
-        <span className="text-[11px] text-[#7C8A9A]">
+        <span className="text-[11px] text-[#6D6279]">
           {selectedIds.length
             ? `تم اختيار ${selectedIds.length}`
             : "يمكن ترك المهمة دون إسناد"}
@@ -7636,7 +7668,7 @@ function TaskAssigneeSelector({
               htmlFor={inputId}
               className={cn(
                 "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors",
-                selected ? "bg-[#EDF4FA]" : "hover:bg-slate-50"
+                selected ? "bg-[#F0EAFE]" : "hover:bg-slate-50"
               )}
             >
               <Checkbox
@@ -7649,14 +7681,14 @@ function TaskAssigneeSelector({
                       : selectedIds.filter((id: number) => id !== member.id)
                   )
                 }
-                className="data-[state=checked]:border-[#52769F] data-[state=checked]:bg-[#52769F]"
+                className="data-[state=checked]:border-[#7A4CCF] data-[state=checked]:bg-[#7A4CCF]"
               />
               <Avatar
                 initials={member.avatarInitials}
                 color={member.color}
                 className="size-7 text-[9px]"
               />
-              <span className="text-sm text-[#40556D]">{member.name}</span>
+              <span className="text-sm text-[#4E4961]">{member.name}</span>
             </label>
           );
         })}
@@ -7745,7 +7777,7 @@ function TaskDrawer({
             <textarea
               value={description}
               onChange={event => setDescription(event.target.value)}
-              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#8570D0]"
               placeholder="تفاصيل المهمة أو النتيجة المطلوبة (اختياري)"
             />
           </Field>
@@ -7776,13 +7808,13 @@ function TaskDrawer({
               onChange={e => setStartDate(e.target.value)}
             />
           </Field>
-          <div className="rounded-lg border border-slate-200 bg-[#FBFDFF] p-3">
+          <div className="rounded-lg border border-slate-200 bg-[#FFFDFF] p-3">
             <label className="flex items-center justify-between gap-3">
               <span>
-                <span className="block text-sm font-medium text-[#52657A]">
+                <span className="block text-sm font-medium text-[#5A5570]">
                   تحديد موعد نهائي
                 </span>
-                <span className="mt-1 block text-xs text-[#7C8A9A]">
+                <span className="mt-1 block text-xs text-[#6D6279]">
                   اتركه مغلقًا إذا كانت المهمة بدون موعد محدد.
                 </span>
               </span>
@@ -7836,7 +7868,7 @@ function TaskDrawer({
           <Button
             disabled={submitting}
             type="submit"
-            className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             {submitting ? "جارٍ الحفظ..." : "حفظ المهمة"}
           </Button>
@@ -7855,10 +7887,10 @@ function ProjectResponsibleSelector({
   return (
     <fieldset>
       <div className="flex items-center justify-between gap-3">
-        <legend className="text-sm font-medium text-[#52657A]">
+        <legend className="text-sm font-medium text-[#5A5570]">
           المسؤولون عن المشروع
         </legend>
-        <span className="text-[11px] text-[#7C8A9A]">
+        <span className="text-[11px] text-[#6D6279]">
           {selectedIds.length
             ? `تم اختيار ${selectedIds.length}`
             : "اختر شخصًا أو أكثر"}
@@ -7874,7 +7906,7 @@ function ProjectResponsibleSelector({
               htmlFor={inputId}
               className={cn(
                 "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors",
-                selected ? "bg-[#EDF4FA]" : "hover:bg-slate-50"
+                selected ? "bg-[#F0EAFE]" : "hover:bg-slate-50"
               )}
             >
               <Checkbox
@@ -7887,14 +7919,14 @@ function ProjectResponsibleSelector({
                       : selectedIds.filter((id: number) => id !== member.id)
                   )
                 }
-                className="data-[state=checked]:border-[#52769F] data-[state=checked]:bg-[#52769F]"
+                className="data-[state=checked]:border-[#7A4CCF] data-[state=checked]:bg-[#7A4CCF]"
               />
               <Avatar
                 initials={member.avatarInitials}
                 color={member.color}
                 className="size-7 text-[9px]"
               />
-              <span className="text-sm text-[#40556D]">{member.name}</span>
+              <span className="text-sm text-[#4E4961]">{member.name}</span>
             </label>
           );
         })}
@@ -7995,7 +8027,7 @@ function ProjectDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
             />
           </Field>
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-[#52657A]">
+            <legend className="mb-2 text-sm font-medium text-[#5A5570]">
               مدة المشروع
             </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -8003,8 +8035,8 @@ function ProjectDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
                 className={cn(
                   "cursor-pointer rounded-lg border px-4 py-3 transition-colors",
                   ongoing
-                    ? "border-[#52769F] bg-[#EEF4FA] ring-1 ring-[#52769F]"
-                    : "border-[#DCE7F2] bg-white hover:bg-[#F7FAFD]"
+                    ? "border-[#7A4CCF] bg-[#F3EEFF] ring-1 ring-[#7A4CCF]"
+                    : "border-[#ECE5FB] bg-white hover:bg-[#F8F7FF]"
                 )}
               >
                 <input
@@ -8015,10 +8047,10 @@ function ProjectDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
                   onChange={() => setOngoing(true)}
                   className="sr-only"
                 />
-                <span className="block text-sm font-semibold text-[#40556D]">
+                <span className="block text-sm font-semibold text-[#4E4961]">
                   مستمر
                 </span>
-                <span className="mt-1 block text-xs text-[#7C8A9A]">
+                <span className="mt-1 block text-xs text-[#6D6279]">
                   بدون تاريخ نهاية
                 </span>
               </label>
@@ -8026,8 +8058,8 @@ function ProjectDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
                 className={cn(
                   "cursor-pointer rounded-lg border px-4 py-3 transition-colors",
                   !ongoing
-                    ? "border-[#52769F] bg-[#EEF4FA] ring-1 ring-[#52769F]"
-                    : "border-[#DCE7F2] bg-white hover:bg-[#F7FAFD]"
+                    ? "border-[#7A4CCF] bg-[#F3EEFF] ring-1 ring-[#7A4CCF]"
+                    : "border-[#ECE5FB] bg-white hover:bg-[#F8F7FF]"
                 )}
               >
                 <input
@@ -8038,10 +8070,10 @@ function ProjectDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
                   onChange={() => setOngoing(false)}
                   className="sr-only"
                 />
-                <span className="block text-sm font-semibold text-[#40556D]">
+                <span className="block text-sm font-semibold text-[#4E4961]">
                   له تاريخ نهاية
                 </span>
-                <span className="mt-1 block text-xs text-[#7C8A9A]">
+                <span className="mt-1 block text-xs text-[#6D6279]">
                   ينتهي في تاريخ محدد
                 </span>
               </label>
@@ -8062,14 +8094,14 @@ function ProjectDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
             <textarea
               value={summary}
               onChange={e => setSummary(e.target.value)}
-              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#8570D0]"
               placeholder="وصف مختصر للمشروع"
             />
           </Field>
           <Button
             disabled={submitting}
             type="submit"
-            className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             {submitting ? "جارٍ الحفظ..." : "حفظ المشروع"}
           </Button>
@@ -8146,7 +8178,7 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
             <textarea
               value={description}
               onChange={event => setDescription(event.target.value)}
-              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#8570D0]"
               placeholder="تفاصيل المهمة أو النتيجة المطلوبة (اختياري)"
             />
           </Field>
@@ -8177,13 +8209,13 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
               onChange={event => setStartDate(event.target.value)}
             />
           </Field>
-          <div className="rounded-lg border border-slate-200 bg-[#FBFDFF] p-3">
+          <div className="rounded-lg border border-slate-200 bg-[#FFFDFF] p-3">
             <label className="flex items-center justify-between gap-3">
               <span>
-                <span className="block text-sm font-medium text-[#52657A]">
+                <span className="block text-sm font-medium text-[#5A5570]">
                   تحديد موعد نهائي
                 </span>
-                <span className="mt-1 block text-xs text-[#7C8A9A]">
+                <span className="mt-1 block text-xs text-[#6D6279]">
                   عند إيقافه يظهر الموعد «غير محدد».
                 </span>
               </span>
@@ -8237,7 +8269,7 @@ function EditTaskDrawer({ task, setTask, data, submitting, onSubmit }: any) {
           <Button
             disabled={submitting}
             type="submit"
-            className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             {submitting ? "جارٍ الحفظ..." : "حفظ التعديلات"}
           </Button>
@@ -8353,7 +8385,7 @@ function EditProjectDrawer({
             />
           </Field>
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-[#52657A]">
+            <legend className="mb-2 text-sm font-medium text-[#5A5570]">
               مدة المشروع
             </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -8361,8 +8393,8 @@ function EditProjectDrawer({
                 className={cn(
                   "cursor-pointer rounded-lg border px-4 py-3 transition-colors",
                   ongoing
-                    ? "border-[#52769F] bg-[#EEF4FA] ring-1 ring-[#52769F]"
-                    : "border-[#DCE7F2] bg-white hover:bg-[#F7FAFD]"
+                    ? "border-[#7A4CCF] bg-[#F3EEFF] ring-1 ring-[#7A4CCF]"
+                    : "border-[#ECE5FB] bg-white hover:bg-[#F8F7FF]"
                 )}
               >
                 <input
@@ -8372,10 +8404,10 @@ function EditProjectDrawer({
                   onChange={() => setOngoing(true)}
                   className="sr-only"
                 />
-                <span className="block text-sm font-semibold text-[#40556D]">
+                <span className="block text-sm font-semibold text-[#4E4961]">
                   مستمر
                 </span>
-                <span className="mt-1 block text-xs text-[#7C8A9A]">
+                <span className="mt-1 block text-xs text-[#6D6279]">
                   بدون تاريخ نهاية
                 </span>
               </label>
@@ -8383,8 +8415,8 @@ function EditProjectDrawer({
                 className={cn(
                   "cursor-pointer rounded-lg border px-4 py-3 transition-colors",
                   !ongoing
-                    ? "border-[#52769F] bg-[#EEF4FA] ring-1 ring-[#52769F]"
-                    : "border-[#DCE7F2] bg-white hover:bg-[#F7FAFD]"
+                    ? "border-[#7A4CCF] bg-[#F3EEFF] ring-1 ring-[#7A4CCF]"
+                    : "border-[#ECE5FB] bg-white hover:bg-[#F8F7FF]"
                 )}
               >
                 <input
@@ -8394,10 +8426,10 @@ function EditProjectDrawer({
                   onChange={() => setOngoing(false)}
                   className="sr-only"
                 />
-                <span className="block text-sm font-semibold text-[#40556D]">
+                <span className="block text-sm font-semibold text-[#4E4961]">
                   له تاريخ نهاية
                 </span>
-                <span className="mt-1 block text-xs text-[#7C8A9A]">
+                <span className="mt-1 block text-xs text-[#6D6279]">
                   ينتهي في تاريخ محدد
                 </span>
               </label>
@@ -8431,13 +8463,13 @@ function EditProjectDrawer({
             <textarea
               value={summary}
               onChange={event => setSummary(event.target.value)}
-              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#6C8FB8]"
+              className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#8570D0]"
             />
           </Field>
           <Button
             disabled={submitting}
             type="submit"
-            className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             {submitting ? "جارٍ الحفظ..." : "حفظ التعديلات"}
           </Button>
@@ -8526,14 +8558,14 @@ function GoalDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
               onChange={event => setYear(event.target.value)}
             />
           </Field>
-          <div className="rounded-lg bg-[#F7F9FC] p-3 text-xs leading-6 text-[#52657A]">
+          <div className="rounded-lg bg-[#F8F6FF] p-3 text-xs leading-6 text-[#5A5570]">
             يبدأ الإنجاز من 0%، ثم يتحدث تلقائيًا حسب تقدم المشاريع المرتبطة
             بهذا الهدف.
           </div>
           <Button
             disabled={submitting}
             type="submit"
-            className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+            className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
           >
             {submitting ? "جارٍ الحفظ..." : "حفظ الهدف"}
           </Button>
@@ -8643,7 +8675,7 @@ function LessonDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
               <textarea
                 value={lesson}
                 onChange={event => setLesson(event.target.value)}
-                className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-7 outline-none focus:border-[#6C8FB8]"
+                className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-7 outline-none focus:border-[#8570D0]"
                 placeholder="اشرح الموقف والدرس بوضوح ليكون مفهومًا لمن لم يشارك في المشروع."
                 maxLength={5000}
               />
@@ -8652,7 +8684,7 @@ function LessonDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
               <textarea
                 value={recommendation}
                 onChange={event => setRecommendation(event.target.value)}
-                className="min-h-28 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-7 outline-none focus:border-[#6C8FB8]"
+                className="min-h-28 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-7 outline-none focus:border-[#8570D0]"
                 placeholder="ما الإجراء العملي الذي ننصح به مستقبلًا؟"
                 maxLength={5000}
               />
@@ -8660,7 +8692,7 @@ function LessonDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
             <Button
               disabled={submitting}
               type="submit"
-              className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               {submitting ? "جارٍ الحفظ..." : "حفظ الدرس المستفاد"}
             </Button>
@@ -8852,7 +8884,7 @@ function InviteDrawer({ open, setOpen, data, submitting, onSubmit }: any) {
             <Button
               disabled={submitting}
               type="submit"
-              className="h-10 w-full bg-[#52769F] hover:bg-[#46698F]"
+              className="h-10 w-full bg-[#7A4CCF] hover:bg-[#684CB2]"
             >
               {submitting ? "جارٍ إنشاء الدعوة..." : "إنشاء رابط الدعوة"}
             </Button>
@@ -8872,7 +8904,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-[#52657A]">
+      <span className="mb-2 block text-sm font-medium text-[#5A5570]">
         {label}
       </span>
       {children}
@@ -8883,7 +8915,7 @@ function LoadingShell() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#F7F9FC] p-4 sm:p-8 xl:mr-[272px]"
+      className="min-h-screen bg-[#F8F6FF] p-4 sm:p-8 xl:mr-[272px]"
     >
       <div className="mx-auto max-w-5xl animate-pulse">
         <div className="h-4 w-32 rounded bg-slate-200" />

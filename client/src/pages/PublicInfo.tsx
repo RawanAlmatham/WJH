@@ -14,17 +14,17 @@ function PageShell({
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-[#F7F9FC] px-5 py-10 text-[#26364A] sm:px-8"
+      className="min-h-screen bg-[#F8F6FF] px-5 py-10 text-[#22273A] sm:px-8"
     >
       <div className="mx-auto max-w-3xl">
         <a
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#52769F] hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[#7A4CCF] hover:underline"
         >
-          <ArrowRight className="size-4" /> العودة إلى أثر
+          <ArrowRight className="size-4" /> العودة إلى وجهة
         </a>
         <article className="mt-6 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-[#EDF4FA] text-[#52769F]">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F0EAFE] text-[#7A4CCF]">
             <ShieldCheck className="size-6" />
           </div>
           <h1 className="mt-5 text-3xl font-bold">{title}</h1>
@@ -48,7 +48,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="text-lg font-bold text-[#344B64]">{title}</h2>
+      <h2 className="text-lg font-bold text-[#4E4860]">{title}</h2>
       <div className="mt-2">{children}</div>
     </section>
   );
@@ -58,7 +58,7 @@ export function Privacy() {
   return (
     <PageShell
       title="سياسة الخصوصية"
-      description="توضح هذه السياسة البيانات التي تحتاجها منصة أثر لتقديم خدمة إدارة العمل الداخلية وكيفية التعامل معها."
+      description="توضح هذه السياسة البيانات التي تحتاجها منصة وجهة لتقديم خدمة إدارة العمل الداخلية وكيفية التعامل معها."
     >
       <Section title="البيانات التي نعالجها">
         <p>
@@ -76,9 +76,9 @@ export function Privacy() {
       </Section>
       <Section title="المشاركة والوصول">
         <p>
-          لا تبيع أثر البيانات ولا تستخدمها للإعلانات. لا تظهر بيانات اللوحة إلا
-          للمستخدمين الذين مُنحوا صلاحية الوصول إليها، وقد تُعالج البيانات لدى
-          مزودي الاستضافة والتشغيل بالقدر اللازم لتقديم الخدمة.
+          لا تبيع وجهة البيانات ولا تستخدمها للإعلانات. لا تظهر بيانات اللوحة
+          إلا للمستخدمين الذين مُنحوا صلاحية الوصول إليها، وقد تُعالج البيانات
+          لدى مزودي الاستضافة والتشغيل بالقدر اللازم لتقديم الخدمة.
         </p>
       </Section>
       <Section title="الاحتفاظ والحذف">
@@ -99,7 +99,7 @@ export function Privacy() {
         <p>
           للاستفسارات المتعلقة بالخصوصية تواصل عبر{" "}
           <a
-            className="font-semibold text-[#52769F] hover:underline"
+            className="font-semibold text-[#7A4CCF] hover:underline"
             href="mailto:ralmatham@ksaa.gov.sa"
           >
             ralmatham@ksaa.gov.sa
@@ -114,7 +114,7 @@ export function Privacy() {
 export function Support() {
   return (
     <PageShell
-      title="دعم أثر"
+      title="دعم وجهة"
       description="نساعدك في مشاكل الدخول والدعوات والصلاحيات واستخدام اللوحات والمشاريع والمهام."
     >
       <Section title="قبل التواصل">
@@ -129,8 +129,8 @@ export function Support() {
       </Section>
       <Section title="التواصل مع الدعم">
         <a
-          className="inline-flex items-center gap-2 rounded-xl bg-[#52769F] px-5 py-3 font-semibold text-white hover:bg-[#46698F]"
-          href="mailto:ralmatham@ksaa.gov.sa?subject=دعم%20منصة%20أثر"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#7A4CCF] px-5 py-3 font-semibold text-white hover:bg-[#684CB2]"
+          href="mailto:ralmatham@ksaa.gov.sa?subject=دعم%20منصة%20وجهة"
         >
           <Mail className="size-4" /> ralmatham@ksaa.gov.sa
         </a>

@@ -89,6 +89,7 @@ export const managementBoards = mysqlTable("managementBoards", {
     .notNull(),
   joinCode: varchar("joinCode", { length: 12 }).notNull().unique(),
   inviteToken: varchar("inviteToken", { length: 64 }).notNull().unique(),
+  template: varchar("template", { length: 24 }).default("work").notNull(),
   enabledModules: json("enabledModules").$type<BoardModule[]>(),
   presentationSections: json("presentationSections").$type<
     PresentationSection[]

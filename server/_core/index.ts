@@ -8,6 +8,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { refreshDueResearchFeeds } from "../db";
 import { runNotificationReminderJob } from "../notifications";
+import { attachGoogleAuthRoutes } from "../googleAuth";
 import { createOAuthRouter } from "../mcp/oauthRoutes";
 import {
   authenticateMcpRequest,
@@ -62,6 +63,7 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  attachGoogleAuthRoutes(app);
   // OAuth discovery/authorization and the authenticated remote MCP endpoint.
   app.use(createOAuthRouter());
   app.all(

@@ -65,17 +65,17 @@ export function showMcpBrowserInfo(
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>أثر — ربط المساعدات الذكية</title>
+    <title>وجهة — ربط المساعدات الذكية</title>
     <style>
       *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f5f8fc;color:#26364a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:32px 20px}.card{width:min(920px,100%);margin:auto;background:#fff;border:1px solid #dfe8f2;border-radius:20px;padding:30px;box-shadow:0 16px 50px rgba(38,54,74,.09)}.brand{color:#52769f;font-weight:800}h1{font-size:28px;margin:10px 0}.status{display:inline-flex;align-items:center;gap:8px;margin:8px 0 18px;padding:7px 12px;border-radius:999px;background:#edf9f2;color:#24734b;font-weight:700;font-size:14px}.dot{width:9px;height:9px;border-radius:50%;background:#2ca56c}.muted{color:#687b90;line-height:1.8}.endpoint{display:flex;gap:10px;align-items:stretch;margin:18px 0 24px}.url{direction:ltr;text-align:left;overflow-wrap:anywhere;flex:1;background:#f6f8fb;border:1px solid #e3eaf2;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.copy{border:0;border-radius:10px;background:#52769f;color:#fff;padding:0 17px;font:inherit;font-weight:700;cursor:pointer}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.platform{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #dfe8f2;border-radius:14px;padding:18px}.platform h2{font-size:19px;margin:0 0 6px}.platform p{margin:0;color:#687b90;line-height:1.7;font-size:14px}.platform ol{margin:12px 0 0;padding-right:20px;color:#52657a;font-size:13px;line-height:1.8}.platform pre{direction:ltr;text-align:left;width:100%;overflow:auto;margin:12px 0 0;padding:10px;border-radius:8px;background:#172033;color:#eef4fa;font-size:11px;line-height:1.6}.action{display:inline-flex;margin-top:auto;padding-top:16px;color:#3e678f;text-decoration:none;font-weight:800}.generic{grid-column:1/-1;background:#f8fafc}.notice{margin:0 0 18px;padding:11px 13px;border:1px solid #f0d48a;border-radius:10px;background:#fff9e8;color:#7a5810;font-size:13px;line-height:1.7}.note{margin:22px 0 0;padding-top:18px;border-top:1px solid #e5ebf2;color:#687b90;font-size:13px;line-height:1.7}@media(max-width:620px){body{padding:16px 12px}.card{padding:22px;border-radius:16px}h1{font-size:24px}.endpoint{flex-direction:column}.copy{min-height:44px}.platforms{grid-template-columns:1fr}.generic{grid-column:auto}}
     </style>
   </head>
   <body>
     <main class="card">
-      <div class="brand">أثر</div>
-      <h1>ربط أثر بالمساعدات الذكية</h1>
+      <div class="brand">وجهة</div>
+      <h1>ربط وجهة بالمساعدات الذكية</h1>
       <div class="status"><span class="dot"></span>خادم MCP متصل ويستجيب</div>
-      <p class="muted">هذا رابط موحّد يعمل مع Claude وChatGPT وGemini CLI وManus وLovable وKimi Code وأي عميل يدعم Remote MCP وOAuth. أضفه داخل إعدادات الموصلات في المنصة التي تستخدمها، ثم سجّل الدخول إلى أثر لمنح الصلاحيات.</p>
+      <p class="muted">هذا رابط موحّد يعمل مع Claude وChatGPT وGemini CLI وManus وLovable وKimi Code وأي عميل يدعم Remote MCP وOAuth. أضفه داخل إعدادات الموصلات في المنصة التي تستخدمها، ثم سجّل الدخول إلى وجهة لمنح الصلاحيات.</p>
       <div class="endpoint">
         <div class="url" id="mcp-url">${MCP_RESOURCE_URL}</div>
         <button class="copy" id="copy-url" type="button">نسخ الرابط</button>
@@ -84,14 +84,14 @@ export function showMcpBrowserInfo(
       <section class="platforms" aria-label="خيارات الربط">
         <article class="platform">
           <h2>Claude</h2>
-          <p>من Settings ← Connectors اختر Add custom connector، ثم أضف الاسم «أثر» والصق رابط MCP أعلاه.</p>
-          <ol><li>افتح Settings ثم Connectors.</li><li>اختر Add custom connector واكتب «أثر».</li><li>الصق الرابط وأكمل تسجيل الدخول والموافقة.</li></ol>
+          <p>من Settings ← Connectors اختر Add custom connector، ثم أضف الاسم «وجهة» والصق رابط MCP أعلاه.</p>
+          <ol><li>افتح Settings ثم Connectors.</li><li>اختر Add custom connector واكتب «وجهة».</li><li>الصق الرابط وأكمل تسجيل الدخول والموافقة.</li></ol>
           <a class="action" href="https://claude.ai/settings/connectors" target="_blank" rel="noreferrer">فتح موصلات Claude ←</a>
         </article>
         <article class="platform">
           <h2>ChatGPT</h2>
-          <p>من صفحة الإضافات أنشئ تطبيقًا مخصصًا باسم «أثر»، واختر OAuth ثم الصق رابط MCP أعلاه.</p>
-          <ol><li>افتح إعدادات التطبيقات والموصلات.</li><li>أنشئ تطبيقًا مخصصًا باسم «أثر».</li><li>أضف الرابط واختر OAuth ثم أكمل الموافقة.</li></ol>
+          <p>من صفحة الإضافات أنشئ تطبيقًا مخصصًا باسم «وجهة»، واختر OAuth ثم الصق رابط MCP أعلاه.</p>
+          <ol><li>افتح إعدادات التطبيقات والموصلات.</li><li>أنشئ تطبيقًا مخصصًا باسم «وجهة».</li><li>أضف الرابط واختر OAuth ثم أكمل الموافقة.</li></ol>
           <a class="action" href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">فتح إضافات ChatGPT ←</a>
         </article>
         <article class="platform">
@@ -103,12 +103,12 @@ export function showMcpBrowserInfo(
         </article>
         <article class="platform">
           <h2>Manus</h2>
-          <p>من Settings ← Connectors اضغط + Connect، ثم أنشئ Custom MCP connector باسم «أثر» والصق الرابط وأكمل الموافقة.</p>
+          <p>من Settings ← Connectors اضغط + Connect، ثم أنشئ Custom MCP connector باسم «وجهة» والصق الرابط وأكمل الموافقة.</p>
           <a class="action" href="https://manus.im/docs/integrations/mcp-connectors" target="_blank" rel="noreferrer">فتح دليل Manus ←</a>
         </article>
         <article class="platform">
           <h2>Lovable</h2>
-          <p>من Connectors ← Personal connectors اختر Add custom MCP server، ثم أضف الاسم «أثر» والصق الرابط وأكمل الموافقة.</p>
+          <p>من Connectors ← Personal connectors اختر Add custom MCP server، ثم أضف الاسم «وجهة» والصق الرابط وأكمل الموافقة.</p>
           <a class="action" href="https://docs.lovable.dev/integrations/lovable-mcp-server" target="_blank" rel="noreferrer">فتح دليل Lovable MCP ←</a>
         </article>
         <article class="platform">
@@ -120,7 +120,7 @@ export function showMcpBrowserInfo(
         </article>
         <article class="platform generic">
           <h2>أي عميل MCP متوافق</h2>
-          <p>استخدم الرابط نفسه كعنوان خادم Streamable HTTP. سيكتشف العميل إعدادات OAuth تلقائيًا، وتبقى العمليات المتاحة محدودة بصلاحيات حسابك في أثر.</p>
+          <p>استخدم الرابط نفسه كعنوان خادم Streamable HTTP. سيكتشف العميل إعدادات OAuth تلقائيًا، وتبقى العمليات المتاحة محدودة بصلاحيات حسابك في وجهة.</p>
         </article>
       </section>
       <p class="note">فتح الرابط مباشرة في المتصفح يعرض هذه التعليمات فقط؛ يبدأ تسجيل الدخول والربط من داخل المساعد أو عميل MCP الذي تختاره.</p>
@@ -196,7 +196,7 @@ function successResult(message: string, result: unknown): CallToolResult {
 
 function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
-  return "تعذر تنفيذ الطلب في أثر";
+  return "تعذر تنفيذ الطلب في وجهة";
 }
 
 async function runTool(
@@ -215,7 +215,7 @@ async function runTool(
 
 function requireWriteScope(authInfo: AuthInfo) {
   if (!authInfo.scopes.includes(MCP_WRITE_SCOPE))
-    throw new Error("هذا الربط لا يملك صلاحية التعديل في أثر");
+    throw new Error("هذا الربط لا يملك صلاحية التعديل في وجهة");
 }
 
 function createCaller(user: User) {
@@ -241,10 +241,10 @@ function includesSearch(value: unknown, search: string) {
 
 async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   const server = new McpServer(
-    { name: "أثر لإدارة الأعمال", version: "1.0.0" },
+    { name: "وجهة لإدارة الأعمال", version: "1.0.0" },
     {
       instructions:
-        "استخدم أدوات أثر لقراءة وإدارة لوحة المستخدم الحالية. نفّذ الإضافة والتعديل والحذف فقط عندما يطلب المستخدم ذلك بوضوح. قبل الحذف اذكر العنصر الذي سيُحذف. معرفات الأعضاء والمشاريع والمهام تُقرأ من أدوات القوائم ولا تُخمن. جميع الصلاحيات وحدود المشاريع يفرضها خادم أثر.",
+        "استخدم أدوات وجهة لقراءة وإدارة لوحة المستخدم الحالية. نفّذ الإضافة والتعديل والحذف فقط عندما يطلب المستخدم ذلك بوضوح. قبل الحذف اذكر العنصر الذي سيُحذف. معرفات الأعضاء والمشاريع والمهام تُقرأ من أدوات القوائم ولا تُخمن. جميع الصلاحيات وحدود المشاريع يفرضها خادم وجهة.",
     }
   );
   const caller = createCaller(user);
@@ -252,7 +252,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   server.registerTool(
     "athr_get_context",
     {
-      title: "عرض سياق حساب أثر",
+      title: "عرض سياق حساب وجهة",
       description:
         "يعرض المستخدم واللوحات المتاحة واللوحة الحالية ودور المستخدم. ابدأ بهذه الأداة عند غموض اللوحة المقصودة.",
       inputSchema: {},
@@ -263,7 +263,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
       runTool(async () => {
         const boards = await caller.boards.mine();
         return {
-          message: "سياق حساب أثر الحالي:",
+          message: "سياق حساب وجهة الحالي:",
           result: {
             user: { id: user.id, name: user.name, email: user.email },
             boards: boards.map(board => ({
@@ -281,9 +281,9 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   server.registerTool(
     "athr_select_board",
     {
-      title: "اختيار لوحة أثر",
+      title: "اختيار لوحة وجهة",
       description:
-        "يغيّر اللوحة الحالية التي ستُنفذ عليها بقية أوامر أثر. استخدم معرفًا من athr_get_context.",
+        "يغيّر اللوحة الحالية التي ستُنفذ عليها بقية أوامر وجهة. استخدم معرفًا من athr_get_context.",
       inputSchema: { board_id: z.number().int().positive() },
       annotations: {
         readOnlyHint: false,
@@ -343,7 +343,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   server.registerTool(
     "athr_list_projects",
     {
-      title: "عرض مشاريع أثر",
+      title: "عرض مشاريع وجهة",
       description:
         "يعرض المشاريع التي يحق للمستخدم رؤيتها فقط، مع إمكان التصفية بالاسم والحالة والمسؤول.",
       inputSchema: {
@@ -377,7 +377,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
     {
       title: "إنشاء مشروع",
       description:
-        "ينشئ مشروعًا في لوحة أثر الحالية. يمكن ترك تاريخ النهاية فارغًا للمشروع المستمر. إذا لم يحدد المسؤول يستخدم عضو الفريق المرتبط بالمستخدم الحالي.",
+        "ينشئ مشروعًا في لوحة وجهة الحالية. يمكن ترك تاريخ النهاية فارغًا للمشروع المستمر. إذا لم يحدد المسؤول يستخدم عضو الفريق المرتبط بالمستخدم الحالي.",
       inputSchema: {
         title: z.string().trim().min(2).max(240),
         summary: z.string().trim().max(1500).optional(),
@@ -419,7 +419,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           endDate: asDate(input.end_date),
           status: input.status,
         });
-        return { message: "تم إنشاء المشروع في أثر.", result };
+        return { message: "تم إنشاء المشروع في وجهة.", result };
       })
   );
 
@@ -478,7 +478,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
               : asDate(input.end_date),
           status: input.status ?? current.status,
         });
-        return { message: "تم تحديث المشروع في أثر.", result };
+        return { message: "تم تحديث المشروع في وجهة.", result };
       })
   );
 
@@ -501,14 +501,14 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
       runTool(async () => {
         requireWriteScope(authInfo);
         const result = await caller.workspace.deleteProject({ id: project_id });
-        return { message: "تم حذف المشروع من أثر.", result };
+        return { message: "تم حذف المشروع من وجهة.", result };
       })
   );
 
   server.registerTool(
     "athr_list_tasks",
     {
-      title: "عرض مهام أثر",
+      title: "عرض مهام وجهة",
       description:
         "يعرض المهام المتاحة للمستخدم مع التصفية بالمشروع أو الشخص أو الحالة أو طلب الدعم.",
       inputSchema: {
@@ -545,7 +545,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
     {
       title: "إنشاء مهمة",
       description:
-        "ينشئ مهمة في أثر. المشروع والإسناد والتواريخ اختيارية، ويمكن إنشاء مهمة فرعية بمعرف المهمة الرئيسية.",
+        "ينشئ مهمة في وجهة. المشروع والإسناد والتواريخ اختيارية، ويمكن إنشاء مهمة فرعية بمعرف المهمة الرئيسية.",
       inputSchema: {
         title: z.string().trim().min(2).max(240),
         description: z.string().trim().max(5000).optional(),
@@ -584,7 +584,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           status: input.status,
           parentTaskId: input.parent_task_id,
         });
-        return { message: "تم إنشاء المهمة في أثر.", result };
+        return { message: "تم إنشاء المهمة في وجهة.", result };
       })
   );
 
@@ -653,7 +653,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           priority: input.priority ?? current.priority,
           status: input.status ?? current.status,
         });
-        return { message: "تم تحديث المهمة في أثر.", result };
+        return { message: "تم تحديث المهمة في وجهة.", result };
       })
   );
 
@@ -676,7 +676,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
       runTool(async () => {
         requireWriteScope(authInfo);
         const result = await caller.workspace.deleteTask({ id: task_id });
-        return { message: "تم حذف المهمة من أثر.", result };
+        return { message: "تم حذف المهمة من وجهة.", result };
       })
   );
 
@@ -815,7 +815,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           recommendation: input.recommendation,
           lessonDate: asDate(input.lesson_date) ?? new Date(),
         });
-        return { message: "تمت إضافة الدرس المستفاد إلى أثر.", result };
+        return { message: "تمت إضافة الدرس المستفاد إلى وجهة.", result };
       })
   );
 
@@ -1003,7 +1003,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   server.registerTool(
     "athr_list_calendar",
     {
-      title: "عرض تقويم أثر",
+      title: "عرض تقويم وجهة",
       description:
         "يعرض مواعيد اللوحة المتاحة للمستخدم مع تصفية الفترة والمشروع.",
       inputSchema: {
@@ -1039,7 +1039,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
     {
       title: "إضافة موعد للتقويم",
       description:
-        "يضيف اجتماعًا أو تسليمًا أو إطلاقًا أو ورشة أو مراجعة إلى تقويم أثر.",
+        "يضيف اجتماعًا أو تسليمًا أو إطلاقًا أو ورشة أو مراجعة إلى تقويم وجهة.",
       inputSchema: {
         title: z.string().trim().min(2).max(240),
         project_id: z.number().int().positive().nullable().optional(),
@@ -1094,7 +1094,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
   server.registerTool(
     "athr_get_report_summary",
     {
-      title: "عرض ملخص تقارير أثر",
+      title: "عرض ملخص تقارير وجهة",
       description: "يعرض مؤشرات إنجاز وتأخر المهام ضمن نطاق وصول المستخدم.",
       inputSchema: {},
       annotations: { readOnlyHint: true, openWorldHint: false },
@@ -1147,7 +1147,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
     {
       title: "حفظ ترجمات ملخصات الأبحاث",
       description:
-        "يحفظ ترجمة عربية أمينة للملخص الأصلي في أثر. اقرأ الخلاصات أولًا، وترجم المعنى كاملًا دون اختلاق معلومات أو تحويل النص إلى ملخص أقصر. يقبل حتى 20 ترجمة في الطلب، ومتاح لمدير اللوحة وأعضائها.",
+        "يحفظ ترجمة عربية أمينة للملخص الأصلي في وجهة. اقرأ الخلاصات أولًا، وترجم المعنى كاملًا دون اختلاق معلومات أو تحويل النص إلى ملخص أقصر. يقبل حتى 20 ترجمة في الطلب، ومتاح لمدير اللوحة وأعضائها.",
       inputSchema: {
         translations: z
           .array(
@@ -1177,7 +1177,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           })),
         });
         return {
-          message: `تم حفظ ${result.updated} ترجمة عربية في أثر.`,
+          message: `تم حفظ ${result.updated} ترجمة عربية في وجهة.`,
           result,
         };
       })
@@ -1330,7 +1330,7 @@ async function createAthrMcpServer(user: User, authInfo: AuthInfo) {
           projectAccess: input.project_access,
           allowedProjectIds: input.allowed_project_ids,
         });
-        return { message: "تم إنشاء دعوة عضو الفريق في أثر.", result };
+        return { message: "تم إنشاء دعوة عضو الفريق في وجهة.", result };
       })
   );
 
@@ -1504,9 +1504,9 @@ const mcpHandler = createMcpHandler(
   async ({ authInfo }) => {
     const userId = Number(authInfo?.extra?.userId);
     if (!authInfo || !Number.isInteger(userId) || userId <= 0)
-      throw new Error("يلزم تسجيل الدخول إلى أثر");
+      throw new Error("يلزم تسجيل الدخول إلى وجهة");
     const user = await db.getUserById(userId);
-    if (!user) throw new Error("حساب أثر غير موجود");
+    if (!user) throw new Error("حساب وجهة غير موجود");
     return createAthrMcpServer(user, authInfo);
   },
   {

@@ -624,7 +624,10 @@ describe.skipIf(!process.env.DATABASE_URL)(
         req: { protocol: "https", headers: {} } as any,
         res: {} as any,
       });
-      const board = await manager.boards.create({ name: marker });
+      const board = await manager.boards.create({
+        name: marker,
+        template: "work",
+      });
       expect(board).toMatchObject({ name: marker, membershipRole: "manager" });
       await expect(
         teamMember.boards.joinByCode({ joinCode: board.joinCode })
@@ -676,7 +679,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         res: {} as any,
       });
       await expect(
-        anonymous.boards.create({ name: "لوحة غير مصرح بها" })
+        anonymous.boards.create({ name: "لوحة غير مصرح بها", template: "work" })
       ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
       await expect(
         anonymous.boards.joinByCode({ joinCode: "ABC12345" })

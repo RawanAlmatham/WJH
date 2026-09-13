@@ -60,7 +60,7 @@ export function PwaInstallButton({
     }
 
     if (isAppleMobile) {
-      toast.message("لتثبيت أثر على الآيفون", {
+      toast.message("لتثبيت وجهة على الآيفون", {
         description:
           "اضغط زر المشاركة في Safari ثم اختر «إضافة إلى الشاشة الرئيسية».",
         duration: 8000,
@@ -68,7 +68,7 @@ export function PwaInstallButton({
       return;
     }
 
-    toast.message("تثبيت تطبيق أثر", {
+    toast.message("تثبيت تطبيق وجهة", {
       description:
         "افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».",
       duration: 8000,
@@ -82,7 +82,7 @@ export function PwaInstallButton({
       onClick={comingSoon ? undefined : install}
       disabled={comingSoon}
       className={cn(
-        "gap-2 border-[#BFD3E7] bg-white text-[#45698F]",
+        "gap-2 border-[#D9CCF3] bg-white text-[#5F4FB5]",
         className
       )}
     >
@@ -97,7 +97,7 @@ export function PwaInstallButton({
           {comingSoon && <span className="text-[10px]">(قريبًا)</span>}
         </>
       ) : (
-        "تثبيت أثر كتطبيق"
+        "تثبيت وجهة كتطبيق"
       )}
     </Button>
   );

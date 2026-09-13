@@ -35,6 +35,12 @@ import {
   type PresentationSection,
 } from "../shared/presentationSections";
 import {
+  BOARD_TEMPLATE_LABELS,
+  boardTemplates,
+  type BoardTemplate,
+  DEFAULT_BOARD_TEMPLATE,
+} from "../shared/boardTemplates";
+import {
   fetchResearchFeed,
   normalizeResearchKeywords,
   RESEARCH_FEED_REFRESH_INTERVAL_MS,
@@ -179,6 +185,67 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     .insert(users)
     .values(values)
     .onDuplicateKeyUpdate({ set: updateSet });
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const normalizedEmail = email.trim().toLowerCase();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, normalizedEmail))
+    .limit(1);
+  return result[0];
+}
+
+export async function getOrCreateGoogleUser(input: {
+  googleSubject: string;
+  name: string;
+  email: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const email = input.email.trim().toLowerCase();
+  const openId = `google:${input.googleSubject.trim()}`;
+  const userByOpenId = await getUserByOpenId(openId);
+  if (userByOpenId) {
+    await db
+      .update(users)
+      .set({
+        email,
+        name: input.name || userByOpenId.name,
+        loginMethod: "google",
+        lastSignedIn: new Date(),
+      })
+      .where(eq(users.id, userByOpenId.id));
+    return await getUserById(userByOpenId.id);
+  }
+
+  const userByEmail = await getUserByEmail(email);
+  if (userByEmail) {
+    await db
+      .update(users)
+      .set({
+        openId,
+        email,
+        name: input.name || userByEmail.name,
+        loginMethod: "google",
+        lastSignedIn: new Date(),
+      })
+      .where(eq(users.id, userByEmail.id));
+    return await getUserById(userByEmail.id);
+  }
+
+  await db.insert(users).values({
+    openId,
+    email,
+    name: input.name,
+    loginMethod: "google",
+    role: email === ENV.adminEmail ? "admin" : "user",
+    lastSignedIn: new Date(),
+  });
+  return await getUserByOpenId(openId);
 }
 
 export function localUserId(email: string) {
@@ -494,6 +561,7 @@ export async function listUserBoards(userId: number) {
         ownerUserId: managementBoards.ownerUserId,
         joinCode: managementBoards.joinCode,
         inviteToken: managementBoards.inviteToken,
+        template: managementBoards.template,
         enabledModules: managementBoards.enabledModules,
         presentationSections: managementBoards.presentationSections,
         membershipRole: boardMemberships.role,
@@ -512,18 +580,47 @@ export async function listUserBoards(userId: number) {
     enabledModules: board.enabledModules ?? DEFAULT_BOARD_MODULES,
     presentationSections:
       board.presentationSections ?? DEFAULT_PRESENTATION_SECTIONS,
+    template: normalizeBoardTemplate(board.template),
     isActive: board.id === activeBoardId,
   }));
 }
 
-export async function createManagementBoard(name: string, ownerUserId: number) {
+function templateConfig(template: BoardTemplate | null | undefined) {
+  return (
+    BOARD_TEMPLATE_LABELS[template ?? DEFAULT_BOARD_TEMPLATE] ?? {
+      modules: DEFAULT_BOARD_MODULES,
+      sections: DEFAULT_PRESENTATION_SECTIONS,
+    }
+  );
+}
+
+function normalizeBoardTemplate(
+  template: string | null | undefined
+): BoardTemplate {
+  return boardTemplates.includes(template as BoardTemplate)
+    ? (template as BoardTemplate)
+    : DEFAULT_BOARD_TEMPLATE;
+}
+
+export async function createManagementBoard(
+  name: string,
+  ownerUserId: number,
+  template: BoardTemplate = DEFAULT_BOARD_TEMPLATE
+) {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
   const joinCode = nanoid(8).toUpperCase();
   const inviteToken = nanoid(32);
-  const result = await db
-    .insert(managementBoards)
-    .values({ name, ownerUserId, joinCode, inviteToken });
+  const safeTemplate = templateConfig(template);
+  const result = await db.insert(managementBoards).values({
+    name,
+    ownerUserId,
+    joinCode,
+    inviteToken,
+    template,
+    enabledModules: safeTemplate.modules,
+    presentationSections: safeTemplate.sections,
+  });
   const boardId = Number(result[0].insertId);
   await db
     .insert(boardMemberships)
@@ -536,10 +633,11 @@ export async function createManagementBoard(name: string, ownerUserId: number) {
   return {
     id: boardId,
     name,
+    template,
     joinCode,
     inviteToken,
-    enabledModules: DEFAULT_BOARD_MODULES,
-    presentationSections: DEFAULT_PRESENTATION_SECTIONS,
+    enabledModules: safeTemplate.modules,
+    presentationSections: safeTemplate.sections,
     membershipRole: "manager" as const,
   };
 }

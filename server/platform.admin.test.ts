@@ -102,7 +102,7 @@ describe("platform administration", () => {
   it("lets a department manager create an independent board", async () => {
     const caller = appRouter.createCaller(context("manager"));
     await expect(
-      caller.boards.create({ name: "إدارة التواصل" })
+      caller.boards.create({ name: "إدارة التواصل", template: "work" })
     ).resolves.toMatchObject({
       id: 31,
       name: "إدارة التواصل",
@@ -110,12 +110,13 @@ describe("platform administration", () => {
     });
   });
 
-  it("prevents a regular team member from creating a board", async () => {
+  it("lets any authenticated user create a board", async () => {
     const caller = appRouter.createCaller(context("user"));
     await expect(
-      caller.boards.create({ name: "لوحة غير مصرح بها" })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
+      caller.boards.create({ name: "لوحة جديدة", template: "work" })
+    ).resolves.toMatchObject({
+      name: "لوحة جديدة",
+      membershipRole: "manager",
     });
   });
 });

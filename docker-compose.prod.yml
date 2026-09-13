@@ -33,8 +33,11 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
-      PUBLIC_URL: ${PUBLIC_URL:-https://athr.aidept.io}
+      PUBLIC_URL: ${PUBLIC_URL:-https://wjh.ralmatham.ai}
       OPENALEX_API_KEY: ${OPENALEX_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
     command: ["sh", "-c", "pnpm exec drizzle-kit migrate && pnpm start"]
     depends_on:
       db:
