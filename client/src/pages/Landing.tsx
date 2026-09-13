@@ -1,7 +1,11 @@
 import { BrandJourney, BrandLogo } from "@/components/Brand";
-import { boardTemplates, BOARD_TEMPLATE_LABELS } from "@shared/boardTemplates";
+import {
+  boardTemplates,
+  BOARD_TEMPLATE_LABELS,
+  type BoardTemplate,
+} from "@shared/boardTemplates";
 import { Button } from "@/components/ui/button";
-import { startLogin } from "@/const";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import {
   ArrowLeft,
@@ -18,53 +22,84 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
+const templateCopy: Record<
+  BoardTemplate,
+  { title: string; description: string; examples: string[] }
+> = {
+  work: {
+    title: "فرق العمل",
+    description:
+      "اجمع مشاريع فريقك ومهامه، ووزّع المسؤوليات ليعرف كل شخص ما عليه ومتى ينجزه.",
+    examples: ["مشاريع الفريق", "توزيع المهام", "مواعيد التسليم"],
+  },
+  startup: {
+    title: "الشركات الناشئة التقنية",
+    description:
+      "حوّل فكرة منتجك إلى خطوات واضحة، ورتّب أولويات الفريق من التجربة إلى الإطلاق.",
+    examples: ["خارطة المنتج", "تجارب وأولويات", "إطلاقات جديدة"],
+  },
+  ecommerce: {
+    title: "التجارة الإلكترونية",
+    description:
+      "نظّم مهام متجرك وحملاته، وجهّز للعروض والمواسم بخطة يعرفها فريقك.",
+    examples: ["مهام المتجر", "الحملات والعروض", "خطط المواسم"],
+  },
+  "personal-tasks": {
+    title: "المهام الشخصية",
+    description: "خفّف زحمة الأفكار، ورتّب مهامك وأولوياتك في مساحة لك وحدك.",
+    examples: ["مهام يومية", "تخطيط أسبوعي", "متابعة الإنجاز"],
+  },
+};
+
 const features = [
   {
     icon: <Target className="size-5" />,
-    title: "خطة تتحول إلى عمل",
-    description:
-      "اربط الأهداف السنوية بالمشاريع والمهام، لتبقى الأولويات واضحة من البداية حتى الإنجاز.",
+    title: "اعرف من أين تبدأ",
+    description: "حدّد أولوياتك، وخَلّ خطوتك التالية واضحة.",
   },
   {
     icon: <ListChecks className="size-5" />,
-    title: "متابعة بلا تعقيد",
-    description:
-      "شاهد حالة المهام والمواعيد والمسؤوليات في مكان واحد، مع ترتيب تلقائي لما يحتاج انتباهك.",
+    title: "كل شيء في مكانه",
+    description: "اجمع المهام والمواعيد وتفاصيل العمل في لوحة واحدة.",
   },
   {
     icon: <Users className="size-5" />,
-    title: "فريق على نفس الصورة",
-    description:
-      "وزّع العمل، تابع أحمال الفريق، وشارك المستجدات من لوحة واضحة للجميع.",
+    title: "لوحدك أو مع فريقك",
+    description: "رتّب يومك في لوحة خاصة، أو ادعُ فريقك ووزّع المسؤوليات.",
   },
   {
     icon: <BarChart3 className="size-5" />,
-    title: "تقارير تساعد على القرار",
-    description:
-      "حوّل تقدّم العمل إلى مؤشرات وتقارير موجزة تساعدك على التدخل في الوقت المناسب.",
+    title: "شوف تقدّمك",
+    description: "تابع ما أنجزته وما تبقّى، واعرف ما يحتاج انتباهك.",
   },
 ];
 
 const steps = [
   {
     number: "01",
-    title: "اختر وجهتك",
-    description: "أنشئ لوحة واختر القالب الذي يناسب عملك وطموحك.",
+    title: "اختر قالبك",
+    description: "أنشئ لوحة للعمل، لشركتك الناشئة، لمتجرك أو لمهامك الشخصية.",
   },
   {
     number: "02",
-    title: "رتّب خطواتك",
-    description: "أضف مهامك وأولوياتك، وادعُ فريقك إذا كانت وجهتكم مشتركة.",
+    title: "أضف خطواتك",
+    description: "اكتب مهامك وحدّد مواعيدها. وإذا معك فريق، ادعُهم إلى اللوحة.",
   },
   {
     number: "03",
-    title: "تابع الإنجاز مع وجهة",
-    description:
-      "راقب الأولويات والتقدم والمواعيد من لوحة واحدة محدثة باستمرار.",
+    title: "تابع تقدّمك",
+    description: "حدّث مهامك أولًا بأول، واحتفل بكل خطوة تنجزها.",
   },
 ];
 
 export default function Landing() {
+  const { user } = useAuth();
+  const createBoard = () =>
+    window.location.assign(
+      user ? "/boards/new" : "/login?next=%2Fboards%2Fnew"
+    );
+  const openAccount = () =>
+    window.location.assign(user ? "/" : "/login?next=%2F");
   return (
     <main
       dir="rtl"
@@ -84,6 +119,9 @@ export default function Landing() {
             className="hidden items-center gap-8 text-sm text-slate-600 md:flex"
             aria-label="التنقل الرئيسي"
           >
+            <a href="#templates" className="transition hover:text-[#1E3A8A]">
+              القوالب الأربعة
+            </a>
             <a href="#features" className="transition hover:text-[#1E3A8A]">
               المزايا
             </a>
@@ -96,11 +134,11 @@ export default function Landing() {
           </nav>
 
           <Button
-            onClick={startLogin}
+            onClick={openAccount}
             variant="outline"
             className="h-10 shrink-0 border-[#CCD4E6] bg-white px-3 text-[#1E3A8A] hover:bg-[#E9EDF7] sm:px-4"
           >
-            تسجيل الدخول
+            {user ? "لوحاتي" : "تسجيل الدخول"}
           </Button>
         </div>
       </header>
@@ -114,32 +152,32 @@ export default function Landing() {
               لكل طموح، وجهة.
             </span>
             <h1 className="mt-7 text-[2.15rem] font-bold leading-[1.3] tracking-tight sm:text-5xl lg:text-[3.6rem]">
-              طموحك يستحق
-              <span className="block text-[#1E3A8A]">وجهة واضحة.</span>
+              مهامك أوضح،
+              <span className="block text-[#1E3A8A]">وإنجازك أقرب.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-[#62635F] sm:text-lg">
-              من فكرة تنتظر البداية إلى إنجاز تفتخر فيه. رتّب مهامك، اجمع فريقك،
-              واختر مساحة تناسب طموحك؛ للعمل، لشركتك، لمتجرك أو ليومك.
+              نظّم عمل فريقك، خطّط لمنتجك التقني، تابع مهام متجرك، أو رتّب يومك.
+              أربعة قوالب تجمع مهامك وخططك في مكان واحد.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button
-                onClick={startLogin}
+                onClick={createBoard}
                 className="h-12 gap-2 bg-[#1E3A8A] px-7 text-base hover:bg-[#172E6E]"
               >
-                ابدأ وجهتك
+                أنشئ لوحتك
                 <ArrowLeft className="size-4" />
               </Button>
               <a
-                href="#how-it-works"
+                href="#templates"
                 className="inline-flex h-12 items-center justify-center rounded-md border border-slate-200 bg-white px-7 text-sm font-semibold text-[#4E534E] transition hover:border-[#CCD4E6] hover:bg-[#F5F2EE]"
               >
-                تعرّف على طريقة العمل
+                اكتشف القالب المناسب
               </a>
               <PwaInstallButton className="h-12 px-6" />
             </div>
             <p className="mt-4 flex items-center gap-2 text-xs text-slate-500">
               <ShieldCheck className="size-4 text-[#7A2E5C]" />
-              التسجيل والدخول عبر حساب Google متاحان الآن.
+              ابدأ بحساب Google، واختر القالب الذي يناسبك.
             </p>
           </div>
 
@@ -152,7 +190,7 @@ export default function Landing() {
               <div>
                 <p className="text-sm font-bold">كل خطوة تقرّبك.</p>
                 <p className="mt-1 text-xs text-[#62635F]">
-                  فكرة واضحة. خطوات مرتبة. إنجاز ملموس.
+                  رتّبها. ابدأها. أنجزها.
                 </p>
               </div>
             </div>
@@ -163,9 +201,9 @@ export default function Landing() {
       <section className="border-y border-slate-200 bg-white/75">
         <div className="mx-auto grid max-w-7xl gap-px px-5 py-5 sm:grid-cols-3 sm:px-8 lg:px-10">
           {[
-            ["رؤية واحدة", "للخطة والعمل اليومي"],
-            ["أولوية أوضح", "لما يحتاج انتباهك الآن"],
-            ["قرار أسرع", "ببيانات محدثة ومختصرة"],
+            ["٤ قوالب", "تناسب عملك وحياتك"],
+            ["مساحة واحدة", "للمهام والخطط والمواعيد"],
+            ["لك ولفريقك", "ابدأ وحدك أو شارك الإنجاز"],
           ].map(([title, text], index) => (
             <div
               key={title}
@@ -183,18 +221,19 @@ export default function Landing() {
         className="mx-auto max-w-7xl px-5 pt-20 sm:px-8 lg:px-10"
       >
         <SectionIntro
-          eyebrow="أربع بدايات. واحتمالات كثيرة."
-          title="مساحة تشبه طريقة عملك"
-          description="اختَر قالبك عند إنشاء اللوحة، لتبدأ بتقسيمات ومهام أولية تناسب وجهتك."
+          eyebrow="أربعة قوالب، ووجهتك أنت تختارها"
+          title="وش تبي تنجز؟"
+          description="لكل بداية احتياج مختلف. اختر القالب الأقرب لك، وابدأ بتقسيمات جاهزة تساعدك ترتّب خطواتك."
         />
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {boardTemplates.map((template, index) => {
             const config = BOARD_TEMPLATE_LABELS[template];
+            const copy = templateCopy[template];
             return (
               <button
                 key={template}
-                onClick={startLogin}
-                className="brand-template-card group text-right"
+                onClick={createBoard}
+                className="brand-template-card group flex flex-col items-start text-right"
                 style={{
                   borderTopColor: ["#1E3A8A", "#7A2E5C", "#A6B69A", "#F6B801"][
                     index
@@ -207,17 +246,28 @@ export default function Landing() {
                 >
                   0{index + 1}
                 </span>
-                <h3 className="mt-5 text-lg font-bold">
-                  {config.title.replace("قالب ", "")}
+                <h3 className="mt-5 min-h-14 text-lg font-bold">
+                  {copy.title}
                 </h3>
-                <p className="mt-2 min-h-14 text-xs leading-6 text-[#62635F]">
-                  {config.description}
+                <p className="mt-2 text-sm leading-7 text-[#62635F]">
+                  {copy.description}
                 </p>
+                <ul className="mt-5 mb-2 space-y-2 text-xs leading-5 text-[#62635F]">
+                  {copy.examples.map(example => (
+                    <li key={example} className="flex items-center gap-2">
+                      <Check
+                        className="size-3.5 shrink-0"
+                        style={{ color: config.accent }}
+                      />
+                      {example}
+                    </li>
+                  ))}
+                </ul>
                 <span
-                  className="mt-5 inline-flex items-center gap-2 text-xs font-semibold"
+                  className="mt-auto inline-flex items-center gap-2 pt-5 text-xs font-semibold"
                   style={{ color: config.accent }}
                 >
-                  ابدأ هنا{" "}
+                  ابدأ مع وجهة{" "}
                   <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
                 </span>
               </button>
@@ -231,9 +281,9 @@ export default function Landing() {
         className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
       >
         <SectionIntro
-          eyebrow="مساحة عمل متكاملة"
-          title="كل ما يحتاجه الفريق للعمل بوضوح"
-          description="صُممت وجهة لتجمع الصورة الكبيرة والتفاصيل اليومية، بدون أن تصبح إدارة العمل عبئًا إضافيًا."
+          eyebrow="ترتيب أقل تعقيدًا، وتركيز أكثر"
+          title="خلّ تركيزك على الإنجاز"
+          description="من أول مهمة إلى آخر خطوة، وجهة تساعدك تبقى على المسار."
         />
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature, index) => (
@@ -264,10 +314,15 @@ export default function Landing() {
       <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 sm:px-8 lg:grid-cols-2 lg:px-10">
         <SectionIntro
           eyebrow="خطواتك، في مكانها."
-          title="الصورة الكبيرة، والتفاصيل التي تصنعها."
-          description="مهام ومشاريع وأولويات في لوحة واحدة، لتعرف أين وصلت وما خطوتك التالية. هذه معاينة توضيحية لطريقة عرض العمل."
+          title="وين وصلت؟ وش باقي؟"
+          description="افتح لوحتك وشوف أولوياتك ومواعيدك وما أنجزته. كل التفاصيل التي تحتاجها لتخطط لخطوتك القادمة."
         />
-        <DashboardPreview />
+        <div>
+          <DashboardPreview />
+          <p className="mt-4 text-center text-xs text-[#62635F]">
+            معاينة توضيحية للوحة العمل
+          </p>
+        </div>
       </section>
 
       <section id="how-it-works" className="bg-[#1F2328] text-white">
@@ -276,7 +331,7 @@ export default function Landing() {
             dark
             eyebrow="بداية بسيطة"
             title="من هنا تبدأ وجهتك"
-            description="ابدأ بحساب Google، وأنشئ لوحتك الخاصة أو انضم إلى لوحة بدعوة من فريقك."
+            description="سجّل بحساب Google، وابدأ بثلاث خطوات بسيطة. عندك دعوة؟ تقدر تنضم مباشرة إلى لوحة فريقك."
           />
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {steps.map((step, index) => (
@@ -308,20 +363,20 @@ export default function Landing() {
           <div>
             <p className="text-xs font-semibold text-[#1E3A8A]">لماذا وجهة؟</p>
             <h2 className="mt-3 text-3xl font-bold leading-tight">
-              لأن الإنجاز لا يكتمل من دون وجهة واضحة.
+              طريقتك مختلفة. ووجهة تناسبها.
             </h2>
             <p className="mt-5 max-w-2xl text-sm leading-8 text-[#62635F] sm:text-base">
-              تجمع المنصة الأهداف والمشاريع والمهام والمواعيد في سياق واحد؛
-              ليعرف كل عضو ما عليه، ويعرف المدير أين يتقدم العمل وأين يحتاج إلى
-              تدخل.
+              يومك الشخصي يختلف عن يوم فريقك، وإطلاق منتج يختلف عن تجهيز حملة
+              لمتجرك. عشان كذا، في وجهة تختار لكل لوحة القالب الذي يناسبها،
+              وتجمع خطواتك في مساحة عربية واضحة.
             </p>
           </div>
           <div className="grid gap-3">
             {[
-              "لوحات مستقلة للفرق والإدارات",
-              "تقدّم مشاريع محسوب تلقائيًا",
-              "أولويات مرتبة حسب الحاجة",
-              "مواعيد وتقارير في صورة واحدة",
+              "لوحة مستقلة لكل مساحة عمل",
+              "أربعة قوالب لبدايات مختلفة",
+              "واجهة عربية من البداية",
+              "دعوات للفريق وصلاحيات واضحة",
             ].map(item => (
               <div
                 key={item}
@@ -343,13 +398,13 @@ export default function Landing() {
             وجهتك القادمة تبدأ بخطوة.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-blue-100">
-            أنشئ لوحتك، اختر قالبك، وابدأ ترتيب ما تريد الوصول إليه.
+            اختر ما تبي تنجزه اليوم، وخَلّ وجهة تجمع خطواتك.
           </p>
           <Button
-            onClick={startLogin}
+            onClick={createBoard}
             className="mt-7 h-11 bg-white px-7 text-[#1E3A8A] hover:bg-slate-50"
           >
-            تسجيل الدخول
+            أنشئ لوحتك الآن
           </Button>
         </div>
       </section>

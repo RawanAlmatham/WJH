@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import InviteAccess from "./pages/InviteAccess";
 import BoardJoin from "./pages/BoardJoin";
 import Login from "./pages/Login";
@@ -18,6 +19,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/welcome"} component={Landing} />
       <Route path={"/invite/:token"} component={InviteAccess} />
       <Route path={"/join/:token"} component={BoardJoin} />
       <Route path={"/login"} component={Login} />
