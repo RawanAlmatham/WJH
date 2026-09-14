@@ -16,6 +16,10 @@ import {
   Clock3,
   FolderKanban,
   ListChecks,
+  ListTodo,
+  Rocket,
+  Store,
+  type LucideIcon,
   ShieldCheck,
   Target,
   Users,
@@ -24,29 +28,43 @@ import type { ReactNode } from "react";
 
 const templateCopy: Record<
   BoardTemplate,
-  { title: string; description: string; examples: string[] }
+  {
+    title: string;
+    description: string;
+    examples: string[];
+    icon: LucideIcon;
+    caption: string;
+  }
 > = {
   work: {
+    icon: Users,
+    caption: "تنسيق وتعاون",
     title: "فرق العمل",
     description:
       "اجمع مشاريع فريقك ومهامه، ووزّع المسؤوليات ليعرف كل شخص ما عليه ومتى ينجزه.",
     examples: ["مشاريع الفريق", "توزيع المهام", "مواعيد التسليم"],
   },
   startup: {
+    icon: Rocket,
+    caption: "بناء وإطلاق",
     title: "الشركات الناشئة التقنية",
     description:
       "حوّل فكرة منتجك إلى خطوات واضحة، ورتّب أولويات الفريق من التجربة إلى الإطلاق.",
     examples: ["خارطة المنتج", "تجارب وأولويات", "إطلاقات جديدة"],
   },
   ecommerce: {
+    icon: Store,
+    caption: "تشغيل ونمو",
     title: "التجارة الإلكترونية",
     description:
-      "نظّم مهام متجرك وحملاته، وجهّز للعروض والمواسم بخطة يعرفها فريقك.",
+      "نظّم مهام متجرك وحملاته، واستعدّ للعروض والمواسم بخطة يعرفها فريقك.",
     examples: ["مهام المتجر", "الحملات والعروض", "خطط المواسم"],
   },
   "personal-tasks": {
+    icon: ListTodo,
+    caption: "تركيز وتوازن",
     title: "المهام الشخصية",
-    description: "خفّف زحمة الأفكار، ورتّب مهامك وأولوياتك في مساحة لك وحدك.",
+    description: "رتّب أفكارك ومهامك اليومية، وحدّد أولوياتك في مساحة خاصة بك.",
     examples: ["مهام يومية", "تخطيط أسبوعي", "متابعة الإنجاز"],
   },
 };
@@ -55,7 +73,7 @@ const features = [
   {
     icon: <Target className="size-5" />,
     title: "اعرف من أين تبدأ",
-    description: "حدّد أولوياتك، وخَلّ خطوتك التالية واضحة.",
+    description: "حدّد أولوياتك، وابدأ بخطوة واضحة.",
   },
   {
     icon: <ListChecks className="size-5" />,
@@ -64,12 +82,12 @@ const features = [
   },
   {
     icon: <Users className="size-5" />,
-    title: "لوحدك أو مع فريقك",
+    title: "لك أو لفريقك",
     description: "رتّب يومك في لوحة خاصة، أو ادعُ فريقك ووزّع المسؤوليات.",
   },
   {
     icon: <BarChart3 className="size-5" />,
-    title: "شوف تقدّمك",
+    title: "تابع تقدّمك",
     description: "تابع ما أنجزته وما تبقّى، واعرف ما يحتاج انتباهك.",
   },
 ];
@@ -83,7 +101,8 @@ const steps = [
   {
     number: "02",
     title: "أضف خطواتك",
-    description: "اكتب مهامك وحدّد مواعيدها. وإذا معك فريق، ادعُهم إلى اللوحة.",
+    description:
+      "أضف مهامك وحدّد مواعيدها، وادعُ أعضاء فريقك للمشاركة عند الحاجة.",
   },
   {
     number: "03",
@@ -218,21 +237,21 @@ export default function Landing() {
 
       <section
         id="templates"
-        className="mx-auto max-w-7xl px-5 pt-20 sm:px-8 lg:px-10"
+        className="mx-auto max-w-7xl scroll-mt-24 px-5 pt-20 sm:px-8 lg:px-10"
       >
         <SectionIntro
-          eyebrow="أربعة قوالب، ووجهتك أنت تختارها"
-          title="وش تبي تنجز؟"
-          description="لكل بداية احتياج مختلف. اختر القالب الأقرب لك، وابدأ بتقسيمات جاهزة تساعدك ترتّب خطواتك."
+          eyebrow="أربعة قوالب، لطموحات مختلفة"
+          title="ما الذي تريد إنجازه؟"
+          description="لكل بداية احتياج مختلف. اختر القالب الأقرب لك، وابدأ بتقسيمات جاهزة تساعدك على تنظيم خطواتك."
         />
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {boardTemplates.map((template, index) => {
             const config = BOARD_TEMPLATE_LABELS[template];
             const copy = templateCopy[template];
+            const TemplateIcon = copy.icon;
             return (
-              <button
+              <article
                 key={template}
-                onClick={createBoard}
                 className="brand-template-card group flex flex-col items-start text-right"
                 style={{
                   borderTopColor: ["#1E3A8A", "#7A2E5C", "#A6B69A", "#F6B801"][
@@ -240,19 +259,45 @@ export default function Landing() {
                   ],
                 }}
               >
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: config.accent }}
+                <div
+                  className="template-visual"
+                  style={{
+                    backgroundColor: config.softAccent,
+                    color: config.accent,
+                  }}
+                  aria-hidden="true"
                 >
-                  0{index + 1}
-                </span>
+                  <svg
+                    className="template-visual-path"
+                    viewBox="0 0 260 130"
+                    fill="none"
+                  >
+                    <path
+                      d="M-20 105H42C82 105 67 38 110 38H159C193 38 176 99 218 99H280"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 5"
+                    />
+                    <circle cx="218" cy="99" r="7" fill="#F6B801" />
+                    <circle cx="42" cy="105" r="4" fill="currentColor" />
+                  </svg>
+                  <span className="template-visual-caption">
+                    {copy.caption}
+                  </span>
+                  <span className="template-icon-tile">
+                    <TemplateIcon className="size-9" strokeWidth={1.7} />
+                  </span>
+                  <span className="template-visual-spark">
+                    <Check className="size-3.5" strokeWidth={2.5} />
+                  </span>
+                </div>
                 <h3 className="mt-5 min-h-14 text-lg font-bold">
                   {copy.title}
                 </h3>
                 <p className="mt-2 text-sm leading-7 text-[#62635F]">
                   {copy.description}
                 </p>
-                <ul className="mt-5 mb-2 space-y-2 text-xs leading-5 text-[#62635F]">
+                <ul className="mt-5 mb-6 space-y-2 text-xs leading-5 text-[#62635F]">
                   {copy.examples.map(example => (
                     <li key={example} className="flex items-center gap-2">
                       <Check
@@ -263,14 +308,20 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
-                <span
-                  className="mt-auto inline-flex items-center gap-2 pt-5 text-xs font-semibold"
-                  style={{ color: config.accent }}
+                <button
+                  type="button"
+                  onClick={createBoard}
+                  aria-label={`ابدأ مع قالب ${copy.title}`}
+                  className="template-card-action mt-auto flex w-full items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
+                  style={{
+                    color: config.accent,
+                    backgroundColor: config.softAccent,
+                  }}
                 >
-                  ابدأ مع وجهة{" "}
-                  <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
-                </span>
-              </button>
+                  ابدأ مع وجهة
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                </button>
+              </article>
             );
           })}
         </div>
@@ -282,8 +333,8 @@ export default function Landing() {
       >
         <SectionIntro
           eyebrow="ترتيب أقل تعقيدًا، وتركيز أكثر"
-          title="خلّ تركيزك على الإنجاز"
-          description="من أول مهمة إلى آخر خطوة، وجهة تساعدك تبقى على المسار."
+          title="ركّز على الإنجاز"
+          description="من أول مهمة إلى آخر خطوة، تساعدك وجهة على متابعة العمل بوضوح."
         />
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature, index) => (
@@ -314,8 +365,8 @@ export default function Landing() {
       <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 sm:px-8 lg:grid-cols-2 lg:px-10">
         <SectionIntro
           eyebrow="خطواتك، في مكانها."
-          title="وين وصلت؟ وش باقي؟"
-          description="افتح لوحتك وشوف أولوياتك ومواعيدك وما أنجزته. كل التفاصيل التي تحتاجها لتخطط لخطوتك القادمة."
+          title="تابع إنجازك، وحدّد خطوتك القادمة"
+          description="اطّلع على أولوياتك ومواعيدك وما أنجزته في لوحة واحدة، وحدّد ما يحتاج إلى متابعة."
         />
         <div>
           <DashboardPreview />
@@ -331,7 +382,7 @@ export default function Landing() {
             dark
             eyebrow="بداية بسيطة"
             title="من هنا تبدأ وجهتك"
-            description="سجّل بحساب Google، وابدأ بثلاث خطوات بسيطة. عندك دعوة؟ تقدر تنضم مباشرة إلى لوحة فريقك."
+            description="سجّل بحساب Google، وابدأ بثلاث خطوات بسيطة، أو انضم إلى لوحة فريقك عبر رابط الدعوة."
           />
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {steps.map((step, index) => (
@@ -367,8 +418,8 @@ export default function Landing() {
             </h2>
             <p className="mt-5 max-w-2xl text-sm leading-8 text-[#62635F] sm:text-base">
               يومك الشخصي يختلف عن يوم فريقك، وإطلاق منتج يختلف عن تجهيز حملة
-              لمتجرك. عشان كذا، في وجهة تختار لكل لوحة القالب الذي يناسبها،
-              وتجمع خطواتك في مساحة عربية واضحة.
+              لمتجرك. لذلك تتيح لك وجهة اختيار القالب المناسب لكل لوحة، وتجمع
+              خطواتك في مساحة عربية واضحة.
             </p>
           </div>
           <div className="grid gap-3">
@@ -398,7 +449,7 @@ export default function Landing() {
             وجهتك القادمة تبدأ بخطوة.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-blue-100">
-            اختر ما تبي تنجزه اليوم، وخَلّ وجهة تجمع خطواتك.
+            اختر هدفك اليوم، وابدأ خطواتك مع وجهة.
           </p>
           <Button
             onClick={createBoard}
