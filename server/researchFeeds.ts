@@ -274,7 +274,7 @@ async function fetchOpenAlexBatch(keywords: string[]) {
       {
         headers: {
           Accept: "application/json",
-          "User-Agent": "WJH-Research-Feeds/1.0 (https://wjh.ralmatham.ai)",
+          "User-Agent": "WJH-Research-Feeds/1.0 (https://wijha.ralmatham.ai)",
           ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         },
         signal: controller.signal,

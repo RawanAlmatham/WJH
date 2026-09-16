@@ -16,7 +16,7 @@ export const ENV = {
   publicUrl: (
     process.env.PUBLIC_URL ??
     (process.env.NODE_ENV === "production"
-      ? "https://wjh.ralmatham.ai"
+      ? "https://wijha.ralmatham.ai"
       : "http://localhost:3000")
   ).replace(/\/+$/, ""),
   isProduction: process.env.NODE_ENV === "production",

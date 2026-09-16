@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "wjh",
   webDir: "dist/public",
   server: {
-    url: "https://wjh.ralmatham.ai",
+    url: "https://wijha.ralmatham.ai",
     cleartext: false,
   },
   ios: {
