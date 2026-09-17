@@ -19,6 +19,7 @@ import {
   taskAssignees,
   taskChecklistItems,
   taskComments,
+  taskInterviews,
   taskParticipants,
   tasks,
   teamInvitations,
@@ -2575,22 +2576,27 @@ export async function getWorkspaceData(boardId: number, userId?: number) {
           .where(inArray(projectMembers.projectId, projectIds)),
       ])
     : [[], []];
-  const [taskCommentRows, taskAssigneeRows, checklistRows] = taskIds.length
-    ? await Promise.all([
-        db
-          .select()
-          .from(taskComments)
-          .where(inArray(taskComments.taskId, taskIds)),
-        db
-          .select()
-          .from(taskAssignees)
-          .where(inArray(taskAssignees.taskId, taskIds)),
-        db
-          .select()
-          .from(taskChecklistItems)
-          .where(inArray(taskChecklistItems.taskId, taskIds)),
-      ])
-    : [[], [], []];
+  const [taskCommentRows, taskAssigneeRows, checklistRows, interviewRows] =
+    taskIds.length
+      ? await Promise.all([
+          db
+            .select()
+            .from(taskComments)
+            .where(inArray(taskComments.taskId, taskIds)),
+          db
+            .select()
+            .from(taskAssignees)
+            .where(inArray(taskAssignees.taskId, taskIds)),
+          db
+            .select()
+            .from(taskChecklistItems)
+            .where(inArray(taskChecklistItems.taskId, taskIds)),
+          db
+            .select()
+            .from(taskInterviews)
+            .where(inArray(taskInterviews.taskId, taskIds)),
+        ])
+      : [[], [], [], []];
   const deliverableIds = deliverableRows.map(deliverable => deliverable.id);
   const commentRows = deliverableIds.length
     ? await db
@@ -2673,6 +2679,12 @@ export async function getWorkspaceData(boardId: number, userId?: number) {
     deliverables: deliverableRows,
     tasks: enrichedTasks,
     taskChecklistItems: checklistRows,
+    taskInterviews: interviewRows.map(interview => ({
+      ...interview,
+      createdByName:
+        userRows.find(user => user.id === interview.createdByUserId)?.name ??
+        "عضو الفريق",
+    })),
     events: visibleEvents,
     lessons: enrichedLessons,
     taskComments: enrichedTaskComments,
@@ -2688,6 +2700,119 @@ export async function getTeamWorkload(boardId: number, userId?: number) {
 export async function getReportSummary(boardId: number, userId?: number) {
   const workspace = await getWorkspaceData(boardId, userId);
   return summarizeTasks(workspace.tasks);
+}
+
+export type TaskInterviewStatus =
+  | "planned"
+  | "completed"
+  | "transcribed"
+  | "analyzed";
+
+type TaskInterviewInput = {
+  participantLabel: string;
+  interviewDate?: Date | null;
+  status: TaskInterviewStatus;
+  recordingUrl?: string | null;
+  recordingConsent?: boolean;
+  transcript?: string | null;
+  summary?: string | null;
+  insights?: string | null;
+  themes?: string[];
+};
+
+function normalizeInterviewThemes(themes: string[] | undefined) {
+  return Array.from(
+    new Set(
+      (themes ?? [])
+        .map(theme => theme.trim())
+        .filter(Boolean)
+        .slice(0, 20)
+    )
+  );
+}
+
+async function requireInterviewTask(
+  taskId: number,
+  boardId: number,
+  interviewId?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
+  const conditions = [eq(tasks.id, taskId), eq(tasks.boardId, boardId)];
+  const rows = interviewId
+    ? await db
+        .select({ id: taskInterviews.id })
+        .from(taskInterviews)
+        .innerJoin(tasks, eq(taskInterviews.taskId, tasks.id))
+        .where(and(...conditions, eq(taskInterviews.id, interviewId)))
+        .limit(1)
+    : await db
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(...conditions))
+        .limit(1);
+  if (!rows[0])
+    throw new Error("المقابلة أو المهمة غير موجودة في اللوحة الحالية");
+  return db;
+}
+
+export async function createTaskInterview(
+  input: TaskInterviewInput & {
+    taskId: number;
+    boardId: number;
+    createdByUserId: number;
+  }
+) {
+  const db = await requireInterviewTask(input.taskId, input.boardId);
+  const created = await db.insert(taskInterviews).values({
+    taskId: input.taskId,
+    participantLabel: input.participantLabel.trim(),
+    interviewDate: input.interviewDate ?? null,
+    status: input.status,
+    recordingUrl: input.recordingUrl?.trim() || null,
+    recordingConsent: Boolean(input.recordingConsent),
+    transcript: input.transcript?.trim() || null,
+    summary: input.summary?.trim() || null,
+    insights: input.insights?.trim() || null,
+    themes: normalizeInterviewThemes(input.themes),
+    createdByUserId: input.createdByUserId,
+  });
+  return { id: Number(created[0].insertId) };
+}
+
+export async function updateTaskInterview(
+  input: TaskInterviewInput & {
+    id: number;
+    taskId: number;
+    boardId: number;
+  }
+) {
+  const db = await requireInterviewTask(input.taskId, input.boardId, input.id);
+  await db
+    .update(taskInterviews)
+    .set({
+      participantLabel: input.participantLabel.trim(),
+      interviewDate: input.interviewDate ?? null,
+      status: input.status,
+      recordingUrl: input.recordingUrl?.trim() || null,
+      recordingConsent: Boolean(input.recordingConsent),
+      transcript: input.transcript?.trim() || null,
+      summary: input.summary?.trim() || null,
+      insights: input.insights?.trim() || null,
+      themes: normalizeInterviewThemes(input.themes),
+    })
+    .where(eq(taskInterviews.id, input.id));
+  return { success: true as const };
+}
+
+export async function deleteTaskInterview(input: {
+  id: number;
+  taskId: number;
+  boardId: number;
+}) {
+  const db = await requireInterviewTask(input.taskId, input.boardId, input.id);
+  await db.delete(taskInterviews).where(eq(taskInterviews.id, input.id));
+  return { success: true as const };
 }
 
 export async function addTaskComment(input: {

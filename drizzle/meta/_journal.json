@@ -162,6 +162,13 @@
       "when": 1789318281206,
       "tag": "0022_workboard_template",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1789654910679,
+      "tag": "0023_shallow_lightspeed",
+      "breakpoints": true
     }
   ]
 }

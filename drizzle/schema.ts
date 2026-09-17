@@ -475,6 +475,41 @@ export const taskChecklistItems = mysqlTable(
   ]
 );
 
+export const taskInterviews = mysqlTable(
+  "taskInterviews",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    taskId: int("taskId")
+      .references(() => tasks.id, { onDelete: "cascade" })
+      .notNull(),
+    participantLabel: varchar("participantLabel", { length: 180 }).notNull(),
+    interviewDate: timestamp("interviewDate"),
+    status: mysqlEnum("status", [
+      "planned",
+      "completed",
+      "transcribed",
+      "analyzed",
+    ])
+      .default("planned")
+      .notNull(),
+    recordingUrl: varchar("recordingUrl", { length: 1024 }),
+    recordingConsent: boolean("recordingConsent").default(false).notNull(),
+    transcript: text("transcript"),
+    summary: text("summary"),
+    insights: text("insights"),
+    themes: json("themes").$type<string[]>(),
+    createdByUserId: int("createdByUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("taskInterviews_task_idx").on(table.taskId),
+    index("taskInterviews_status_idx").on(table.status),
+  ]
+);
+
 export const taskComments = mysqlTable(
   "taskComments",
   {

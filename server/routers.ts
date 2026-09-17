@@ -31,6 +31,19 @@ const taskStatus = z.enum([
   "complete",
   "overdue",
 ]);
+const taskInterviewInput = z.object({
+  participantLabel: z.string().trim().min(1).max(180),
+  interviewDate: z.date().nullable().optional(),
+  status: z.enum(["planned", "completed", "transcribed", "analyzed"]),
+  recordingUrl: z
+    .union([z.literal(""), z.string().trim().url().max(1024)])
+    .optional(),
+  recordingConsent: z.boolean().optional(),
+  transcript: z.string().max(100_000).nullable().optional(),
+  summary: z.string().max(10_000).nullable().optional(),
+  insights: z.string().max(10_000).nullable().optional(),
+  themes: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+});
 const projectStatus = z.enum([
   "planned",
   "in_progress",
@@ -1048,6 +1061,48 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
         return db.deleteTaskChecklistItem({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+      }),
+    createTaskInterview: teamMemberProcedure
+      .input(
+        taskInterviewInput.extend({
+          taskId: z.number().int().positive(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
+        return db.createTaskInterview({
+          ...input,
+          boardId: ctx.activeBoardId,
+          createdByUserId: ctx.user.id,
+        });
+      }),
+    updateTaskInterview: teamMemberProcedure
+      .input(
+        taskInterviewInput.extend({
+          id: z.number().int().positive(),
+          taskId: z.number().int().positive(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
+        return db.updateTaskInterview({
+          ...input,
+          boardId: ctx.activeBoardId,
+        });
+      }),
+    deleteTaskInterview: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          taskId: z.number().int().positive(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        await requireTaskAccess(ctx.user.id, ctx.activeBoardId, input.taskId);
+        return db.deleteTaskInterview({
           ...input,
           boardId: ctx.activeBoardId,
         });

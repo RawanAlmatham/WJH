@@ -91,6 +91,8 @@ import {
   ExternalLink,
   SlidersHorizontal,
   Link2,
+  Mic2,
+  Tags,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -131,6 +133,18 @@ type TaskStatus =
   | "in_review"
   | "complete"
   | "overdue";
+type InterviewStatus = "planned" | "completed" | "transcribed" | "analyzed";
+type InterviewDraft = {
+  participantLabel: string;
+  interviewDate: string;
+  status: InterviewStatus;
+  recordingUrl: string;
+  recordingConsent: boolean;
+  transcript: string;
+  summary: string;
+  insights: string;
+  themes: string;
+};
 type ProjectStatus =
   | "planned"
   | "in_progress"
@@ -251,6 +265,18 @@ const taskStatusLabel: Record<string, string> = {
   complete: "مكتملة",
   overdue: "متأخرة",
 };
+const interviewStatusLabel: Record<InterviewStatus, string> = {
+  planned: "مجدولة",
+  completed: "أُجريت",
+  transcribed: "مفرّغة",
+  analyzed: "مُحللة",
+};
+const interviewStatusClass: Record<InterviewStatus, string> = {
+  planned: "bg-blue-50 text-blue-700 ring-blue-100",
+  completed: "bg-amber-50 text-amber-700 ring-amber-100",
+  transcribed: "bg-violet-50 text-violet-700 ring-violet-100",
+  analyzed: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+};
 const projectStatusLabel: Record<string, string> = {
   planned: "مخطط",
   in_progress: "قيد التنفيذ",
@@ -336,6 +362,45 @@ function dateInputValue(value: Date | string | null | undefined) {
   const date = new Date(value);
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return local.toISOString().slice(0, 10);
+}
+
+function emptyInterviewDraft(): InterviewDraft {
+  return {
+    participantLabel: "",
+    interviewDate: todayInputValue(),
+    status: "planned",
+    recordingUrl: "",
+    recordingConsent: false,
+    transcript: "",
+    summary: "",
+    insights: "",
+    themes: "",
+  };
+}
+
+function interviewDraftFrom(interview: any): InterviewDraft {
+  return {
+    participantLabel: interview.participantLabel ?? "",
+    interviewDate: dateInputValue(interview.interviewDate),
+    status: interview.status ?? "planned",
+    recordingUrl: interview.recordingUrl ?? "",
+    recordingConsent: Boolean(interview.recordingConsent),
+    transcript: interview.transcript ?? "",
+    summary: interview.summary ?? "",
+    insights: interview.insights ?? "",
+    themes: Array.isArray(interview.themes) ? interview.themes.join("، ") : "",
+  };
+}
+
+function splitInterviewThemes(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[,،\n]/)
+        .map(theme => theme.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 20);
 }
 
 function positiveIdOrNull(value: unknown) {
@@ -1437,7 +1502,9 @@ function Sidebar({
           <div className="flex items-center gap-3">
             <BrandMark className="size-11" />
             <div>
-              <p className="brand-wordmark mb-1 text-2xl font-bold leading-none tracking-[-.07em] text-[#1F2328]">وجهة</p>
+              <p className="brand-wordmark mb-1 text-2xl font-bold leading-none tracking-[-.07em] text-[#1F2328]">
+                وجهة
+              </p>
               <p className="max-w-36 truncate text-[11px] text-[#62635F]">
                 {workspaceName}
               </p>
@@ -3194,6 +3261,9 @@ function TaskDetailPage({
   const completedChecklistItems = checklistItems.filter(
     (item: any) => item.isComplete
   ).length;
+  const interviews = (data.taskInterviews ?? []).filter(
+    (interview: any) => interview.taskId === task.id
+  );
   const comments = (data.taskComments ?? []).filter(
     (comment: any) => comment.taskId === task.id
   );
@@ -3476,6 +3546,11 @@ function TaskDetailPage({
           </form>
         )}
       </section>
+      <TaskInterviewsSection
+        taskId={task.id}
+        interviews={interviews}
+        canEditWork={canEditWork}
+      />
       <section className="mt-5 rounded-xl border border-violet-100 bg-white p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -3706,6 +3781,455 @@ function TaskDetailPage({
         )}
       </section>
     </div>
+  );
+}
+
+function TaskInterviewsSection({
+  taskId,
+  interviews,
+  canEditWork,
+}: {
+  taskId: number;
+  interviews: any[];
+  canEditWork: boolean;
+}) {
+  const utils = trpc.useUtils();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<InterviewDraft>(emptyInterviewDraft);
+  const resetEditor = () => {
+    setEditorOpen(false);
+    setEditingId(null);
+    setDraft(emptyInterviewDraft());
+  };
+  const refresh = async () => {
+    await utils.workspace.overview.invalidate();
+    resetEditor();
+  };
+  const createInterview = trpc.workspace.createTaskInterview.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      toast.success("تمت إضافة المقابلة");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const updateInterview = trpc.workspace.updateTaskInterview.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      toast.success("تم تحديث المقابلة");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const deleteInterview = trpc.workspace.deleteTaskInterview.useMutation({
+    onSuccess: async () => {
+      await utils.workspace.overview.invalidate();
+      toast.success("تم حذف المقابلة");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const themeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    interviews.forEach(interview => {
+      (Array.isArray(interview.themes) ? interview.themes : []).forEach(
+        (theme: string) => counts.set(theme, (counts.get(theme) ?? 0) + 1)
+      );
+    });
+    return Array.from(counts.entries()).sort(
+      ([themeA, countA], [themeB, countB]) =>
+        countB - countA || themeA.localeCompare(themeB, "ar")
+    );
+  }, [interviews]);
+  const payload = () => ({
+    taskId,
+    participantLabel: draft.participantLabel.trim(),
+    interviewDate: draft.interviewDate
+      ? new Date(`${draft.interviewDate}T12:00:00`)
+      : null,
+    status: draft.status,
+    recordingUrl: draft.recordingUrl.trim(),
+    recordingConsent: draft.recordingConsent,
+    transcript: draft.transcript.trim(),
+    summary: draft.summary.trim(),
+    insights: draft.insights.trim(),
+    themes: splitInterviewThemes(draft.themes),
+  });
+  const saveInterview = () => {
+    if (!draft.participantLabel.trim())
+      return toast.error("أضف اسم المشارك أو رمزه");
+    if (draft.recordingUrl.trim() && !draft.recordingConsent)
+      return toast.error("أكّد موافقة المشارك قبل حفظ رابط التسجيل");
+    if (editingId) updateInterview.mutate({ id: editingId, ...payload() });
+    else createInterview.mutate(payload());
+  };
+  const pending = createInterview.isPending || updateInterview.isPending;
+  const transcribedCount = interviews.filter(interview =>
+    ["transcribed", "analyzed"].includes(interview.status)
+  ).length;
+  const analyzedCount = interviews.filter(
+    interview => interview.status === "analyzed"
+  ).length;
+  return (
+    <section className="mt-5 rounded-xl border border-[#DCE8F3] bg-white p-5 sm:p-7">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-[#1F2328]">
+            <Mic2 className="size-4 text-[#7A2E5C]" />
+            سجل المقابلات
+          </h2>
+          <p className="mt-1 max-w-2xl text-xs leading-6 text-[#62635F]">
+            احفظ كل مقابلة كسجل مستقل، ثم اجمع الموضوعات المتكررة والنتائج في
+            مكان واحد. استخدم رمزًا للمشارك إذا كانت هويته حساسة.
+          </p>
+        </div>
+        {canEditWork && (
+          <Button
+            type="button"
+            variant={editorOpen ? "outline" : "default"}
+            onClick={() => {
+              if (editorOpen) return resetEditor();
+              setDraft(emptyInterviewDraft());
+              setEditingId(null);
+              setEditorOpen(true);
+            }}
+            className={cn(
+              "h-9 gap-2",
+              !editorOpen && "bg-[#7A2E5C] hover:bg-[#64244B]"
+            )}
+          >
+            {editorOpen ? (
+              <X className="size-4" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            {editorOpen ? "إلغاء" : "إضافة مقابلة"}
+          </Button>
+        )}
+      </div>
+
+      {!!interviews.length && (
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {[
+            ["إجمالي المقابلات", interviews.length],
+            ["تم تفريغها", transcribedCount],
+            ["تم تحليلها", analyzedCount],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg bg-[#F5F2EE] px-4 py-3">
+              <p className="text-[11px] text-[#62635F]">{label}</p>
+              <p className="mt-1 text-xl font-bold text-[#1E3A8A]">{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!!themeCounts.length && (
+        <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50/40 p-4">
+          <p className="flex items-center gap-2 text-xs font-semibold text-[#6E5312]">
+            <Tags className="size-4" />
+            الموضوعات المتكررة
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {themeCounts.map(([theme, count]) => (
+              <span
+                key={theme}
+                className="rounded-full bg-white px-3 py-1 text-xs text-[#6E5312] ring-1 ring-amber-200"
+              >
+                {theme} · {count}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {editorOpen && canEditWork && (
+        <form
+          onSubmit={event => {
+            event.preventDefault();
+            saveInterview();
+          }}
+          className="mt-5 rounded-xl border border-[#DCE8F3] bg-[#F9FBFD] p-4 sm:p-5"
+        >
+          <h3 className="text-sm font-semibold">
+            {editingId ? "تعديل سجل المقابلة" : "مقابلة جديدة"}
+          </h3>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <Field label="اسم المشارك أو رمزه">
+              <Input
+                value={draft.participantLabel}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    participantLabel: event.target.value,
+                  }))
+                }
+                placeholder="مثال: مشارك 01"
+              />
+            </Field>
+            <Field label="تاريخ المقابلة">
+              <Input
+                type="date"
+                value={draft.interviewDate}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    interviewDate: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="حالة المعالجة">
+              <select
+                value={draft.status}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    status: event.target.value as InterviewStatus,
+                  }))
+                }
+                className="form-select"
+              >
+                {Object.entries(interviewStatusLabel).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field label="رابط التسجيل (اختياري)">
+              <Input
+                type="url"
+                dir="ltr"
+                value={draft.recordingUrl}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    recordingUrl: event.target.value,
+                  }))
+                }
+                placeholder="https://..."
+              />
+            </Field>
+            <Field label="الموضوعات والوسوم">
+              <Input
+                value={draft.themes}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    themes: event.target.value,
+                  }))
+                }
+                placeholder="مثال: التسجيل، الصلاحيات، التقارير"
+              />
+            </Field>
+          </div>
+          <label className="mt-3 flex items-center gap-2 text-xs text-[#555A54]">
+            <Checkbox
+              checked={draft.recordingConsent}
+              onCheckedChange={checked =>
+                setDraft(current => ({
+                  ...current,
+                  recordingConsent: checked === true,
+                }))
+              }
+            />
+            تم أخذ موافقة المشارك على التسجيل وحفظ رابطه
+          </label>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field label="الخلاصة">
+              <Textarea
+                value={draft.summary}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    summary: event.target.value,
+                  }))
+                }
+                className="min-h-28"
+                placeholder="ما أهم ما قاله المشارك؟"
+              />
+            </Field>
+            <Field label="النتائج والفرص">
+              <Textarea
+                value={draft.insights}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    insights: event.target.value,
+                  }))
+                }
+                className="min-h-28"
+                placeholder="المشكلات، الاحتياجات، الاقتراحات والفرص..."
+              />
+            </Field>
+          </div>
+          <div className="mt-4">
+            <Field label="التفريغ النصي">
+              <Textarea
+                value={draft.transcript}
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    transcript: event.target.value,
+                  }))
+                }
+                className="min-h-44 leading-7"
+                placeholder="ألصق نص المقابلة هنا، ويمكنك تنسيقه بصيغة: المحاور: ... / المشارك: ..."
+              />
+            </Field>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              type="submit"
+              disabled={pending || !draft.participantLabel.trim()}
+              className="h-10 bg-[#1E3A8A] hover:bg-[#172E6E]"
+            >
+              {pending ? "جارٍ الحفظ..." : "حفظ المقابلة"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={resetEditor}
+              className="h-10"
+            >
+              إلغاء
+            </Button>
+          </div>
+        </form>
+      )}
+
+      <div className="mt-5 space-y-3">
+        {interviews.map(interview => {
+          const status = interview.status as InterviewStatus;
+          const themes = Array.isArray(interview.themes)
+            ? interview.themes
+            : [];
+          return (
+            <article
+              key={interview.id}
+              className="rounded-xl border border-slate-200 bg-[#FDFCFA] p-4"
+            >
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-[#1F2328]">
+                      {interview.participantLabel}
+                    </h3>
+                    <span
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1",
+                        interviewStatusClass[status]
+                      )}
+                    >
+                      {interviewStatusLabel[status]}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#62635F]">
+                    {interview.interviewDate
+                      ? fullDateText(interview.interviewDate)
+                      : "لم يُحدد التاريخ"}
+                    {interview.createdByName
+                      ? ` · أضيفت بواسطة ${interview.createdByName}`
+                      : ""}
+                  </p>
+                </div>
+                {canEditWork && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(interview.id);
+                        setDraft(interviewDraftFrom(interview));
+                        setEditorOpen(true);
+                      }}
+                      aria-label={`تعديل مقابلة ${interview.participantLabel}`}
+                      className="rounded-md p-2 text-[#1E3A8A] hover:bg-[#E9EDF7]"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                    <DeleteWorkDialog
+                      kind="مقابلة"
+                      title={interview.participantLabel}
+                      description="سيُحذف التفريغ والخلاصة والنتائج المرتبطة بهذه المقابلة نهائيًا."
+                      onConfirm={() =>
+                        deleteInterview.mutate({ id: interview.id, taskId })
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+              {!!themes.length && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {themes.map((theme: string) => (
+                    <span
+                      key={theme}
+                      className="rounded-full bg-[#E9EDF7] px-2.5 py-1 text-[11px] text-[#1E3A8A]"
+                    >
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {interview.summary && (
+                  <div className="rounded-lg bg-white p-3 ring-1 ring-slate-100">
+                    <p className="text-[11px] font-semibold text-[#7A2E5C]">
+                      الخلاصة
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#555A54]">
+                      {interview.summary}
+                    </p>
+                  </div>
+                )}
+                {interview.insights && (
+                  <div className="rounded-lg bg-white p-3 ring-1 ring-slate-100">
+                    <p className="text-[11px] font-semibold text-[#45613F]">
+                      النتائج والفرص
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#555A54]">
+                      {interview.insights}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {interview.recordingUrl && interview.recordingConsent && (
+                <a
+                  href={interview.recordingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#1E3A8A] hover:underline"
+                >
+                  <ExternalLink className="size-3.5" />
+                  فتح التسجيل
+                </a>
+              )}
+              {interview.transcript && (
+                <details className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-[#1E3A8A]">
+                    عرض التفريغ النصي
+                  </summary>
+                  <p className="mt-3 whitespace-pre-wrap border-t border-slate-100 pt-3 text-sm leading-8 text-[#444943]">
+                    {interview.transcript}
+                  </p>
+                </details>
+              )}
+            </article>
+          );
+        })}
+        {!interviews.length && !editorOpen && (
+          <div className="rounded-xl border border-dashed border-[#CAD9E8] bg-[#F9FBFD] px-5 py-8 text-center">
+            <Mic2 className="mx-auto size-7 text-[#8EACCB]" />
+            <p className="mt-3 text-sm font-medium text-[#444943]">
+              لا توجد مقابلات مسجلة في هذه المهمة بعد.
+            </p>
+            <p className="mt-1 text-xs leading-6 text-[#62635F]">
+              أضف أول مقابلة، ثم دوّن تفريغها ونتائجها ووسومها.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
