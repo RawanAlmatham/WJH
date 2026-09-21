@@ -812,7 +812,20 @@ export const appRouter = router({
           title: z.string().trim().min(2).max(240),
           projectId: z.number().int().positive().nullable().optional(),
           eventDate: z.date(),
-          type: z.enum(["meeting", "delivery", "launch", "workshop", "review"]),
+          location: z.string().trim().max(320).nullable().optional(),
+          notes: z.string().trim().max(4000).nullable().optional(),
+          type: z.enum([
+            "meeting",
+            "delivery",
+            "launch",
+            "workshop",
+            "review",
+            "activity",
+            "flight",
+            "stay",
+            "transport",
+            "meal",
+          ]),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -833,7 +846,20 @@ export const appRouter = router({
           title: z.string().trim().min(2).max(240),
           projectId: z.number().int().positive().nullable().optional(),
           eventDate: z.date(),
-          type: z.enum(["meeting", "delivery", "launch", "workshop", "review"]),
+          location: z.string().trim().max(320).nullable().optional(),
+          notes: z.string().trim().max(4000).nullable().optional(),
+          type: z.enum([
+            "meeting",
+            "delivery",
+            "launch",
+            "workshop",
+            "review",
+            "activity",
+            "flight",
+            "stay",
+            "transport",
+            "meal",
+          ]),
         })
       )
       .mutation(async ({ input, ctx }) => {

@@ -17,6 +17,7 @@ import {
   FolderKanban,
   ListChecks,
   ListTodo,
+  Plane,
   Rocket,
   Store,
   type LucideIcon,
@@ -67,6 +68,14 @@ const templateCopy: Record<
     description: "رتّب أفكارك ومهامك اليومية، وحدّد أولوياتك في مساحة خاصة بك.",
     examples: ["مهام يومية", "تخطيط أسبوعي", "متابعة الإنجاز"],
   },
+  travel: {
+    icon: Plane,
+    caption: "اكتشاف وتنظيم",
+    title: "تنظيم الرحلات",
+    description:
+      "رتّب حجوزاتك وبرنامج كل يوم، واجمع الأنشطة والتنقلات في تقويم واحد.",
+    examples: ["برنامج يومي", "حجوزات وتنقلات", "قائمة تجهيز"],
+  },
 };
 
 const features = [
@@ -96,7 +105,8 @@ const steps = [
   {
     number: "01",
     title: "اختر قالبك",
-    description: "أنشئ لوحة للعمل، لشركتك الناشئة، لمتجرك أو لمهامك الشخصية.",
+    description:
+      "أنشئ لوحة للعمل، لشركتك الناشئة، لمتجرك، لمهامك الشخصية أو لرحلتك.",
   },
   {
     number: "02",
@@ -139,7 +149,7 @@ export default function Landing() {
             aria-label="التنقل الرئيسي"
           >
             <a href="#templates" className="transition hover:text-[#1E3A8A]">
-              القوالب الأربعة
+              القوالب الخمسة
             </a>
             <a href="#features" className="transition hover:text-[#1E3A8A]">
               المزايا
@@ -175,8 +185,8 @@ export default function Landing() {
               <span className="block text-[#1E3A8A]">وإنجازك أقرب.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-[#62635F] sm:text-lg">
-              نظّم عمل فريقك، خطّط لمنتجك التقني، تابع مهام متجرك، أو رتّب يومك.
-              أربعة قوالب تجمع مهامك وخططك في مكان واحد.
+              نظّم عمل فريقك، خطّط لمنتجك، تابع متجرك، رتّب يومك أو جهّز رحلتك.
+              خمسة قوالب تجمع مهامك وخططك في مكان واحد.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button
@@ -220,7 +230,7 @@ export default function Landing() {
       <section className="border-y border-slate-200 bg-white/75">
         <div className="mx-auto grid max-w-7xl gap-px px-5 py-5 sm:grid-cols-3 sm:px-8 lg:px-10">
           {[
-            ["٤ قوالب", "تناسب عملك وحياتك"],
+            ["٥ قوالب", "تناسب عملك وحياتك"],
             ["مساحة واحدة", "للمهام والخطط والمواعيد"],
             ["لك ولفريقك", "ابدأ وحدك أو شارك الإنجاز"],
           ].map(([title, text], index) => (
@@ -240,11 +250,11 @@ export default function Landing() {
         className="mx-auto max-w-7xl scroll-mt-24 px-5 pt-20 sm:px-8 lg:px-10"
       >
         <SectionIntro
-          eyebrow="أربعة قوالب، لطموحات مختلفة"
+          eyebrow="خمسة قوالب، لطموحات مختلفة"
           title="ما الذي تريد إنجازه؟"
           description="لكل بداية احتياج مختلف. اختر القالب الأقرب لك، وابدأ بتقسيمات جاهزة تساعدك على تنظيم خطواتك."
         />
-        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {boardTemplates.map((template, index) => {
             const config = BOARD_TEMPLATE_LABELS[template];
             const copy = templateCopy[template];
@@ -254,9 +264,13 @@ export default function Landing() {
                 key={template}
                 className="brand-template-card group flex flex-col items-start text-right"
                 style={{
-                  borderTopColor: ["#1E3A8A", "#7A2E5C", "#A6B69A", "#F6B801"][
-                    index
-                  ],
+                  borderTopColor: [
+                    "#1E3A8A",
+                    "#7A2E5C",
+                    "#A6B69A",
+                    "#F6B801",
+                    "#0F766E",
+                  ][index],
                 }}
               >
                 <div
@@ -417,15 +431,15 @@ export default function Landing() {
               طريقتك مختلفة. ووجهة تناسبها.
             </h2>
             <p className="mt-5 max-w-2xl text-sm leading-8 text-[#62635F] sm:text-base">
-              يومك الشخصي يختلف عن يوم فريقك، وإطلاق منتج يختلف عن تجهيز حملة
-              لمتجرك. لذلك تتيح لك وجهة اختيار القالب المناسب لكل لوحة، وتجمع
-              خطواتك في مساحة عربية واضحة.
+              يومك الشخصي يختلف عن يوم فريقك، وإطلاق منتج يختلف عن تجهيز رحلة أو
+              حملة لمتجرك. لذلك تتيح لك وجهة اختيار القالب المناسب لكل لوحة،
+              وتجمع خطواتك في مساحة عربية واضحة.
             </p>
           </div>
           <div className="grid gap-3">
             {[
               "لوحة مستقلة لكل مساحة عمل",
-              "أربعة قوالب لبدايات مختلفة",
+              "خمسة قوالب لبدايات مختلفة",
               "واجهة عربية من البداية",
               "دعوات للفريق وصلاحيات واضحة",
             ].map(item => (

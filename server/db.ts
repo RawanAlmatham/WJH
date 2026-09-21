@@ -3176,7 +3176,19 @@ export async function createCalendarEvent(input: {
   title: string;
   projectId?: number | null;
   eventDate: Date;
-  type: "meeting" | "delivery" | "launch" | "workshop" | "review";
+  location?: string | null;
+  notes?: string | null;
+  type:
+    | "meeting"
+    | "delivery"
+    | "launch"
+    | "workshop"
+    | "review"
+    | "activity"
+    | "flight"
+    | "stay"
+    | "transport"
+    | "meal";
   boardId: number;
 }) {
   const database = await getDb();
@@ -3199,6 +3211,8 @@ export async function createCalendarEvent(input: {
     title: input.title,
     projectId: input.projectId ?? null,
     eventDate: input.eventDate,
+    location: input.location?.trim() || null,
+    notes: input.notes?.trim() || null,
     type: input.type,
   });
   return { id: Number(created[0].insertId) };
@@ -3209,7 +3223,19 @@ export async function updateCalendarEvent(input: {
   title: string;
   projectId?: number | null;
   eventDate: Date;
-  type: "meeting" | "delivery" | "launch" | "workshop" | "review";
+  location?: string | null;
+  notes?: string | null;
+  type:
+    | "meeting"
+    | "delivery"
+    | "launch"
+    | "workshop"
+    | "review"
+    | "activity"
+    | "flight"
+    | "stay"
+    | "transport"
+    | "meal";
   boardId: number;
 }) {
   const database = await getDb();
@@ -3233,6 +3259,8 @@ export async function updateCalendarEvent(input: {
       title: input.title,
       projectId: input.projectId ?? null,
       eventDate: input.eventDate,
+      location: input.location?.trim() || null,
+      notes: input.notes?.trim() || null,
       type: input.type,
     })
     .where(

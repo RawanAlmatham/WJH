@@ -6,6 +6,7 @@ export const boardTemplates = [
   "startup",
   "ecommerce",
   "personal-tasks",
+  "travel",
 ] as const;
 
 export type BoardTemplate = (typeof boardTemplates)[number];
@@ -232,6 +233,49 @@ export const BOARD_TEMPLATE_LABELS: Record<
         description:
           "احجز وقتًا ثابتًا لمراجعة ما أُنجز وتجهيز الأسبوع التالي.",
         priority: "low",
+      },
+    ],
+  },
+  travel: {
+    title: "قالب تنظيم الرحلات",
+    description:
+      "رتّب حجوزات الرحلة وبرنامج كل يوم والمهام المشتركة في مكان واحد.",
+    accent: "#0F766E",
+    softAccent: "#E6F4F1",
+    highlights: ["برنامج يومي", "حجوزات وتنقلات", "قائمة تجهيز"],
+    modules: ["plan", "projects", "tasks", "team", "calendar"],
+    sections: ["priorities", "attention", "upcoming", "team"],
+    navigation: {
+      home: "ملخص الرحلة",
+      weekly: "استعدادات الرحلة",
+      plan: "خطة الرحلة",
+      projects: "محطات الرحلة",
+      tasks: "قائمة التجهيز",
+      team: "المسافرون",
+      feeds: "دليل الوجهات",
+      lessons: "ملاحظات الرحلة",
+      launches: "الحجوزات",
+      calendar: "برنامج الرحلة",
+      reports: "ملخص الرحلة",
+    },
+    starterTasks: [
+      {
+        title: "تثبيت حجوزات الطيران والسكن",
+        description:
+          "اجمع أرقام الحجوزات ومواعيد الوصول والمغادرة في مكان واحد.",
+        priority: "high",
+      },
+      {
+        title: "بناء البرنامج اليومي للرحلة",
+        description:
+          "أضف الأنشطة والتنقلات والحجوزات لكل يوم وحدد أوقاتها ومواقعها.",
+        priority: "high",
+      },
+      {
+        title: "تجهيز المستندات والأمتعة",
+        description:
+          "راجع الجوازات والتأشيرات والتأمين وقائمة الأغراض قبل المغادرة.",
+        priority: "medium",
       },
     ],
   },

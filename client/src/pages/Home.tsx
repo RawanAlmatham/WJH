@@ -92,6 +92,7 @@ import {
   SlidersHorizontal,
   Link2,
   Mic2,
+  MapPin,
   Tags,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -134,6 +135,17 @@ type TaskStatus =
   | "complete"
   | "overdue";
 type InterviewStatus = "planned" | "completed" | "transcribed" | "analyzed";
+type CalendarEventType =
+  | "meeting"
+  | "delivery"
+  | "launch"
+  | "workshop"
+  | "review"
+  | "activity"
+  | "flight"
+  | "stay"
+  | "transport"
+  | "meal";
 type InterviewDraft = {
   participantLabel: string;
   interviewDate: string;
@@ -362,6 +374,14 @@ function dateInputValue(value: Date | string | null | undefined) {
   const date = new Date(value);
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return local.toISOString().slice(0, 10);
+}
+
+function timeInputValue(value: Date | string | null | undefined) {
+  if (!value) return "09:00";
+  const date = new Date(value);
+  return `${String(date.getHours()).padStart(2, "0")}:${String(
+    date.getMinutes()
+  ).padStart(2, "0")}`;
 }
 
 function emptyInterviewDraft(): InterviewDraft {
@@ -1171,6 +1191,7 @@ export default function Home() {
     data,
     user,
     workspaceName,
+    boardTemplate: activeBoard?.template ?? "work",
     setPage,
     setProjectId,
     setTaskId,
@@ -1481,7 +1502,9 @@ function Sidebar({
     },
   ];
   const visibleEntries = entries.filter(
-    entry => !entry.module || enabledModules.includes(entry.module)
+    entry =>
+      (!entry.module || enabledModules.includes(entry.module)) &&
+      !(activeTemplate === "travel" && entry.id === "launches")
   );
   return (
     <>
@@ -5909,13 +5932,115 @@ function LaunchesPage({ data, canEditWork, setPage, setProjectId }: any) {
   );
 }
 
-function CalendarPage({ data, setPage, openTaskDetail }: any) {
+function CalendarPage({
+  data,
+  setPage,
+  openTaskDetail,
+  canEditWork,
+  boardTemplate,
+}: any) {
+  const utils = trpc.useUtils();
+  const isTravel = boardTemplate === "travel";
   const [calendarSystem, setCalendarSystem] = useState<"gregory" | "islamic">(
     "gregory"
   );
   const [monthCursor, setMonthCursor] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventDate, setEventDate] = useState(todayInputValue);
+  const [eventTime, setEventTime] = useState("09:00");
+  const [eventType, setEventType] = useState<CalendarEventType>(
+    isTravel ? "activity" : "meeting"
+  );
+  const [eventProjectId, setEventProjectId] = useState("");
+  const [eventLocation, setEventLocation] = useState("");
+  const [eventNotes, setEventNotes] = useState("");
+  const refresh = async () => utils.workspace.overview.invalidate();
+  const createEvent = trpc.workspace.createCalendarEvent.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setEditorOpen(false);
+      toast.success(
+        isTravel ? "تمت إضافة الفعالية إلى برنامج الرحلة" : "تمت إضافة الموعد"
+      );
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const updateEvent = trpc.workspace.updateCalendarEvent.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setEditorOpen(false);
+      toast.success("تم تحديث الفعالية");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const deleteEvent = trpc.workspace.deleteCalendarEvent.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setEditorOpen(false);
+      toast.success("تم حذف الفعالية");
+    },
+    onError: issue => toast.error(issue.message),
+  });
+  const eventTypeOptions: { value: CalendarEventType; label: string }[] =
+    isTravel
+      ? [
+          { value: "activity", label: "نشاط" },
+          { value: "flight", label: "رحلة طيران" },
+          { value: "stay", label: "سكن" },
+          { value: "transport", label: "تنقّل" },
+          { value: "meal", label: "مطعم أو وجبة" },
+          { value: "meeting", label: "موعد" },
+        ]
+      : [
+          { value: "meeting", label: "اجتماع" },
+          { value: "delivery", label: "تسليم" },
+          { value: "workshop", label: "ورشة" },
+          { value: "review", label: "مراجعة" },
+          { value: "activity", label: "فعالية" },
+        ];
+  const openCreate = (date = new Date()) => {
+    setEditingEvent(null);
+    setEventTitle("");
+    setEventDate(dateInputValue(date));
+    setEventTime("09:00");
+    setEventType(isTravel ? "activity" : "meeting");
+    setEventProjectId("");
+    setEventLocation("");
+    setEventNotes("");
+    setEditorOpen(true);
+  };
+  const openEdit = (item: any) => {
+    setEditingEvent(item);
+    setEventTitle(item.title);
+    setEventDate(dateInputValue(item.eventDate));
+    setEventTime(timeInputValue(item.eventDate));
+    setEventType(item.type as CalendarEventType);
+    setEventProjectId(item.projectId ? String(item.projectId) : "");
+    setEventLocation(item.location ?? "");
+    setEventNotes(item.notes ?? "");
+    setEditorOpen(true);
+  };
+  const submitEvent = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!eventTitle.trim() || !eventDate || !eventTime) {
+      toast.error("أكمل اسم الفعالية وتاريخها ووقتها");
+      return;
+    }
+    const input = {
+      title: eventTitle.trim(),
+      projectId: eventProjectId ? Number(eventProjectId) : null,
+      eventDate: new Date(`${eventDate}T${eventTime}:00`),
+      type: eventType,
+      location: eventLocation.trim() || null,
+      notes: eventNotes.trim() || null,
+    };
+    if (editingEvent) updateEvent.mutate({ id: editingEvent.id, ...input });
+    else createEvent.mutate(input);
+  };
   const year = monthCursor.getFullYear();
   const month = monthCursor.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -5994,32 +6119,68 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
     launch: "إطلاق",
     workshop: "ورشة",
     review: "مراجعة",
+    activity: "نشاط",
+    flight: "رحلة طيران",
+    stay: "سكن",
+    transport: "تنقّل",
+    meal: "مطعم أو وجبة",
     task_due: "موعد نهائي لمهمة",
   };
+  const eventTimeText = (value: Date | string) =>
+    new Intl.DateTimeFormat("ar-SA", {
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(value));
   const eventClass = (event: any) =>
     event.calendarKind === "task"
       ? "border-rose-500 bg-rose-50 text-rose-700"
       : event.calendarKind === "launch"
         ? "border-violet-500 bg-violet-50 text-violet-700"
-        : "border-[#7A2E5C] bg-[#E9EDF7] text-[#172E6E]";
+        : event.type === "flight"
+          ? "border-sky-500 bg-sky-50 text-sky-700"
+          : event.type === "stay"
+            ? "border-amber-500 bg-amber-50 text-amber-700"
+            : event.type === "transport"
+              ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+              : event.type === "meal"
+                ? "border-orange-500 bg-orange-50 text-orange-700"
+                : "border-teal-600 bg-teal-50 text-teal-800";
   const openCalendarItem = (event: any) => {
     if (event.calendarKind === "task") openTaskDetail(event.taskId);
-    if (event.calendarKind === "launch") setPage("launches");
+    else if (event.calendarKind === "launch" && !isTravel) setPage("launches");
+    else if (event.calendarKind !== "task") openEdit(event);
   };
   return (
     <div className="entry">
       <PageHeading
-        title="التقويم"
-        description="المواعيد النهائية للمهام والإطلاقات في مكان واحد."
+        title={isTravel ? "برنامج الرحلة" : "التقويم"}
+        description={
+          isTravel
+            ? "رتّب كل يوم بالوقت والمكان، واجمع الأنشطة والتنقلات والحجوزات في برنامج واحد."
+            : "المواعيد النهائية للمهام والفعاليات والإطلاقات في مكان واحد."
+        }
         action={
-          <Button
-            variant="outline"
-            onClick={() => setPage("launches")}
-            className="h-10 gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
-          >
-            <Rocket className="size-4" />
-            إدارة الإطلاقات
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {canEditWork && (
+              <Button
+                onClick={() => openCreate()}
+                className="h-10 gap-2 bg-[#0F766E] hover:bg-[#115E59]"
+              >
+                <Plus className="size-4" />
+                {isTravel ? "إضافة فعالية" : "إضافة موعد"}
+              </Button>
+            )}
+            {!isTravel && (
+              <Button
+                variant="outline"
+                onClick={() => setPage("launches")}
+                className="h-10 gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
+              >
+                <Rocket className="size-4" />
+                إدارة الإطلاقات
+              </Button>
+            )}
+          </div>
         }
       />
       <div className="grid gap-5 xl:grid-cols-[1fr_265px]">
@@ -6088,8 +6249,8 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
               موعد إطلاق
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-[#7A2E5C]" />
-              موعد آخر
+              <span className="size-2.5 rounded-full bg-teal-600" />
+              {isTravel ? "نشاط أو حجز" : "فعالية أخرى"}
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -6146,11 +6307,23 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                             ? gregorianDay
                             : hijriDay}
                         </span>
-                        <span className="text-[9px] text-slate-400">
-                          {calendarSystem === "gregory"
-                            ? `${hijriDay} هـ`
-                            : `${gregorianDay} م`}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-slate-400">
+                            {calendarSystem === "gregory"
+                              ? `${hijriDay} هـ`
+                              : `${gregorianDay} م`}
+                          </span>
+                          {canEditWork && (
+                            <button
+                              type="button"
+                              aria-label={`إضافة فعالية في ${fullDateText(date)}`}
+                              onClick={() => openCreate(date)}
+                              className="rounded p-0.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+                            >
+                              <Plus className="size-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="mt-1 space-y-1">
                         {(eventsByDate[key] ?? []).map((event: any) => (
@@ -6161,9 +6334,14 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                             className={cn(
                               "w-full truncate rounded border-r-2 px-1.5 py-1 text-right text-[10px]",
                               eventClass(event),
-                              event.calendarKind === "event" && "cursor-default"
+                              event.calendarKind === "event" && "cursor-pointer"
                             )}
                           >
+                            {event.calendarKind === "event" && (
+                              <span className="ml-1 opacity-70">
+                                {eventTimeText(event.eventDate)}
+                              </span>
+                            )}
                             {event.title}
                           </button>
                         ))}
@@ -6213,7 +6391,16 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
                   <p className="truncate text-sm font-medium">{event.title}</p>
                   <p className="mt-1 text-[11px] text-[#62635F]">
                     {eventTypeLabel[event.type] ?? event.type}
+                    {event.calendarKind === "event"
+                      ? ` · ${eventTimeText(event.eventDate)}`
+                      : ""}
                   </p>
+                  {event.location && (
+                    <p className="mt-1 flex items-center gap-1 truncate text-[10px] text-slate-500">
+                      <MapPin className="size-3 shrink-0" />
+                      {event.location}
+                    </p>
+                  )}
                 </div>
               </button>
             ))}
@@ -6223,6 +6410,146 @@ function CalendarPage({ data, setPage, openTaskDetail }: any) {
           </div>
         </aside>
       </div>
+      <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
+        <SheetContent
+          side="left"
+          dir="rtl"
+          className="w-full overflow-y-auto sm:max-w-lg"
+        >
+          <SheetHeader className="text-right">
+            <SheetTitle>
+              {editingEvent
+                ? canEditWork
+                  ? "تعديل الفعالية"
+                  : "تفاصيل الفعالية"
+                : isTravel
+                  ? "فعالية جديدة في الرحلة"
+                  : "موعد جديد"}
+            </SheetTitle>
+            <SheetDescription>
+              أضف الوقت والمكان حتى يظهر البرنامج اليومي واضحًا للجميع.
+            </SheetDescription>
+          </SheetHeader>
+          <form onSubmit={submitEvent} className="mt-7 space-y-5">
+            <Field label="اسم الفعالية">
+              <Input
+                autoFocus
+                value={eventTitle}
+                onChange={event => setEventTitle(event.target.value)}
+                disabled={!canEditWork}
+                placeholder={
+                  isTravel
+                    ? "مثال: زيارة متحف الفن الحديث"
+                    : "مثال: اجتماع متابعة المشروع"
+                }
+                required
+              />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="التاريخ">
+                <Input
+                  type="date"
+                  value={eventDate}
+                  onChange={event => setEventDate(event.target.value)}
+                  disabled={!canEditWork}
+                  required
+                />
+              </Field>
+              <Field label="الوقت">
+                <Input
+                  type="time"
+                  value={eventTime}
+                  onChange={event => setEventTime(event.target.value)}
+                  disabled={!canEditWork}
+                  required
+                />
+              </Field>
+            </div>
+            <Field label="نوع الفعالية">
+              <select
+                value={eventType}
+                disabled={!canEditWork}
+                onChange={event =>
+                  setEventType(event.target.value as CalendarEventType)
+                }
+                className="form-select"
+              >
+                {eventTypeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={isTravel ? "المكان أو رابط الخريطة" : "المكان (اختياري)"}
+            >
+              <Input
+                value={eventLocation}
+                onChange={event => setEventLocation(event.target.value)}
+                disabled={!canEditWork}
+                placeholder="مثال: حي شيبويا، طوكيو"
+              />
+            </Field>
+            <Field
+              label={
+                isTravel
+                  ? "محطة الرحلة المرتبطة (اختياري)"
+                  : "المشروع المرتبط (اختياري)"
+              }
+            >
+              <select
+                value={eventProjectId}
+                disabled={!canEditWork}
+                onChange={event => setEventProjectId(event.target.value)}
+                className="form-select"
+              >
+                <option value="">بدون ربط</option>
+                {data.projects.map((project: any) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="ملاحظات (اختياري)">
+              <Textarea
+                value={eventNotes}
+                onChange={event => setEventNotes(event.target.value)}
+                disabled={!canEditWork}
+                placeholder="رقم الحجز، تعليمات الوصول، ما يلزم إحضاره..."
+                className="min-h-28"
+              />
+            </Field>
+            {canEditWork && (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="submit"
+                  disabled={createEvent.isPending || updateEvent.isPending}
+                  className="h-10 flex-1 bg-[#0F766E] hover:bg-[#115E59]"
+                >
+                  {createEvent.isPending || updateEvent.isPending
+                    ? "جارٍ الحفظ..."
+                    : editingEvent
+                      ? "حفظ التعديلات"
+                      : "حفظ الفعالية"}
+                </Button>
+                {editingEvent && editingEvent.type !== "launch" && (
+                  <DeleteWorkDialog
+                    kind="الفعالية"
+                    title={editingEvent.title}
+                    description="سيُحذف هذا الموعد من التقويم نهائيًا."
+                    showLabel
+                    onConfirm={() =>
+                      deleteEvent.mutate({ id: editingEvent.id })
+                    }
+                  />
+                )}
+              </div>
+            )}
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
