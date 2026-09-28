@@ -403,6 +403,11 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number().int().positive(),
+          title: z.string().trim().min(3).max(280).optional(),
+          description: z.string().trim().max(20_000).nullable().optional(),
+          category: z.string().trim().max(160).nullable().optional(),
+          audience: z.string().trim().max(240).nullable().optional(),
+          ownerUserId: z.number().int().positive().nullable().optional(),
           stage: z.enum(["raw", "understanding", "validated"]).optional(),
           evidenceStrength: z
             .enum(["none", "low", "medium", "high"])
@@ -437,6 +442,12 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number().int().positive(),
+          problemId: z.number().int().positive().nullable().optional(),
+          title: z.string().trim().min(3).max(280).optional(),
+          description: z.string().trim().max(20_000).nullable().optional(),
+          category: z.string().trim().max(160).nullable().optional(),
+          audience: z.string().trim().max(240).nullable().optional(),
+          ownerUserId: z.number().int().positive().nullable().optional(),
           stage: z
             .enum([
               "seed",
@@ -495,6 +506,29 @@ export const appRouter = router({
           userId: ctx.user.id,
         })
       ),
+    updateInterview: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          problemId: z.number().int().positive().nullable().optional(),
+          ideaId: z.number().int().positive().nullable().optional(),
+          participantLabel: z.string().trim().min(2).max(180).optional(),
+          interviewDate: z.date().nullable().optional(),
+          status: z
+            .enum(["planned", "completed", "transcribed", "analyzed"])
+            .optional(),
+          transcript: z.string().max(100_000).nullable().optional(),
+          summary: z.string().max(20_000).nullable().optional(),
+          insights: z.string().max(20_000).nullable().optional(),
+          themes: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabInterview({
+          ...input,
+          boardId: ctx.activeBoardId,
+        })
+      ),
     createExperiment: teamMemberProcedure
       .input(
         z.object({
@@ -516,6 +550,33 @@ export const appRouter = router({
           ...input,
           boardId: ctx.activeBoardId,
           userId: ctx.user.id,
+        })
+      ),
+    updateExperiment: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          title: z.string().trim().min(3).max(280).optional(),
+          hypothesis: z.string().trim().min(3).max(20_000).optional(),
+          successMetric: z.string().trim().max(280).nullable().optional(),
+          targetValue: z
+            .number()
+            .int()
+            .min(0)
+            .max(1_000_000_000)
+            .nullable()
+            .optional(),
+          currentValue: z.number().int().min(0).max(1_000_000_000).optional(),
+          status: z
+            .enum(["planned", "running", "review", "complete"])
+            .optional(),
+          result: z.string().trim().max(20_000).nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabExperiment({
+          ...input,
+          boardId: ctx.activeBoardId,
         })
       ),
     aiSettings: protectedProcedure.query(async ({ ctx }) => {

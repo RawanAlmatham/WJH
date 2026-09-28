@@ -123,12 +123,22 @@ export async function createIdeaLabIdea(input: {
 export async function updateIdeaLabProblem(input: {
   boardId: number;
   id: number;
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  audience?: string | null;
+  ownerUserId?: number | null;
   stage?: "raw" | "understanding" | "validated";
   evidenceStrength?: "none" | "low" | "medium" | "high";
 }) {
   const db = await database();
   await requireProblem(db, input.boardId, input.id);
   const values: Partial<typeof ideaLabProblems.$inferInsert> = {};
+  if (input.title !== undefined) values.title = input.title;
+  if (input.description !== undefined) values.description = input.description;
+  if (input.category !== undefined) values.category = input.category;
+  if (input.audience !== undefined) values.audience = input.audience;
+  if (input.ownerUserId !== undefined) values.ownerUserId = input.ownerUserId;
   if (input.stage) values.stage = input.stage;
   if (input.evidenceStrength) values.evidenceStrength = input.evidenceStrength;
   if (!Object.keys(values).length) return { id: input.id };
@@ -147,6 +157,12 @@ export async function updateIdeaLabProblem(input: {
 export async function updateIdeaLabIdea(input: {
   boardId: number;
   id: number;
+  problemId?: number | null;
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  audience?: string | null;
+  ownerUserId?: number | null;
   stage?:
     | "seed"
     | "exploration"
@@ -158,7 +174,14 @@ export async function updateIdeaLabIdea(input: {
 }) {
   const db = await database();
   await requireIdea(db, input.boardId, input.id);
+  if (input.problemId) await requireProblem(db, input.boardId, input.problemId);
   const values: Partial<typeof ideaLabIdeas.$inferInsert> = {};
+  if (input.problemId !== undefined) values.problemId = input.problemId;
+  if (input.title !== undefined) values.title = input.title;
+  if (input.description !== undefined) values.description = input.description;
+  if (input.category !== undefined) values.category = input.category;
+  if (input.audience !== undefined) values.audience = input.audience;
+  if (input.ownerUserId !== undefined) values.ownerUserId = input.ownerUserId;
   if (input.stage) values.stage = input.stage;
   if (input.confidence) values.confidence = input.confidence;
   if (!Object.keys(values).length) return { id: input.id };
@@ -258,6 +281,84 @@ export async function createIdeaLabExperiment(input: {
     createdByUserId: input.userId,
   });
   return { id: Number(result[0].insertId) };
+}
+
+export async function updateIdeaLabInterview(input: {
+  boardId: number;
+  id: number;
+  problemId?: number | null;
+  ideaId?: number | null;
+  participantLabel?: string;
+  interviewDate?: Date | null;
+  status?: "planned" | "completed" | "transcribed" | "analyzed";
+  transcript?: string | null;
+  summary?: string | null;
+  insights?: string | null;
+  themes?: string[];
+}) {
+  const db = await database();
+  await requireInterview(db, input.boardId, input.id);
+  if (input.problemId) await requireProblem(db, input.boardId, input.problemId);
+  if (input.ideaId) await requireIdea(db, input.boardId, input.ideaId);
+  const values: Partial<typeof ideaLabInterviews.$inferInsert> = {};
+  if (input.problemId !== undefined) values.problemId = input.problemId;
+  if (input.ideaId !== undefined) values.ideaId = input.ideaId;
+  if (input.participantLabel !== undefined)
+    values.participantLabel = input.participantLabel;
+  if (input.interviewDate !== undefined)
+    values.interviewDate = input.interviewDate;
+  if (input.status !== undefined) values.status = input.status;
+  if (input.transcript !== undefined) values.transcript = input.transcript;
+  if (input.summary !== undefined) values.summary = input.summary;
+  if (input.insights !== undefined) values.insights = input.insights;
+  if (input.themes !== undefined) values.themes = input.themes;
+  if (!Object.keys(values).length) return { id: input.id };
+  await db
+    .update(ideaLabInterviews)
+    .set(values)
+    .where(
+      and(
+        eq(ideaLabInterviews.id, input.id),
+        eq(ideaLabInterviews.boardId, input.boardId)
+      )
+    );
+  return { id: input.id };
+}
+
+export async function updateIdeaLabExperiment(input: {
+  boardId: number;
+  id: number;
+  title?: string;
+  hypothesis?: string;
+  successMetric?: string | null;
+  targetValue?: number | null;
+  currentValue?: number;
+  status?: "planned" | "running" | "review" | "complete";
+  result?: string | null;
+}) {
+  const db = await database();
+  await requireExperiment(db, input.boardId, input.id);
+  const values: Partial<typeof ideaLabExperiments.$inferInsert> = {};
+  if (input.title !== undefined) values.title = input.title;
+  if (input.hypothesis !== undefined) values.hypothesis = input.hypothesis;
+  if (input.successMetric !== undefined)
+    values.successMetric = input.successMetric;
+  if (input.targetValue !== undefined) values.targetValue = input.targetValue;
+  if (input.currentValue !== undefined)
+    values.currentValue = input.currentValue;
+  if (input.status !== undefined) values.status = input.status;
+  if (input.result !== undefined) values.result = input.result;
+  if (!Object.keys(values).length) return { id: input.id };
+  await db
+    .update(ideaLabExperiments)
+    .set(values)
+    .where(
+      and(
+        eq(ideaLabExperiments.id, input.id),
+        eq(ideaLabExperiments.boardId, input.boardId)
+      )
+    );
+  return { id: input.id };
 }
 
 export async function getIdeaLabSource(boardId: number, sourceId: number) {
@@ -382,4 +483,40 @@ async function requireIdea(
     .where(and(eq(ideaLabIdeas.id, ideaId), eq(ideaLabIdeas.boardId, boardId)))
     .limit(1);
   if (!rows[0]) throw new Error("الفكرة غير موجودة في هذه اللوحة");
+}
+
+async function requireInterview(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  interviewId: number
+) {
+  const rows = await db
+    .select({ id: ideaLabInterviews.id })
+    .from(ideaLabInterviews)
+    .where(
+      and(
+        eq(ideaLabInterviews.id, interviewId),
+        eq(ideaLabInterviews.boardId, boardId)
+      )
+    )
+    .limit(1);
+  if (!rows[0]) throw new Error("المقابلة غير موجودة في هذه اللوحة");
+}
+
+async function requireExperiment(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  experimentId: number
+) {
+  const rows = await db
+    .select({ id: ideaLabExperiments.id })
+    .from(ideaLabExperiments)
+    .where(
+      and(
+        eq(ideaLabExperiments.id, experimentId),
+        eq(ideaLabExperiments.boardId, boardId)
+      )
+    )
+    .limit(1);
+  if (!rows[0]) throw new Error("التجربة غير موجودة في هذه اللوحة");
 }

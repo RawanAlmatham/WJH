@@ -1487,6 +1487,9 @@ function SettingsPage({ board, aiSettings, canManage }: any) {
   const utils = trpc.useUtils();
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(aiSettings?.model || "gpt-4.1-mini");
+  const mcpConnections = trpc.auth.mcpConnections.useQuery(undefined, {
+    retry: false,
+  });
   const save = trpc.ideaLab.saveAiSettings.useMutation({
     onSuccess: async () => {
       setApiKey("");
@@ -1503,6 +1506,7 @@ function SettingsPage({ board, aiSettings, canManage }: any) {
     onError: issue => toast.error(issue.message),
   });
   const inviteUrl = `${window.location.origin}/join/${board.inviteToken}`;
+  const mcpEndpoint = `${window.location.origin}/mcp`;
   return (
     <>
       <PageHeading
@@ -1606,6 +1610,54 @@ function SettingsPage({ board, aiSettings, canManage }: any) {
               نسخ رابط الدعوة
             </Button>
           )}
+        </section>
+        <section className="rounded-2xl border border-[#CCD4E6] bg-[#F8FAFD] p-6 lg:col-span-2">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#14285F] text-[#F6B801]">
+                <Bot className="size-5" />
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-bold">ربط المساعد الذكي</h2>
+                  <Pill tone="green">MCP جاهز</Pill>
+                </div>
+                <p className="mt-1 max-w-2xl text-xs leading-6 text-[#696D75]">
+                  اربط مختبر الأفكار مع ChatGPT أو Claude أو أي مساعد يدعم
+                  Remote MCP. يستطيع المساعد قراءة المشكلات والأفكار والمصادر
+                  والمقابلات والتجارب، والتعديل ضمن صلاحيات حسابك.
+                </p>
+              </div>
+            </div>
+            <div className="text-xs text-[#696D75]">
+              {mcpConnections.isLoading
+                ? "جارٍ التحقق من الاتصالات…"
+                : `${mcpConnections.data?.length ?? 0} اتصال نشط`}
+            </div>
+          </div>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <Input
+              dir="ltr"
+              readOnly
+              value={mcpEndpoint}
+              className="bg-white font-mono text-xs"
+            />
+            <Button
+              variant="outline"
+              className="shrink-0 border-[#CCD4E6] text-[#14285F]"
+              onClick={async () => {
+                await navigator.clipboard.writeText(mcpEndpoint);
+                toast.success("تم نسخ رابط MCP");
+              }}
+            >
+              <Link2 className="ml-2 size-4" />
+              نسخ الرابط
+            </Button>
+          </div>
+          <p className="mt-3 text-[11px] leading-5 text-[#696D75]">
+            تحليل المصادر لا يعمل تلقائيًا؛ يستخدم مفتاح API الخاص بالعضو فقط
+            بعد أن يطلب التحليل صراحة، ويحفظ النتيجة كمسودة للمراجعة.
+          </p>
         </section>
       </div>
     </>

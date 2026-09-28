@@ -28,6 +28,58 @@ export const MCP_DEFAULT_AUTHORIZATION_SCOPES = [
   MCP_WRITE_SCOPE,
 ].join(" ");
 
+export const WIJHA_MCP_TOOL_NAMES = [
+  "wijha_get_context",
+  "wijha_select_lab",
+  "wijha_get_lab_summary",
+  "wijha_list_team",
+  "wijha_list_problems",
+  "wijha_create_problem",
+  "wijha_update_problem",
+  "wijha_list_ideas",
+  "wijha_create_idea",
+  "wijha_update_idea",
+  "wijha_list_sources",
+  "wijha_add_source",
+  "wijha_analyze_source",
+  "wijha_approve_source_analysis",
+  "wijha_list_interviews",
+  "wijha_create_interview",
+  "wijha_update_interview",
+  "wijha_list_experiments",
+  "wijha_create_experiment",
+  "wijha_update_experiment",
+] as const;
+
+const readSecurity = [{ type: "oauth2", scopes: [MCP_READ_SCOPE] }];
+const writeSecurity = [
+  { type: "oauth2", scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE] },
+];
+const problemStage = z.enum(["raw", "understanding", "validated"]);
+const evidenceStrength = z.enum(["none", "low", "medium", "high"]);
+const ideaStage = z.enum([
+  "seed",
+  "exploration",
+  "interviews",
+  "experiment",
+  "promising",
+  "archived",
+]);
+const confidence = z.enum(["low", "medium", "high"]);
+const interviewStatus = z.enum([
+  "planned",
+  "completed",
+  "transcribed",
+  "analyzed",
+]);
+const experimentStatus = z.enum(["planned", "running", "review", "complete"]);
+const sourceAiStatus = z.enum(["not_requested", "draft", "approved", "failed"]);
+const dateInput = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}(?:T.*)?$/, "استخدم تاريخًا بصيغة YYYY-MM-DD");
+const resultLimit = z.number().int().min(1).max(100).default(50);
+
 export function shouldShowMcpBrowserInfo(
   method: string,
   acceptHeader = "",
@@ -55,7 +107,6 @@ export function showMcpBrowserInfo(
     next();
     return;
   }
-
   response.status(200).set({
     "Cache-Control": "no-store",
     "Content-Type": "text/html; charset=utf-8",
@@ -65,114 +116,29 @@ export function showMcpBrowserInfo(
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>وجهة — ربط المساعدات الذكية</title>
+    <title>وجهة — MCP مختبر الأفكار</title>
     <style>
-      *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f5f2ee;color:#1f2328;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:32px 20px}.card{width:min(920px,100%);margin:auto;background:#fff;border:1px solid #dfe8f2;border-radius:20px;padding:30px;box-shadow:0 16px 50px rgba(38,54,74,.09)}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;color:#1e3a8a;font-weight:800}h1{font-size:28px;margin:10px 0}.status{display:inline-flex;align-items:center;gap:8px;margin:8px 0 18px;padding:7px 12px;border-radius:999px;background:#edf9f2;color:#24734b;font-weight:700;font-size:14px}.dot{width:9px;height:9px;border-radius:50%;background:#2ca56c}.muted{color:#62635f;line-height:1.8}.endpoint{display:flex;gap:10px;align-items:stretch;margin:18px 0 24px}.url{direction:ltr;text-align:left;overflow-wrap:anywhere;flex:1;background:#f5f2ee;border:1px solid #e3eaf2;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.copy{border:0;border-radius:10px;background:#1e3a8a;color:#fff;padding:0 17px;font:inherit;font-weight:700;cursor:pointer}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.platform{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #dfe8f2;border-radius:14px;padding:18px}.platform h2{font-size:19px;margin:0 0 6px}.platform p{margin:0;color:#62635f;line-height:1.7;font-size:14px}.platform ol{margin:12px 0 0;padding-right:20px;color:#4e534e;font-size:13px;line-height:1.8}.platform pre{direction:ltr;text-align:left;width:100%;overflow:auto;margin:12px 0 0;padding:10px;border-radius:8px;background:#172033;color:#eef4fa;font-size:11px;line-height:1.6}.action{display:inline-flex;margin-top:auto;padding-top:16px;color:#1e3a8a;text-decoration:none;font-weight:800}.generic{grid-column:1/-1;background:#f8fafc}.notice{margin:0 0 18px;padding:11px 13px;border:1px solid #f0d48a;border-radius:10px;background:#fff9e8;color:#7a5810;font-size:13px;line-height:1.7}.note{margin:22px 0 0;padding-top:18px;border-top:1px solid #e5ebf2;color:#62635f;font-size:13px;line-height:1.7}@media(max-width:620px){body{padding:16px 12px}.card{padding:22px;border-radius:16px}h1{font-size:24px}.endpoint{flex-direction:column}.copy{min-height:44px}.platforms{grid-template-columns:1fr}.generic{grid-column:auto}}
+      *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f5f2ee;color:#1f2328;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px}.card{width:min(780px,100%);margin:auto;background:#fff;border:1px solid #dfe3ec;border-radius:24px;padding:30px;box-shadow:0 20px 60px rgba(20,40,95,.1)}.brand{display:flex;align-items:center;gap:10px;color:#14285f;font-weight:900}.mark{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:#14285f;color:#f6b801;font-size:22px}h1{font-size:28px;margin:22px 0 10px}.lead{color:#62635f;line-height:1.9}.status{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:7px 12px;border-radius:99px;background:#edf8f1;color:#24734b;font-size:13px;font-weight:800}.dot{width:8px;height:8px;border-radius:50%;background:#2ca56c}.endpoint{direction:ltr;text-align:left;overflow-wrap:anywhere;margin:22px 0;padding:14px;border:1px solid #d8deea;border-radius:12px;background:#f7f8fb;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.item{padding:16px;border:1px solid #e2e5eb;border-radius:14px}.item strong{display:block;color:#14285f;margin-bottom:5px}.item span{color:#62635f;font-size:13px;line-height:1.7}.note{margin-top:20px;padding:14px;border-radius:12px;background:#fff6d9;color:#6f5600;font-size:13px;line-height:1.8}@media(max-width:620px){body{padding:12px}.card{padding:22px}.grid{grid-template-columns:1fr}h1{font-size:24px}}
     </style>
   </head>
   <body>
     <main class="card">
-      <div class="brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 300" width="40" height="38" role="img" aria-hidden="true"><path fill="#1E3A8A" d="M0 176V82C0 37 34 6 79 6H173Q190 6 190 23V46C190 112 151 158 81 158H66C40 158 20 166 5 182Q0 187 0 176Z"/>
-<circle fill="#F6B801" cx="262" cy="54" r="54"/>
-<path fill="#A6B69A" d="M57 174H111Q121 174 118 184C111 207 111 227 111 250V284Q111 300 95 300H57C24 300 0 274 0 240C0 204 24 174 57 174Z"/>
-<path fill="#7A2E5C" d="M126 284V246C126 179 178 126 247 126H281C307 126 320 140 320 166V219C320 267 286 300 240 300H142Q126 300 126 284Z"/></svg>
- <span>وجهة</span></div>
-      <h1>ربط وجهة بالمساعدات الذكية</h1>
-      <div class="status"><span class="dot"></span>خادم MCP متصل ويستجيب</div>
-      <p class="muted">هذا رابط موحّد يعمل مع Claude وChatGPT وGemini CLI وManus وLovable وKimi Code وأي عميل يدعم Remote MCP وOAuth. أضفه داخل إعدادات الموصلات في المنصة التي تستخدمها، ثم سجّل الدخول إلى وجهة لمنح الصلاحيات.</p>
-      <div class="endpoint">
-        <div class="url" id="mcp-url">${MCP_RESOURCE_URL}</div>
-        <button class="copy" id="copy-url" type="button">نسخ الرابط</button>
-      </div>
-      <p class="notice"><strong>تنبيه:</strong> في Gemini استخدم Gemini CLI أو Antigravity، وفي Kimi استخدم Kimi Code. صفحات المحادثة العادية قد لا تعرض خيار إضافة خادم MCP مخصص.</p>
-      <section class="platforms" aria-label="خيارات الربط">
-        <article class="platform">
-          <h2>Claude</h2>
-          <p>من Settings ← Connectors اختر Add custom connector، ثم أضف الاسم «وجهة» والصق رابط MCP أعلاه.</p>
-          <ol><li>افتح Settings ثم Connectors.</li><li>اختر Add custom connector واكتب «وجهة».</li><li>الصق الرابط وأكمل تسجيل الدخول والموافقة.</li></ol>
-          <a class="action" href="https://claude.ai/settings/connectors" target="_blank" rel="noreferrer">فتح موصلات Claude ←</a>
-        </article>
-        <article class="platform">
-          <h2>ChatGPT</h2>
-          <p>من صفحة الإضافات أنشئ تطبيقًا مخصصًا باسم «وجهة»، واختر OAuth ثم الصق رابط MCP أعلاه.</p>
-          <ol><li>افتح إعدادات التطبيقات والموصلات.</li><li>أنشئ تطبيقًا مخصصًا باسم «وجهة».</li><li>أضف الرابط واختر OAuth ثم أكمل الموافقة.</li></ol>
-          <a class="action" href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">فتح إضافات ChatGPT ←</a>
-        </article>
-        <article class="platform">
-          <h2>Gemini</h2>
-          <p>استخدم Gemini CLI أو Antigravity الداعم لـRemote MCP.</p>
-          <ol><li>افتح ~/.gemini/settings.json.</li><li>أضف الإعداد التالي وأعد تشغيل Gemini CLI.</li><li>نفّذ /mcp auth wjh وأكمل الموافقة.</li></ol>
-          <pre>{"mcpServers":{"wjh":{"httpUrl":"${MCP_RESOURCE_URL}"}}}</pre>
-          <a class="action" href="https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md" target="_blank" rel="noreferrer">فتح دليل Gemini MCP ←</a>
-        </article>
-        <article class="platform">
-          <h2>Manus</h2>
-          <p>من Settings ← Connectors اضغط + Connect، ثم أنشئ Custom MCP connector باسم «وجهة» والصق الرابط وأكمل الموافقة.</p>
-          <a class="action" href="https://manus.im/docs/integrations/mcp-connectors" target="_blank" rel="noreferrer">فتح دليل Manus ←</a>
-        </article>
-        <article class="platform">
-          <h2>Lovable</h2>
-          <p>من Connectors ← Personal connectors اختر Add custom MCP server، ثم أضف الاسم «وجهة» والصق الرابط وأكمل الموافقة.</p>
-          <a class="action" href="https://docs.lovable.dev/integrations/lovable-mcp-server" target="_blank" rel="noreferrer">فتح دليل Lovable MCP ←</a>
-        </article>
-        <article class="platform">
-          <h2>Kimi</h2>
-          <p>استخدم Kimi Code CLI الذي يدعم خوادم MCP البعيدة وOAuth.</p>
-          <ol><li>افتح ~/.kimi-code/mcp.json.</li><li>أضف الإعداد التالي وابدأ جلسة جديدة.</li><li>نفّذ /mcp-config login wjh وأكمل الموافقة.</li></ol>
-          <pre>{"mcpServers":{"wjh":{"url":"${MCP_RESOURCE_URL}"}}}</pre>
-          <a class="action" href="https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html" target="_blank" rel="noreferrer">فتح دليل Kimi MCP ←</a>
-        </article>
-        <article class="platform generic">
-          <h2>أي عميل MCP متوافق</h2>
-          <p>استخدم الرابط نفسه كعنوان خادم Streamable HTTP. سيكتشف العميل إعدادات OAuth تلقائيًا، وتبقى العمليات المتاحة محدودة بصلاحيات حسابك في وجهة.</p>
-        </article>
+      <div class="brand"><span class="mark">و</span><span>وجهة</span></div>
+      <h1>MCP مختبر الأفكار</h1>
+      <p class="lead">اربط وجهة بالمساعد الذكي ليقرأ مشكلات المختبر وأفكاره ومصادره ومقابلاته وتجاربِه، ويضيف أو يحدّث السجلات ضمن صلاحيات حسابك.</p>
+      <div class="status"><span class="dot"></span>الخادم جاهز للربط عبر OAuth</div>
+      <div class="endpoint">${MCP_RESOURCE_URL}</div>
+      <section class="grid" aria-label="قدرات MCP">
+        <div class="item"><strong>استكشاف الفرص</strong><span>قراءة ملخص المختبر والبحث في المشكلات والأفكار.</span></div>
+        <div class="item"><strong>جمع الأدلة</strong><span>إضافة الروابط والمقابلات وربطها بالمشكلة أو الفكرة.</span></div>
+        <div class="item"><strong>تشغيل التجارب</strong><span>إنشاء التجارب وتحديث تقدمها ونتائجها.</span></div>
+        <div class="item"><strong>تحليل اختياري</strong><span>تحليل المصادر بمفتاح API الخاص بالعضو وبعد طلبه الصريح.</span></div>
       </section>
-      <p class="note">فتح الرابط مباشرة في المتصفح يعرض هذه التعليمات فقط؛ يبدأ تسجيل الدخول والربط من داخل المساعد أو عميل MCP الذي تختاره.</p>
+      <p class="note">أضف الرابط كخادم Remote MCP في ChatGPT أو Claude أو أي عميل متوافق، ثم سجّل الدخول بحساب Google المستخدم في وجهة ووافق على صلاحيات القراءة والتعديل.</p>
     </main>
-    <script>
-      document.getElementById("copy-url").addEventListener("click",async function(){
-        await navigator.clipboard.writeText(document.getElementById("mcp-url").textContent.trim());
-        this.textContent="تم النسخ";
-        setTimeout(()=>{this.textContent="نسخ الرابط"},1600);
-      });
-    </script>
   </body>
 </html>`);
 }
-
-const taskStatus = z.enum([
-  "not_started",
-  "in_progress",
-  "blocked",
-  "in_review",
-  "complete",
-  "overdue",
-]);
-const projectStatus = z.enum([
-  "planned",
-  "in_progress",
-  "in_review",
-  "complete",
-  "blocked",
-]);
-const lessonCategory = z.enum(["success", "challenge", "improvement", "risk"]);
-const goalStatus = z.enum(["on_track", "attention", "at_risk", "complete"]);
-const eventType = z.enum([
-  "meeting",
-  "delivery",
-  "launch",
-  "workshop",
-  "review",
-]);
-const dateInput = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}(?:T.*)?$/, "استخدم تاريخًا بصيغة YYYY-MM-DD");
-
-const readSecurity = [{ type: "oauth2", scopes: [MCP_READ_SCOPE] }];
-const writeSecurity = [
-  { type: "oauth2", scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE] },
-];
 
 function asDate(value: string | null | undefined) {
   if (!value) return null;
@@ -234,31 +200,41 @@ function normalizedSearch(value?: string) {
   return value?.trim().toLocaleLowerCase("ar") ?? "";
 }
 
-function includesSearch(value: unknown, search: string) {
+function includesSearch(search: string, ...values: unknown[]) {
   return (
     !search ||
-    String(value ?? "")
-      .toLocaleLowerCase("ar")
-      .includes(search)
+    values.some(value =>
+      String(value ?? "")
+        .toLocaleLowerCase("ar")
+        .includes(search)
+    )
   );
 }
 
-async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
+function countBy<T>(items: T[], value: (item: T) => string) {
+  return items.reduce<Record<string, number>>((counts, item) => {
+    const key = value(item);
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
   const server = new McpServer(
-    { name: "وجهة لإدارة الأعمال", version: "1.0.0" },
+    { name: "وجهة — مختبر الأفكار", version: "2.0.0" },
     {
       instructions:
-        "استخدم أدوات وجهة لقراءة وإدارة لوحة المستخدم الحالية. نفّذ الإضافة والتعديل والحذف فقط عندما يطلب المستخدم ذلك بوضوح. قبل الحذف اذكر العنصر الذي سيُحذف. معرفات الأعضاء والمشاريع والمهام تُقرأ من أدوات القوائم ولا تُخمن. جميع الصلاحيات وحدود المشاريع يفرضها خادم وجهة.",
+        "هذه الأدوات تخص مختبر الأفكار في وجهة فقط. ابدأ بـ wijha_get_context لمعرفة المختبر الحالي. استخدم المعرفات التي تعيدها أدوات القوائم ولا تخمنها. لا تنفذ أي إضافة أو تعديل إلا بطلب المستخدم. لا تشغّل تحليل المصادر إلا بطلب صريح لأنه يستخدم مفتاح API الخاص بالعضو وتكلفته. مخرجات التحليل مسودات حتى يعتمدها المستخدم. لا توجد أدوات حذف في هذا الخادم.",
     }
   );
   const caller = createCaller(user);
 
   server.registerTool(
-    "wjh_get_context",
+    "wijha_get_context",
     {
       title: "عرض سياق حساب وجهة",
       description:
-        "يعرض المستخدم واللوحات المتاحة واللوحة الحالية ودور المستخدم. ابدأ بهذه الأداة عند غموض اللوحة المقصودة.",
+        "يعرض الحساب ومختبرات الأفكار المتاحة والمختبر الحالي ودور المستخدم. ابدأ به قبل أي عملية.",
       inputSchema: {},
       annotations: { readOnlyHint: true, openWorldHint: false },
       _meta: { securitySchemes: readSecurity },
@@ -266,29 +242,31 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
     () =>
       runTool(async () => {
         const boards = await caller.boards.mine();
+        const labs = boards
+          .filter(board => board.template === "idea_lab")
+          .map(board => ({
+            id: board.id,
+            name: board.name,
+            role: board.membershipRole,
+            is_active: board.isActive,
+          }));
         return {
-          message: "سياق حساب وجهة الحالي:",
+          message: "سياق حساب وجهة:",
           result: {
             user: { id: user.id, name: user.name, email: user.email },
-            boards: boards.map(board => ({
-              id: board.id,
-              name: board.name,
-              role: board.membershipRole,
-              isActive: board.isActive,
-              enabledModules: board.enabledModules,
-            })),
+            labs,
           },
         };
       })
   );
 
   server.registerTool(
-    "wjh_select_board",
+    "wijha_select_lab",
     {
-      title: "اختيار لوحة وجهة",
+      title: "اختيار مختبر أفكار",
       description:
-        "يغيّر اللوحة الحالية التي ستُنفذ عليها بقية أوامر وجهة. استخدم معرفًا من wjh_get_context.",
-      inputSchema: { board_id: z.number().int().positive() },
+        "يغيّر المختبر الحالي الذي تعمل عليه بقية أدوات وجهة. استخدم معرفًا من wijha_get_context.",
+      inputSchema: { lab_id: z.number().int().positive() },
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -297,273 +275,137 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
       },
       _meta: { securitySchemes: writeSecurity },
     },
-    ({ board_id }) =>
+    ({ lab_id }) =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        await caller.boards.select({ boardId: board_id });
         const boards = await caller.boards.mine();
-        const board = boards.find(item => item.id === board_id);
-        return { message: "تم اختيار اللوحة.", result: board };
+        const lab = boards.find(
+          board => board.id === lab_id && board.template === "idea_lab"
+        );
+        if (!lab) throw new Error("مختبر الأفكار غير موجود أو غير متاح لحسابك");
+        await caller.boards.select({ boardId: lab_id });
+        return {
+          message: "تم اختيار مختبر الأفكار.",
+          result: { id: lab.id, name: lab.name, role: lab.membershipRole },
+        };
       })
   );
 
   server.registerTool(
-    "wjh_list_team",
+    "wijha_get_lab_summary",
     {
-      title: "عرض فريق اللوحة",
+      title: "ملخص مختبر الأفكار",
       description:
-        "يعرض أعضاء فريق اللوحة الحالية ومعرفاتهم لاستخدامها في الإسناد ومسؤولية المشاريع.",
+        "يعرض أعداد المشكلات والأفكار والمصادر والمقابلات والتجارب وتوزيع المراحل في المختبر الحالي.",
+      inputSchema: {},
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    () =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        return {
+          message: `ملخص مختبر ${data.board.name}:`,
+          result: {
+            lab: { id: data.board.id, name: data.board.name },
+            totals: {
+              problems: data.problems.length,
+              ideas: data.ideas.length,
+              sources: data.sources.length,
+              interviews: data.interviews.length,
+              experiments: data.experiments.length,
+              members: data.members.length,
+            },
+            problem_stages: countBy(data.problems, item => item.stage),
+            idea_stages: countBy(data.ideas, item => item.stage),
+            interview_statuses: countBy(data.interviews, item => item.status),
+            experiment_statuses: countBy(data.experiments, item => item.status),
+          },
+        };
+      })
+  );
+
+  server.registerTool(
+    "wijha_list_team",
+    {
+      title: "عرض فريق المختبر",
+      description:
+        "يعرض أعضاء المختبر ومعرفات حساباتهم لاستخدامها عند إسناد مشكلة أو فكرة.",
       inputSchema: { search: z.string().trim().max(160).optional() },
       annotations: { readOnlyHint: true, openWorldHint: false },
       _meta: { securitySchemes: readSecurity },
     },
     ({ search }) =>
       runTool(async () => {
-        const data = await caller.workspace.overview();
+        const data = await caller.ideaLab.overview();
         const query = normalizedSearch(search);
         const members = data.members
-          .filter(
-            member =>
-              includesSearch(member.name, query) ||
-              includesSearch(member.role, query) ||
-              includesSearch(member.email, query)
+          .filter(member =>
+            includesSearch(query, member.name, member.email, member.role)
           )
           .map(member => ({
-            id: member.id,
+            member_id: member.id,
+            user_id: member.userId,
             name: member.name,
-            role: member.role,
             email: member.email,
-            projectAccess: member.projectAccess,
-            currentTasks: member.activeTaskCount,
-            lateTasks: member.overdueCount,
+            role: member.role,
           }));
         return {
-          message: `أعضاء الفريق (${members.length}):`,
+          message: `أعضاء المختبر (${members.length}):`,
           result: members,
         };
       })
   );
 
   server.registerTool(
-    "wjh_list_projects",
+    "wijha_list_problems",
     {
-      title: "عرض مشاريع وجهة",
-      description:
-        "يعرض المشاريع التي يحق للمستخدم رؤيتها فقط، مع إمكان التصفية بالاسم والحالة والمسؤول.",
+      title: "عرض مشكلات المختبر",
+      description: "يعرض المشكلات مع البحث والتصفية بحسب المرحلة وقوة الأدلة.",
       inputSchema: {
         search: z.string().trim().max(240).optional(),
-        status: projectStatus.optional(),
-        responsible_member_id: z.number().int().positive().optional(),
-      },
-      annotations: { readOnlyHint: true, openWorldHint: false },
-      _meta: { securitySchemes: readSecurity },
-    },
-    ({ search, status, responsible_member_id }) =>
-      runTool(async () => {
-        const data = await caller.workspace.overview();
-        const query = normalizedSearch(search);
-        const projects = data.projects.filter(
-          project =>
-            includesSearch(project.title, query) &&
-            (!status || project.status === status) &&
-            (!responsible_member_id ||
-              project.responsibleMemberIds.includes(responsible_member_id))
-        );
-        return {
-          message: `المشاريع المتاحة (${projects.length}):`,
-          result: projects,
-        };
-      })
-  );
-
-  server.registerTool(
-    "wjh_create_project",
-    {
-      title: "إنشاء مشروع",
-      description:
-        "ينشئ مشروعًا في لوحة وجهة الحالية. يمكن ترك تاريخ النهاية فارغًا للمشروع المستمر. إذا لم يحدد المسؤول يستخدم عضو الفريق المرتبط بالمستخدم الحالي.",
-      inputSchema: {
-        title: z.string().trim().min(2).max(240),
-        summary: z.string().trim().max(1500).optional(),
-        annual_goal_id: z.number().int().positive().nullable().optional(),
-        owner_member_id: z.number().int().positive().optional(),
-        responsible_member_ids: z
-          .array(z.number().int().positive())
-          .max(100)
-          .optional(),
-        start_date: dateInput.optional(),
-        end_date: dateInput.nullable().optional(),
-        status: projectStatus.default("planned"),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const data = await caller.workspace.overview();
-        const self = data.members.find(member => member.userId === user.id);
-        const ownerMemberId = input.owner_member_id ?? self?.id;
-        if (!ownerMemberId)
-          throw new Error("حدد owner_member_id من قائمة فريق اللوحة");
-        const result = await caller.workspace.createProject({
-          title: input.title,
-          summary: input.summary,
-          annualGoalId: input.annual_goal_id,
-          ownerMemberId,
-          responsibleMemberIds: input.responsible_member_ids?.length
-            ? input.responsible_member_ids
-            : [ownerMemberId],
-          startDate: asDate(input.start_date) ?? new Date(),
-          endDate: asDate(input.end_date),
-          status: input.status,
-        });
-        return { message: "تم إنشاء المشروع في وجهة.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_update_project",
-    {
-      title: "تعديل مشروع",
-      description:
-        "يعدّل الحقول المحددة في مشروع متاح للمستخدم، مع الإبقاء على بقية بياناته كما هي.",
-      inputSchema: {
-        project_id: z.number().int().positive(),
-        title: z.string().trim().min(2).max(240).optional(),
-        summary: z.string().trim().max(1500).optional(),
-        annual_goal_id: z.number().int().positive().nullable().optional(),
-        owner_member_id: z.number().int().positive().optional(),
-        responsible_member_ids: z
-          .array(z.number().int().positive())
-          .min(1)
-          .max(100)
-          .optional(),
-        start_date: dateInput.optional(),
-        end_date: dateInput.nullable().optional(),
-        status: projectStatus.optional(),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const data = await caller.workspace.overview();
-        const current = data.projects.find(
-          item => item.id === input.project_id
-        );
-        if (!current) throw new Error("المشروع غير موجود أو غير متاح لحسابك");
-        const result = await caller.workspace.updateProject({
-          id: current.id,
-          title: input.title ?? current.title,
-          summary: input.summary ?? current.summary ?? undefined,
-          annualGoalId:
-            input.annual_goal_id === undefined
-              ? current.annualGoalId
-              : input.annual_goal_id,
-          ownerMemberId: input.owner_member_id ?? current.ownerMemberId,
-          responsibleMemberIds:
-            input.responsible_member_ids ?? current.responsibleMemberIds,
-          startDate: asDate(input.start_date) ?? current.startDate,
-          endDate:
-            input.end_date === undefined
-              ? current.endDate
-              : asDate(input.end_date),
-          status: input.status ?? current.status,
-        });
-        return { message: "تم تحديث المشروع في وجهة.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_delete_project",
-    {
-      title: "حذف مشروع",
-      description:
-        "يحذف مشروعًا متاحًا للمستخدم وما يرتبط به من مهام ومخرجات ودروس ومواعيد. لا تستخدمه قبل تأكيد المستخدم الصريح.",
-      inputSchema: { project_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ project_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteProject({ id: project_id });
-        return { message: "تم حذف المشروع من وجهة.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_list_tasks",
-    {
-      title: "عرض مهام وجهة",
-      description:
-        "يعرض المهام المتاحة للمستخدم مع التصفية بالمشروع أو الشخص أو الحالة أو طلب الدعم.",
-      inputSchema: {
-        search: z.string().trim().max(240).optional(),
-        project_id: z.number().int().positive().optional(),
-        assignee_member_id: z.number().int().positive().optional(),
-        status: taskStatus.optional(),
-        needs_support: z.boolean().optional(),
+        stage: problemStage.optional(),
+        evidence_strength: evidenceStrength.optional(),
+        limit: resultLimit,
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
       _meta: { securitySchemes: readSecurity },
     },
     input =>
       runTool(async () => {
-        const data = await caller.workspace.overview();
+        const data = await caller.ideaLab.overview();
         const query = normalizedSearch(input.search);
-        const tasks = data.tasks.filter(
-          task =>
-            includesSearch(task.title, query) &&
-            (!input.project_id || task.projectId === input.project_id) &&
-            (!input.assignee_member_id ||
-              (task.assigneeMemberIds?.includes(input.assignee_member_id) ??
-                task.assigneeMemberId === input.assignee_member_id)) &&
-            (!input.status || task.status === input.status) &&
-            (input.needs_support === undefined ||
-              task.needsSupport === input.needs_support)
-        );
-        return { message: `المهام المتاحة (${tasks.length}):`, result: tasks };
+        const rows = data.problems
+          .filter(
+            item =>
+              includesSearch(
+                query,
+                item.title,
+                item.description,
+                item.category,
+                item.audience
+              ) &&
+              (!input.stage || item.stage === input.stage) &&
+              (!input.evidence_strength ||
+                item.evidenceStrength === input.evidence_strength)
+          )
+          .slice(0, input.limit);
+        return { message: `المشكلات (${rows.length}):`, result: rows };
       })
   );
 
   server.registerTool(
-    "wjh_create_task",
+    "wijha_create_problem",
     {
-      title: "إنشاء مهمة",
+      title: "إضافة مشكلة",
       description:
-        "ينشئ مهمة في وجهة. المشروع والإسناد والتواريخ اختيارية، ويمكن إنشاء مهمة فرعية بمعرف المهمة الرئيسية.",
+        "يضيف مشكلة أو ملاحظة خام إلى المختبر الحالي. يمكن إدخال المشكلة مباشرة دون وجود إشارة سابقة.",
       inputSchema: {
-        title: z.string().trim().min(2).max(240),
-        description: z.string().trim().max(5000).optional(),
-        project_id: z.number().int().positive().nullable().optional(),
-        assignee_member_id: z.number().int().positive().nullable().optional(),
-        assignee_member_ids: z
-          .array(z.number().int().positive())
-          .max(20)
-          .optional(),
-        start_date: dateInput.nullable().optional(),
-        due_date: dateInput.nullable().optional(),
-        priority: z.enum(["urgent", "high", "medium", "low"]).default("medium"),
-        status: taskStatus.default("not_started"),
-        parent_task_id: z.number().int().positive().nullable().optional(),
+        title: z.string().trim().min(3).max(280),
+        description: z.string().trim().max(20_000).optional(),
+        category: z.string().trim().max(160).optional(),
+        audience: z.string().trim().max(240).optional(),
+        owner_user_id: z.number().int().positive().nullable().optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -576,42 +418,32 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
     input =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        const result = await caller.workspace.createTask({
+        const result = await caller.ideaLab.createProblem({
           title: input.title,
           description: input.description,
-          projectId: input.project_id,
-          assigneeMemberId: input.assignee_member_id,
-          assigneeMemberIds: input.assignee_member_ids,
-          startDate: asDate(input.start_date),
-          dueDate: asDate(input.due_date),
-          priority: input.priority,
-          status: input.status,
-          parentTaskId: input.parent_task_id,
+          category: input.category,
+          audience: input.audience,
+          ownerUserId: input.owner_user_id,
         });
-        return { message: "تم إنشاء المهمة في وجهة.", result };
+        return { message: "تمت إضافة المشكلة.", result };
       })
   );
 
   server.registerTool(
-    "wjh_update_task",
+    "wijha_update_problem",
     {
-      title: "تعديل مهمة",
+      title: "تحديث مشكلة",
       description:
-        "يعدّل الحقول المحددة في مهمة متاحة للمستخدم مع إبقاء بقية بياناتها كما هي.",
+        "يحدّث الحقول المحددة في مشكلة موجودة ويُبقي بقية بياناتها كما هي.",
       inputSchema: {
-        task_id: z.number().int().positive(),
-        title: z.string().trim().min(2).max(240).optional(),
-        description: z.string().trim().max(5000).optional(),
-        project_id: z.number().int().positive().nullable().optional(),
-        assignee_member_id: z.number().int().positive().nullable().optional(),
-        assignee_member_ids: z
-          .array(z.number().int().positive())
-          .max(20)
-          .optional(),
-        start_date: dateInput.nullable().optional(),
-        due_date: dateInput.nullable().optional(),
-        priority: z.enum(["urgent", "high", "medium", "low"]).optional(),
-        status: taskStatus.optional(),
+        problem_id: z.number().int().positive(),
+        title: z.string().trim().min(3).max(280).optional(),
+        description: z.string().trim().max(20_000).nullable().optional(),
+        category: z.string().trim().max(160).nullable().optional(),
+        audience: z.string().trim().max(240).nullable().optional(),
+        owner_user_id: z.number().int().positive().nullable().optional(),
+        stage: problemStage.optional(),
+        evidence_strength: evidenceStrength.optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -624,544 +456,112 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
     input =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        const data = await caller.workspace.overview();
-        const current = data.tasks.find(item => item.id === input.task_id);
-        if (!current) throw new Error("المهمة غير موجودة أو غير متاحة لحسابك");
-        const result = await caller.workspace.updateTask({
-          id: current.id,
-          title: input.title ?? current.title,
-          description: input.description ?? current.description ?? undefined,
-          projectId:
-            input.project_id === undefined
-              ? current.projectId
-              : input.project_id,
-          assigneeMemberId:
-            input.assignee_member_id === undefined
-              ? current.assigneeMemberId
-              : input.assignee_member_id,
-          assigneeMemberIds:
-            input.assignee_member_ids ??
-            (input.assignee_member_id === undefined
-              ? current.assigneeMemberIds
-              : input.assignee_member_id
-                ? [input.assignee_member_id]
-                : []),
-          startDate:
-            input.start_date === undefined
-              ? current.startDate
-              : asDate(input.start_date),
-          dueDate:
-            input.due_date === undefined
-              ? current.dueDate
-              : asDate(input.due_date),
-          priority: input.priority ?? current.priority,
-          status: input.status ?? current.status,
+        const result = await caller.ideaLab.updateProblem({
+          id: input.problem_id,
+          title: input.title,
+          description: input.description,
+          category: input.category,
+          audience: input.audience,
+          ownerUserId: input.owner_user_id,
+          stage: input.stage,
+          evidenceStrength: input.evidence_strength,
         });
-        return { message: "تم تحديث المهمة في وجهة.", result };
+        return { message: "تم تحديث المشكلة.", result };
       })
   );
 
   server.registerTool(
-    "wjh_delete_task",
+    "wijha_list_ideas",
     {
-      title: "حذف مهمة",
+      title: "عرض أفكار المختبر",
       description:
-        "يحذف مهمة متاحة للمستخدم وتعليقاتها ومرفقاتها المرتبطة. لا تستخدمه قبل تأكيد المستخدم الصريح.",
-      inputSchema: { task_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ task_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteTask({ id: task_id });
-        return { message: "تم حذف المهمة من وجهة.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_set_task_support",
-    {
-      title: "تحديد احتياج المهمة للدعم",
-      description:
-        "يضع أو يزيل علامة يحتاج دعم على مهمة متاحة، ويشرح نوع الدعم عند تفعيلها.",
-      inputSchema: {
-        task_id: z.number().int().positive(),
-        needs_support: z.boolean(),
-        support_request: z.string().trim().max(2000).optional(),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.updateTaskSupport({
-          id: input.task_id,
-          needsSupport: input.needs_support,
-          supportRequest: input.support_request,
-        });
-        return { message: "تم تحديث احتياج المهمة للدعم.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_add_task_comment",
-    {
-      title: "إضافة تعليق على مهمة",
-      description: "يضيف تعليقًا باسم المستخدم الحالي إلى مهمة متاحة له.",
-      inputSchema: {
-        task_id: z.number().int().positive(),
-        comment: z.string().trim().min(1).max(3000),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ task_id, comment }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        await caller.workspace.addTaskComment({
-          taskId: task_id,
-          body: comment,
-        });
-        return {
-          message: "تمت إضافة التعليق إلى المهمة.",
-          result: { success: true },
-        };
-      })
-  );
-
-  server.registerTool(
-    "wjh_list_lessons",
-    {
-      title: "عرض الدروس المستفادة",
-      description:
-        "يعرض الدروس المستفادة المتاحة للمستخدم مع التصفية بالمشروع أو التصنيف أو الفترة.",
+        "يعرض الأفكار مع البحث والتصفية بحسب المشكلة والمرحلة ومستوى الثقة.",
       inputSchema: {
         search: z.string().trim().max(240).optional(),
-        project_id: z.number().int().positive().optional(),
-        category: lessonCategory.optional(),
-        from_date: dateInput.optional(),
-        to_date: dateInput.optional(),
+        problem_id: z.number().int().positive().optional(),
+        stage: ideaStage.optional(),
+        confidence: confidence.optional(),
+        limit: resultLimit,
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
       _meta: { securitySchemes: readSecurity },
     },
     input =>
       runTool(async () => {
-        const data = await caller.workspace.overview();
+        const data = await caller.ideaLab.overview();
         const query = normalizedSearch(input.search);
-        const from = asDate(input.from_date);
-        const to = asDate(input.to_date);
-        const lessons = data.lessons.filter(item => {
-          const date = new Date(item.lessonDate);
-          return (
-            (includesSearch(item.title, query) ||
-              includesSearch(item.lesson, query) ||
-              includesSearch(item.recommendation, query)) &&
-            (!input.project_id || item.projectId === input.project_id) &&
-            (!input.category || item.category === input.category) &&
-            (!from || date >= from) &&
-            (!to || date <= to)
-          );
-        });
-        return {
-          message: `الدروس المستفادة (${lessons.length}):`,
-          result: lessons,
-        };
-      })
-  );
-
-  server.registerTool(
-    "wjh_create_lesson",
-    {
-      title: "إضافة درس مستفاد",
-      description: "يضيف درسًا مستفادًا ويربطه بمشروع متاح للمستخدم.",
-      inputSchema: {
-        title: z.string().trim().min(2).max(240),
-        project_id: z.number().int().positive(),
-        category: lessonCategory,
-        lesson: z.string().trim().min(2).max(5000),
-        recommendation: z.string().trim().max(5000).optional(),
-        lesson_date: dateInput.optional(),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.createLessonLearned({
-          title: input.title,
-          projectId: input.project_id,
-          category: input.category,
-          lesson: input.lesson,
-          recommendation: input.recommendation,
-          lessonDate: asDate(input.lesson_date) ?? new Date(),
-        });
-        return { message: "تمت إضافة الدرس المستفاد إلى وجهة.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_update_lesson",
-    {
-      title: "تعديل درس مستفاد",
-      description:
-        "يعدّل الحقول المحددة في درس مستفاد متاح للمستخدم مع إبقاء بقية بياناته.",
-      inputSchema: {
-        lesson_id: z.number().int().positive(),
-        title: z.string().trim().min(2).max(240).optional(),
-        project_id: z.number().int().positive().optional(),
-        category: lessonCategory.optional(),
-        lesson: z.string().trim().min(2).max(5000).optional(),
-        recommendation: z.string().trim().max(5000).optional(),
-        lesson_date: dateInput.optional(),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const data = await caller.workspace.overview();
-        const current = data.lessons.find(item => item.id === input.lesson_id);
-        if (!current) throw new Error("الدرس غير موجود أو غير متاح لحسابك");
-        const result = await caller.workspace.updateLessonLearned({
-          id: current.id,
-          title: input.title ?? current.title,
-          projectId: input.project_id ?? current.projectId,
-          category: input.category ?? current.category,
-          lesson: input.lesson ?? current.lesson,
-          recommendation:
-            input.recommendation ?? current.recommendation ?? undefined,
-          lessonDate: asDate(input.lesson_date) ?? current.lessonDate,
-        });
-        return { message: "تم تحديث الدرس المستفاد.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_delete_lesson",
-    {
-      title: "حذف درس مستفاد",
-      description:
-        "يحذف درسًا مستفادًا متاحًا للمستخدم. لا تستخدمه قبل تأكيد المستخدم الصريح.",
-      inputSchema: { lesson_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ lesson_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteLessonLearned({
-          id: lesson_id,
-        });
-        return { message: "تم حذف الدرس المستفاد.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_list_goals",
-    {
-      title: "عرض أهداف الخطة السنوية",
-      description: "يعرض أهداف الخطة السنوية في اللوحة الحالية وتقدمها.",
-      inputSchema: { year: z.number().int().min(2000).max(2100).optional() },
-      annotations: { readOnlyHint: true, openWorldHint: false },
-      _meta: { securitySchemes: readSecurity },
-    },
-    ({ year }) =>
-      runTool(async () => {
-        const data = await caller.workspace.overview();
-        const goals = data.goals.filter(goal => !year || goal.year === year);
-        return { message: `الأهداف السنوية (${goals.length}):`, result: goals };
-      })
-  );
-
-  server.registerTool(
-    "wjh_create_goal",
-    {
-      title: "إضافة هدف سنوي",
-      description: "يضيف هدفًا للخطة السنوية. متاح لمدير اللوحة فقط.",
-      inputSchema: {
-        title: z.string().trim().min(2).max(240),
-        theme: z.string().trim().min(2).max(160),
-        year: z.number().int().min(2000).max(2100),
-        owner_member_id: z.number().int().positive(),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.createAnnualGoal({
-          title: input.title,
-          theme: input.theme,
-          year: input.year,
-          ownerMemberId: input.owner_member_id,
-        });
-        return { message: "تمت إضافة الهدف السنوي.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_update_goal",
-    {
-      title: "تعديل هدف سنوي",
-      description: "يعدّل الحقول المحددة في هدف سنوي. متاح لمدير اللوحة فقط.",
-      inputSchema: {
-        goal_id: z.number().int().positive(),
-        title: z.string().trim().min(2).max(240).optional(),
-        theme: z.string().trim().min(2).max(160).optional(),
-        year: z.number().int().min(2000).max(2100).optional(),
-        owner_member_id: z.number().int().positive().optional(),
-        status: goalStatus.optional(),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const data = await caller.workspace.overview();
-        const current = data.goals.find(item => item.id === input.goal_id);
-        if (!current) throw new Error("الهدف غير موجود في اللوحة الحالية");
-        if (!current.ownerMemberId)
-          throw new Error("حدد owner_member_id لهذا الهدف");
-        const result = await caller.workspace.updateAnnualGoal({
-          id: current.id,
-          title: input.title ?? current.title,
-          theme: input.theme ?? current.theme,
-          year: input.year ?? current.year,
-          ownerMemberId: input.owner_member_id ?? current.ownerMemberId,
-          status: input.status ?? current.status,
-        });
-        return { message: "تم تحديث الهدف السنوي.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_delete_goal",
-    {
-      title: "حذف هدف سنوي",
-      description:
-        "يحذف هدفًا سنويًا ويفك ارتباط المشاريع به دون حذف المشاريع. متاح للمدير وبعد تأكيد المستخدم.",
-      inputSchema: { goal_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ goal_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteAnnualGoal({ id: goal_id });
-        return { message: "تم حذف الهدف السنوي.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_list_calendar",
-    {
-      title: "عرض تقويم وجهة",
-      description:
-        "يعرض مواعيد اللوحة المتاحة للمستخدم مع تصفية الفترة والمشروع.",
-      inputSchema: {
-        project_id: z.number().int().positive().optional(),
-        from_date: dateInput.optional(),
-        to_date: dateInput.optional(),
-      },
-      annotations: { readOnlyHint: true, openWorldHint: false },
-      _meta: { securitySchemes: readSecurity },
-    },
-    input =>
-      runTool(async () => {
-        const data = await caller.workspace.overview();
-        const from = asDate(input.from_date);
-        const to = asDate(input.to_date);
-        const events = data.events.filter(item => {
-          const date = new Date(item.eventDate);
-          return (
-            (!input.project_id || item.projectId === input.project_id) &&
-            (!from || date >= from) &&
-            (!to || date <= to)
-          );
-        });
-        return {
-          message: `مواعيد التقويم (${events.length}):`,
-          result: events,
-        };
-      })
-  );
-
-  server.registerTool(
-    "wjh_create_calendar_event",
-    {
-      title: "إضافة موعد للتقويم",
-      description:
-        "يضيف اجتماعًا أو تسليمًا أو إطلاقًا أو ورشة أو مراجعة إلى تقويم وجهة.",
-      inputSchema: {
-        title: z.string().trim().min(2).max(240),
-        project_id: z.number().int().positive().nullable().optional(),
-        event_date: dateInput,
-        type: eventType,
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.createCalendarEvent({
-          title: input.title,
-          projectId: input.project_id,
-          eventDate: asDate(input.event_date)!,
-          type: input.type,
-        });
-        return { message: "تمت إضافة الموعد إلى التقويم.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_delete_calendar_event",
-    {
-      title: "حذف موعد من التقويم",
-      description: "يحذف موعدًا متاحًا للمستخدم من التقويم بعد تأكيده.",
-      inputSchema: { event_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ event_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteCalendarEvent({
-          id: event_id,
-        });
-        return { message: "تم حذف الموعد من التقويم.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_get_report_summary",
-    {
-      title: "عرض ملخص تقارير وجهة",
-      description: "يعرض مؤشرات إنجاز وتأخر المهام ضمن نطاق وصول المستخدم.",
-      inputSchema: {},
-      annotations: { readOnlyHint: true, openWorldHint: false },
-      _meta: { securitySchemes: readSecurity },
-    },
-    () =>
-      runTool(async () => ({
-        message: "ملخص التقرير الحالي:",
-        result: await caller.workspace.reportSummary(),
-      }))
-  );
-
-  server.registerTool(
-    "wjh_list_research_feed",
-    {
-      title: "عرض الخلاصات البحثية",
-      description:
-        "يعرض موضوعات الخلاصات والأبحاث المتاحة، مع التصفية بالموضوع أو المشروع أو كلمات البحث.",
-      inputSchema: {
-        interest_id: z.number().int().positive().optional(),
-        project_id: z.number().int().positive().optional(),
-        search: z.string().trim().max(300).optional(),
-      },
-      annotations: { readOnlyHint: true, openWorldHint: false },
-      _meta: { securitySchemes: readSecurity },
-    },
-    input =>
-      runTool(async () => {
-        const feed = await caller.workspace.researchFeed();
-        const query = normalizedSearch(input.search);
-        const items = feed.items.filter(
-          item =>
-            (!input.interest_id ||
-              item.interestIds.includes(input.interest_id)) &&
-            (!input.project_id || item.projectId === input.project_id) &&
-            (includesSearch(item.title, query) ||
-              includesSearch(item.abstract, query) ||
-              includesSearch(item.abstractArabic, query) ||
-              item.authors.some(author => includesSearch(author, query)))
-        );
-        return {
-          message: `الخلاصات البحثية (${items.length}):`,
-          result: { interests: feed.interests, items },
-        };
-      })
-  );
-
-  server.registerTool(
-    "wjh_save_research_translations",
-    {
-      title: "حفظ ترجمات ملخصات الأبحاث",
-      description:
-        "يحفظ ترجمة عربية أمينة للملخص الأصلي في وجهة. اقرأ الخلاصات أولًا، وترجم المعنى كاملًا دون اختلاق معلومات أو تحويل النص إلى ملخص أقصر. يقبل حتى 20 ترجمة في الطلب، ومتاح لمدير اللوحة وأعضائها.",
-      inputSchema: {
-        translations: z
-          .array(
-            z.object({
-              feed_item_id: z.number().int().positive(),
-              arabic_abstract: z.string().trim().min(20).max(20_000),
-            })
+        const rows = data.ideas
+          .filter(
+            item =>
+              includesSearch(
+                query,
+                item.title,
+                item.description,
+                item.category,
+                item.audience
+              ) &&
+              (!input.problem_id || item.problemId === input.problem_id) &&
+              (!input.stage || item.stage === input.stage) &&
+              (!input.confidence || item.confidence === input.confidence)
           )
-          .min(1)
-          .max(20),
+          .slice(0, input.limit);
+        return { message: `الأفكار (${rows.length}):`, result: rows };
+      })
+  );
+
+  server.registerTool(
+    "wijha_create_idea",
+    {
+      title: "إضافة فكرة",
+      description:
+        "يضيف فكرة جديدة، ويمكن ربطها بمشكلة موجودة باستخدام معرف المشكلة.",
+      inputSchema: {
+        problem_id: z.number().int().positive().nullable().optional(),
+        title: z.string().trim().min(3).max(280),
+        description: z.string().trim().max(20_000).optional(),
+        category: z.string().trim().max(160).optional(),
+        audience: z.string().trim().max(240).optional(),
+        owner_user_id: z.number().int().positive().nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.createIdea({
+          problemId: input.problem_id,
+          title: input.title,
+          description: input.description,
+          category: input.category,
+          audience: input.audience,
+          ownerUserId: input.owner_user_id,
+        });
+        return { message: "تمت إضافة الفكرة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_update_idea",
+    {
+      title: "تحديث فكرة",
+      description:
+        "يحدّث الفكرة أو ينقلها بين مراحل الاستكشاف مع الإبقاء على الحقول غير المحددة.",
+      inputSchema: {
+        idea_id: z.number().int().positive(),
+        problem_id: z.number().int().positive().nullable().optional(),
+        title: z.string().trim().min(3).max(280).optional(),
+        description: z.string().trim().max(20_000).nullable().optional(),
+        category: z.string().trim().max(160).nullable().optional(),
+        audience: z.string().trim().max(240).nullable().optional(),
+        owner_user_id: z.number().int().positive().nullable().optional(),
+        stage: ideaStage.optional(),
+        confidence: confidence.optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -1171,114 +571,144 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
       },
       _meta: { securitySchemes: writeSecurity },
     },
-    ({ translations }) =>
+    input =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        const result = await caller.workspace.saveResearchFeedTranslations({
-          translations: translations.map(translation => ({
-            id: translation.feed_item_id,
-            abstractArabic: translation.arabic_abstract,
-          })),
+        const result = await caller.ideaLab.updateIdea({
+          id: input.idea_id,
+          problemId: input.problem_id,
+          title: input.title,
+          description: input.description,
+          category: input.category,
+          audience: input.audience,
+          ownerUserId: input.owner_user_id,
+          stage: input.stage,
+          confidence: input.confidence,
+        });
+        return { message: "تم تحديث الفكرة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_list_sources",
+    {
+      title: "عرض المصادر الداعمة",
+      description:
+        "يعرض الروابط والمصادر المرتبطة بالمشكلات أو الأفكار وحالة ملخص الذكاء الاصطناعي.",
+      inputSchema: {
+        problem_id: z.number().int().positive().optional(),
+        idea_id: z.number().int().positive().optional(),
+        ai_status: sourceAiStatus.optional(),
+        include_content: z.boolean().default(false),
+        limit: resultLimit,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        const rows = data.sources
+          .filter(
+            item =>
+              (!input.problem_id || item.problemId === input.problem_id) &&
+              (!input.idea_id || item.ideaId === input.idea_id) &&
+              (!input.ai_status || item.aiStatus === input.ai_status)
+          )
+          .slice(0, input.limit)
+          .map(item => ({
+            id: item.id,
+            problemId: item.problemId,
+            ideaId: item.ideaId,
+            url: item.url,
+            sourceType: item.sourceType,
+            title: item.title,
+            publisher: item.publisher,
+            notes: input.include_content ? item.notes : undefined,
+            extractedText: input.include_content
+              ? item.extractedText
+              : undefined,
+            aiSummary: item.aiSummary,
+            aiStatus: item.aiStatus,
+            createdAt: item.createdAt,
+          }));
+        return { message: `المصادر (${rows.length}):`, result: rows };
+      })
+  );
+
+  server.registerTool(
+    "wijha_add_source",
+    {
+      title: "إضافة مصدر داعم",
+      description:
+        "يضيف رابطًا داعمًا مثل موقع أو TikTok أو YouTube ويربطه بمشكلة أو فكرة. يجب تحديد أحدهما على الأقل.",
+      inputSchema: {
+        problem_id: z.number().int().positive().nullable().optional(),
+        idea_id: z.number().int().positive().nullable().optional(),
+        url: z.string().trim().url().max(2048),
+        source_type: z.string().trim().min(1).max(32).default("website"),
+        title: z.string().trim().max(500).optional(),
+        publisher: z.string().trim().max(240).optional(),
+        notes: z.string().trim().max(50_000).optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.createSource({
+          problemId: input.problem_id,
+          ideaId: input.idea_id,
+          url: input.url,
+          sourceType: input.source_type,
+          title: input.title,
+          publisher: input.publisher,
+          notes: input.notes,
+        });
+        return { message: "تمت إضافة المصدر الداعم.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_analyze_source",
+    {
+      title: "تحليل مصدر بمفتاح العضو",
+      description:
+        "يجلب المصدر عند الإمكان ويلخصه باستخدام مفتاح OpenAI المحفوظ في حساب العضو. شغّله فقط بعد طلب صريح لأن التكلفة تقع على العضو، والنتيجة تُحفظ كمسودة.",
+      inputSchema: { source_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ source_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.analyzeSource({
+          sourceId: source_id,
         });
         return {
-          message: `تم حفظ ${result.updated} ترجمة عربية في وجهة.`,
+          message: "اكتمل التحليل وحُفظ الملخص كمسودة للمراجعة.",
           result,
         };
       })
   );
 
   server.registerTool(
-    "wjh_create_research_interest",
+    "wijha_approve_source_analysis",
     {
-      title: "إضافة موضوع للخلاصات البحثية",
-      description:
-        "يضيف موضوعًا وكلمات مفتاحية للخلاصات البحثية. متاح لمدير اللوحة وأعضائها.",
-      inputSchema: {
-        name: z.string().trim().min(2).max(180),
-        keywords: z.array(z.string().trim().min(2).max(100)).min(1).max(40),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: true,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.createResearchInterest(input);
-        return { message: "تمت إضافة موضوع الخلاصات البحثية.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_update_research_interest",
-    {
-      title: "تعديل موضوع للخلاصات البحثية",
-      description:
-        "يعدّل اسم موضوع الخلاصات وكلماته المفتاحية. متاح لمدير اللوحة فقط.",
-      inputSchema: {
-        interest_id: z.number().int().positive(),
-        name: z.string().trim().min(2).max(180),
-        keywords: z.array(z.string().trim().min(2).max(100)).min(1).max(40),
-      },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: true,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    input =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.updateResearchInterest({
-          id: input.interest_id,
-          name: input.name,
-          keywords: input.keywords,
-        });
-        return { message: "تم تحديث موضوع الخلاصات البحثية.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_delete_research_interest",
-    {
-      title: "حذف موضوع من الخلاصات البحثية",
-      description:
-        "يحذف موضوع خلاصات بحثية. متاح لمدير اللوحة فقط وبعد تأكيد المستخدم.",
-      inputSchema: { interest_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ interest_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteResearchInterest({
-          id: interest_id,
-        });
-        return { message: "تم حذف موضوع الخلاصات البحثية.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_link_research_item",
-    {
-      title: "ربط خلاصة بحثية بمشروع",
-      description:
-        "يربط بحثًا من الخلاصات بمشروع متاح للمستخدم، أو يفك الارتباط عند تمرير null.",
-      inputSchema: {
-        feed_item_id: z.number().int().positive(),
-        project_id: z.number().int().positive().nullable(),
-      },
+      title: "اعتماد ملخص مصدر",
+      description: "يعتمد مسودة ملخص المصدر بعد أن يراجعها المستخدم أو الفريق.",
+      inputSchema: { source_id: z.number().int().positive() },
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -1287,33 +717,66 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
       },
       _meta: { securitySchemes: writeSecurity },
     },
-    input =>
+    ({ source_id }) =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        const result = await caller.workspace.linkResearchFeedItem({
-          id: input.feed_item_id,
-          projectId: input.project_id,
+        const result = await caller.ideaLab.approveSourceAnalysis({
+          sourceId: source_id,
         });
-        return { message: "تم تحديث ارتباط الخلاصة بالمشروع.", result };
+        return { message: "تم اعتماد ملخص المصدر.", result };
       })
   );
 
   server.registerTool(
-    "wjh_invite_team_member",
+    "wijha_list_interviews",
     {
-      title: "دعوة عضو إلى فريق اللوحة",
+      title: "عرض مقابلات العملاء",
       description:
-        "ينشئ دعوة عضو أو مدير أو مشاهد. متاح لمدير اللوحة فقط، ويمكن تقييد العضو بمشاريع مختارة.",
+        "يعرض المقابلات المرتبطة بالمشكلات أو الأفكار. يمكن تضمين النص الكامل عند الحاجة.",
       inputSchema: {
-        name: z.string().trim().min(2).max(160),
-        email: z.string().trim().email().max(320),
-        team_role: z.string().trim().min(2).max(160),
-        access_role: z.enum(["manager", "member", "viewer"]).default("member"),
-        project_access: z.enum(["all", "selected"]).default("all"),
-        allowed_project_ids: z
-          .array(z.number().int().positive())
-          .max(500)
-          .default([]),
+        problem_id: z.number().int().positive().optional(),
+        idea_id: z.number().int().positive().optional(),
+        status: interviewStatus.optional(),
+        include_transcript: z.boolean().default(false),
+        limit: resultLimit,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        const rows = data.interviews
+          .filter(
+            item =>
+              (!input.problem_id || item.problemId === input.problem_id) &&
+              (!input.idea_id || item.ideaId === input.idea_id) &&
+              (!input.status || item.status === input.status)
+          )
+          .slice(0, input.limit)
+          .map(item => ({
+            ...item,
+            transcript: input.include_transcript ? item.transcript : undefined,
+          }));
+        return { message: `المقابلات (${rows.length}):`, result: rows };
+      })
+  );
+
+  server.registerTool(
+    "wijha_create_interview",
+    {
+      title: "إضافة مقابلة",
+      description:
+        "يسجل مقابلة مخططة أو منجزة ويربطها بمشكلة أو فكرة، مع نص التفريغ والملخص والاستنتاجات عند توفرها.",
+      inputSchema: {
+        problem_id: z.number().int().positive().nullable().optional(),
+        idea_id: z.number().int().positive().nullable().optional(),
+        participant_label: z.string().trim().min(2).max(180),
+        interview_date: dateInput.nullable().optional(),
+        transcript: z.string().max(100_000).optional(),
+        summary: z.string().max(20_000).optional(),
+        insights: z.string().max(20_000).optional(),
+        themes: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -1326,36 +789,161 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
     input =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        const result = await caller.workspace.inviteMember({
-          name: input.name,
-          email: input.email,
-          teamRole: input.team_role,
-          accessRole: input.access_role,
-          projectAccess: input.project_access,
-          allowedProjectIds: input.allowed_project_ids,
+        const result = await caller.ideaLab.createInterview({
+          problemId: input.problem_id,
+          ideaId: input.idea_id,
+          participantLabel: input.participant_label,
+          interviewDate: asDate(input.interview_date),
+          transcript: input.transcript,
+          summary: input.summary,
+          insights: input.insights,
+          themes: input.themes,
         });
-        return { message: "تم إنشاء دعوة عضو الفريق في وجهة.", result };
+        return { message: "تمت إضافة المقابلة.", result };
       })
   );
 
   server.registerTool(
-    "wjh_update_team_member_access",
+    "wijha_update_interview",
     {
-      title: "تعديل وصول عضو الفريق",
+      title: "تحديث مقابلة",
       description:
-        "يعدّل دور عضو الفريق أو يحدد إن كان يرى جميع المشاريع أو مشاريع مختارة. متاح لمدير اللوحة فقط.",
+        "يحدّث حالة المقابلة أو تفريغها أو ملخصها أو استنتاجاتها وموضوعاتها.",
       inputSchema: {
-        member_id: z.number().int().positive(),
-        access_role: z.enum(["manager", "member", "viewer"]).optional(),
-        project_access: z.enum(["all", "selected"]).optional(),
-        allowed_project_ids: z
-          .array(z.number().int().positive())
-          .max(500)
+        interview_id: z.number().int().positive(),
+        problem_id: z.number().int().positive().nullable().optional(),
+        idea_id: z.number().int().positive().nullable().optional(),
+        participant_label: z.string().trim().min(2).max(180).optional(),
+        interview_date: dateInput.nullable().optional(),
+        status: interviewStatus.optional(),
+        transcript: z.string().max(100_000).nullable().optional(),
+        summary: z.string().max(20_000).nullable().optional(),
+        insights: z.string().max(20_000).nullable().optional(),
+        themes: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.updateInterview({
+          id: input.interview_id,
+          problemId: input.problem_id,
+          ideaId: input.idea_id,
+          participantLabel: input.participant_label,
+          interviewDate:
+            input.interview_date === undefined
+              ? undefined
+              : asDate(input.interview_date),
+          status: input.status,
+          transcript: input.transcript,
+          summary: input.summary,
+          insights: input.insights,
+          themes: input.themes,
+        });
+        return { message: "تم تحديث المقابلة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_list_experiments",
+    {
+      title: "عرض التجارب",
+      description:
+        "يعرض تجارب التحقق المرتبطة بالأفكار مع التصفية بحسب الفكرة أو الحالة.",
+      inputSchema: {
+        idea_id: z.number().int().positive().optional(),
+        status: experimentStatus.optional(),
+        limit: resultLimit,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        const rows = data.experiments
+          .filter(
+            item =>
+              (!input.idea_id || item.ideaId === input.idea_id) &&
+              (!input.status || item.status === input.status)
+          )
+          .slice(0, input.limit);
+        return { message: `التجارب (${rows.length}):`, result: rows };
+      })
+  );
+
+  server.registerTool(
+    "wijha_create_experiment",
+    {
+      title: "إنشاء تجربة",
+      description: "ينشئ تجربة صغيرة لاختبار افتراض مرتبط بفكرة موجودة.",
+      inputSchema: {
+        idea_id: z.number().int().positive(),
+        title: z.string().trim().min(3).max(280),
+        hypothesis: z.string().trim().min(3).max(20_000),
+        success_metric: z.string().trim().max(280).optional(),
+        target_value: z
+          .number()
+          .int()
+          .min(0)
+          .max(1_000_000_000)
+          .nullable()
           .optional(),
       },
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.createExperiment({
+          ideaId: input.idea_id,
+          title: input.title,
+          hypothesis: input.hypothesis,
+          successMetric: input.success_metric,
+          targetValue: input.target_value,
+        });
+        return { message: "تم إنشاء التجربة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_update_experiment",
+    {
+      title: "تحديث تجربة",
+      description:
+        "يحدّث فرضية التجربة أو مقياسها أو تقدمها أو حالتها أو نتيجتها.",
+      inputSchema: {
+        experiment_id: z.number().int().positive(),
+        title: z.string().trim().min(3).max(280).optional(),
+        hypothesis: z.string().trim().min(3).max(20_000).optional(),
+        success_metric: z.string().trim().max(280).nullable().optional(),
+        target_value: z
+          .number()
+          .int()
+          .min(0)
+          .max(1_000_000_000)
+          .nullable()
+          .optional(),
+        current_value: z.number().int().min(0).max(1_000_000_000).optional(),
+        status: experimentStatus.optional(),
+        result: z.string().trim().max(20_000).nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -1364,84 +952,17 @@ async function createWjhMcpServer(user: User, authInfo: AuthInfo) {
     input =>
       runTool(async () => {
         requireWriteScope(authInfo);
-        if (!input.access_role && !input.project_access)
-          throw new Error("حدد access_role أو project_access لتعديل الوصول");
-        if (input.access_role && input.project_access)
-          throw new Error(
-            "عدّل الدور أو نطاق المشاريع في كل طلب على حدة لضمان اكتمال العملية"
-          );
-        const changes: unknown[] = [];
-        if (input.access_role) {
-          changes.push(
-            await caller.workspace.updateTeamMemberAccess({
-              memberId: input.member_id,
-              accessRole: input.access_role,
-            })
-          );
-        }
-        if (input.project_access) {
-          changes.push(
-            await caller.workspace.updateTeamMemberProjectAccess({
-              memberId: input.member_id,
-              projectAccess: input.project_access,
-              allowedProjectIds:
-                input.project_access === "all"
-                  ? []
-                  : (input.allowed_project_ids ?? []),
-            })
-          );
-        }
-        return { message: "تم تحديث وصول عضو الفريق.", result: changes };
-      })
-  );
-
-  server.registerTool(
-    "wjh_reissue_team_invitation",
-    {
-      title: "إعادة إصدار دعوة عضو",
-      description:
-        "يلغي رمز الدعوة السابق وينشئ رابط دعوة جديدًا للعضو. متاح لمدير اللوحة فقط.",
-      inputSchema: { member_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ member_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.reissueTeamInvitation({
-          memberId: member_id,
+        const result = await caller.ideaLab.updateExperiment({
+          id: input.experiment_id,
+          title: input.title,
+          hypothesis: input.hypothesis,
+          successMetric: input.success_metric,
+          targetValue: input.target_value,
+          currentValue: input.current_value,
+          status: input.status,
+          result: input.result,
         });
-        return { message: "تم إصدار رابط دعوة جديد.", result };
-      })
-  );
-
-  server.registerTool(
-    "wjh_remove_team_member",
-    {
-      title: "حذف عضو من فريق اللوحة",
-      description:
-        "يحذف عضوًا غير مرتبط بحساب مفعل من فريق اللوحة. متاح للمدير وبعد تأكيد المستخدم الصريح.",
-      inputSchema: { member_id: z.number().int().positive() },
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: false,
-        openWorldHint: false,
-      },
-      _meta: { securitySchemes: writeSecurity },
-    },
-    ({ member_id }) =>
-      runTool(async () => {
-        requireWriteScope(authInfo);
-        const result = await caller.workspace.deleteTeamMember({
-          memberId: member_id,
-        });
-        return { message: "تم حذف العضو من فريق اللوحة.", result };
+        return { message: "تم تحديث التجربة.", result };
       })
   );
 
@@ -1511,7 +1032,7 @@ const mcpHandler = createMcpHandler(
       throw new Error("يلزم تسجيل الدخول إلى وجهة");
     const user = await db.getUserById(userId);
     if (!user) throw new Error("حساب وجهة غير موجود");
-    return createWjhMcpServer(user, authInfo);
+    return createWijhaMcpServer(user, authInfo);
   },
   {
     responseMode: "json",
