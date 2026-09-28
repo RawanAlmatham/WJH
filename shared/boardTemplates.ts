@@ -1,10 +1,10 @@
 import type { BoardModule } from "./boardModules";
 import type { PresentationSection } from "./presentationSections";
 
-/** No templates are published while the new independent experiences are designed. */
-export const boardTemplates: readonly string[] = [];
+/** Published products. Each template owns its own workflow and data model. */
+export const boardTemplates = ["idea_lab"] as const;
 
-export type BoardTemplate = string;
+export type BoardTemplate = (typeof boardTemplates)[number] | string;
 
 export const templateNavigationKeys = [
   "home",
@@ -38,7 +38,36 @@ export type BoardTemplateConfig = {
   }>;
 };
 
-export const BOARD_TEMPLATE_LABELS: Record<string, BoardTemplateConfig> = {};
+export const BOARD_TEMPLATE_LABELS: Record<string, BoardTemplateConfig> = {
+  idea_lab: {
+    title: "مختبر الأفكار",
+    description:
+      "مساحة لفهم المشكلات، جمع الأدلة، إجراء المقابلات، واختبار أفكار الأعمال مع الفريق.",
+    accent: "#1E3A8A",
+    softAccent: "#E9EDF7",
+    highlights: [
+      "بنك مستقل للمشكلات والأفكار",
+      "مقابلات وتجارب مرتبطة بالأدلة",
+      "تحليل اختياري باستخدام مفتاح العضو",
+    ],
+    modules: [],
+    sections: [],
+    navigation: {
+      home: "بوصلة الفرص",
+      weekly: "المقابلات",
+      plan: "المشكلات",
+      projects: "الأفكار",
+      tasks: "التجارب",
+      team: "الفريق",
+      feeds: "المصادر",
+      lessons: "القرارات",
+      launches: "المواعيد",
+      calendar: "التقويم",
+      reports: "مقارنة الفرص",
+    },
+    starterTasks: [],
+  },
+};
 
 export const EMPTY_BOARD_TEMPLATE_CONFIG: BoardTemplateConfig = {
   title: "مساحة عمل",

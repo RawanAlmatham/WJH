@@ -99,21 +99,33 @@ describe("platform administration", () => {
     });
   });
 
-  it("pauses board creation for department managers while templates are rebuilt", async () => {
+  it("lets a department manager create an idea lab", async () => {
     const caller = appRouter.createCaller(context("manager"));
     await expect(
-      caller.boards.create({ name: "إدارة التواصل", template: "work" })
-    ).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
+      caller.boards.create({ name: "إدارة التواصل", template: "idea_lab" })
+    ).resolves.toMatchObject({
+      id: 31,
+      membershipRole: "manager",
     });
+    expect(db.createManagementBoard).toHaveBeenCalledWith(
+      "إدارة التواصل",
+      2,
+      "idea_lab"
+    );
   });
 
-  it("pauses board creation for regular users while templates are rebuilt", async () => {
+  it("lets a regular account create an idea lab and become its manager", async () => {
     const caller = appRouter.createCaller(context("user"));
     await expect(
-      caller.boards.create({ name: "لوحة جديدة", template: "work" })
-    ).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
+      caller.boards.create({ name: "مختبر جديد", template: "idea_lab" })
+    ).resolves.toMatchObject({
+      id: 31,
+      membershipRole: "manager",
     });
+    expect(db.createManagementBoard).toHaveBeenCalledWith(
+      "مختبر جديد",
+      2,
+      "idea_lab"
+    );
   });
 });

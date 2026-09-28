@@ -17,6 +17,13 @@ import { boardModules } from "@shared/boardModules";
 import { presentationSections } from "@shared/presentationSections";
 import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
+import * as ideaLab from "./ideaLab";
+import {
+  decryptPersonalApiKey,
+  encryptPersonalApiKey,
+  extractPublicSource,
+  summarizeWithOpenAi,
+} from "./aiProvider";
 import {
   listOAuthConnections,
   revokeAllOAuthTokensForUser,
@@ -337,15 +344,12 @@ export const appRouter = router({
       .input(
         z.object({
           name: z.string().trim().min(2).max(180),
-          template: z.string().trim().min(1).max(48),
+          template: z.literal("idea_lab"),
         })
       )
-      .mutation(() => {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "إنشاء المساحات متوقف مؤقتًا حتى يكتمل أول قالب جديد",
-        });
-      }),
+      .mutation(({ input, ctx }) =>
+        db.createManagementBoard(input.name, ctx.user.id, input.template)
+      ),
     select: protectedProcedure
       .input(z.object({ boardId: z.number().int().positive() }))
       .mutation(({ input, ctx }) =>
@@ -373,6 +377,248 @@ export const appRouter = router({
           });
         return db.joinManagementBoard(board.id, ctx.user.id);
       }),
+  }),
+  ideaLab: router({
+    overview: boardProcedure.query(({ ctx }) =>
+      ideaLab.getIdeaLabOverview(ctx.activeBoardId)
+    ),
+    createProblem: teamMemberProcedure
+      .input(
+        z.object({
+          title: z.string().trim().min(3).max(280),
+          description: z.string().trim().max(20_000).optional(),
+          category: z.string().trim().max(160).optional(),
+          audience: z.string().trim().max(240).optional(),
+          ownerUserId: z.number().int().positive().nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabProblem({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    updateProblem: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          stage: z.enum(["raw", "understanding", "validated"]).optional(),
+          evidenceStrength: z
+            .enum(["none", "low", "medium", "high"])
+            .optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabProblem({
+          ...input,
+          boardId: ctx.activeBoardId,
+        })
+      ),
+    createIdea: teamMemberProcedure
+      .input(
+        z.object({
+          problemId: z.number().int().positive().nullable().optional(),
+          title: z.string().trim().min(3).max(280),
+          description: z.string().trim().max(20_000).optional(),
+          category: z.string().trim().max(160).optional(),
+          audience: z.string().trim().max(240).optional(),
+          ownerUserId: z.number().int().positive().nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabIdea({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    updateIdea: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          stage: z
+            .enum([
+              "seed",
+              "exploration",
+              "interviews",
+              "experiment",
+              "promising",
+              "archived",
+            ])
+            .optional(),
+          confidence: z.enum(["low", "medium", "high"]).optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabIdea({
+          ...input,
+          boardId: ctx.activeBoardId,
+        })
+      ),
+    createSource: teamMemberProcedure
+      .input(
+        z.object({
+          problemId: z.number().int().positive().nullable().optional(),
+          ideaId: z.number().int().positive().nullable().optional(),
+          url: z.string().trim().url().max(2048),
+          sourceType: z.string().trim().min(1).max(32),
+          title: z.string().trim().max(500).optional(),
+          publisher: z.string().trim().max(240).optional(),
+          notes: z.string().trim().max(50_000).optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabSource({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    createInterview: teamMemberProcedure
+      .input(
+        z.object({
+          problemId: z.number().int().positive().nullable().optional(),
+          ideaId: z.number().int().positive().nullable().optional(),
+          participantLabel: z.string().trim().min(2).max(180),
+          interviewDate: z.date().nullable().optional(),
+          transcript: z.string().max(100_000).optional(),
+          summary: z.string().max(20_000).optional(),
+          insights: z.string().max(20_000).optional(),
+          themes: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabInterview({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    createExperiment: teamMemberProcedure
+      .input(
+        z.object({
+          ideaId: z.number().int().positive(),
+          title: z.string().trim().min(3).max(280),
+          hypothesis: z.string().trim().min(3).max(20_000),
+          successMetric: z.string().trim().max(280).optional(),
+          targetValue: z
+            .number()
+            .int()
+            .min(0)
+            .max(1_000_000_000)
+            .nullable()
+            .optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabExperiment({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    aiSettings: protectedProcedure.query(async ({ ctx }) => {
+      const setting = await ideaLab.getUserAiSetting(ctx.user.id);
+      return setting
+        ? {
+            configured: true as const,
+            provider: setting.provider,
+            model: setting.model,
+            lastFour: setting.apiKeyLastFour,
+          }
+        : { configured: false as const, provider: "openai" as const };
+    }),
+    saveAiSettings: protectedProcedure
+      .input(
+        z.object({
+          apiKey: z.string().trim().min(20).max(300),
+          model: z.string().trim().min(3).max(120).default("gpt-4.1-mini"),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.saveUserAiSetting({
+          userId: ctx.user.id,
+          encryptedApiKey: encryptPersonalApiKey(input.apiKey),
+          apiKeyLastFour: input.apiKey.slice(-4),
+          model: input.model,
+        })
+      ),
+    deleteAiSettings: protectedProcedure.mutation(({ ctx }) =>
+      ideaLab.deleteUserAiSetting(ctx.user.id)
+    ),
+    analyzeSource: teamMemberProcedure
+      .input(z.object({ sourceId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const source = await ideaLab.getIdeaLabSource(
+          ctx.activeBoardId,
+          input.sourceId
+        );
+        const setting = await ideaLab.getUserAiSetting(ctx.user.id);
+        if (!setting)
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "أضف مفتاح OpenAI في إعدادات حسابك أولًا",
+          });
+        let extractedText = source.extractedText;
+        if (!extractedText) {
+          try {
+            extractedText = (await extractPublicSource(source.url)).text;
+          } catch (error) {
+            if (!source.notes?.trim())
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message:
+                  error instanceof Error
+                    ? `${error.message}. الصق نص المقطع أو ملاحظاتك ثم حاول مجددًا.`
+                    : "تعذر قراءة المصدر. الصق نص المقطع أو ملاحظاتك ثم حاول مجددًا.",
+              });
+          }
+        }
+        try {
+          const summary = await summarizeWithOpenAi({
+            apiKey: decryptPersonalApiKey(setting.encryptedApiKey),
+            model: setting.model,
+            url: source.url,
+            title: source.title,
+            notes: source.notes,
+            extractedText,
+            entityKind: source.ideaId
+              ? "idea"
+              : source.problemId
+                ? "problem"
+                : "source",
+          });
+          return ideaLab.saveIdeaLabSourceAnalysis({
+            boardId: ctx.activeBoardId,
+            sourceId: source.id,
+            userId: ctx.user.id,
+            extractedText,
+            summary,
+            status: "draft",
+          });
+        } catch (error) {
+          await ideaLab.saveIdeaLabSourceAnalysis({
+            boardId: ctx.activeBoardId,
+            sourceId: source.id,
+            userId: ctx.user.id,
+            extractedText,
+            status: "failed",
+          });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              error instanceof Error
+                ? error.message
+                : "تعذر تحليل المصدر باستخدام حسابك",
+          });
+        }
+      }),
+    approveSourceAnalysis: teamMemberProcedure
+      .input(z.object({ sourceId: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.approveIdeaLabSourceAnalysis(ctx.activeBoardId, input.sourceId)
+      ),
   }),
   workspace: router({
     overview: boardProcedure.query(({ ctx }) =>

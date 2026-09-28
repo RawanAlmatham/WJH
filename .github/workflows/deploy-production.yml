@@ -39,7 +39,7 @@ jobs:
         run: pnpm verify
 
   deploy:
-    name: Deploy to wjh.ralmatham.ai
+    name: Deploy to wijha.ralmatham.ai
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -88,4 +88,4 @@ jobs:
         run: |
           curl --fail --show-error --silent \
             --retry 12 --retry-delay 5 --retry-all-errors \
-            https://wjh.ralmatham.ai/ > /dev/null
+            https://wijha.ralmatham.ai/ > /dev/null

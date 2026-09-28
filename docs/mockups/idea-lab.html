@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مختبر الأفكار — نموذج تصميم وجهة</title>
+    <style>
+      :root {
+        --navy: #1e3a8a;
+        --navy-dark: #14285f;
+        --navy-soft: #e9edf7;
+        --cream: #f5f2ee;
+        --paper: #ffffff;
+        --ink: #1f2328;
+        --muted: #696d75;
+        --line: #dedfdc;
+        --yellow: #f6b801;
+        --yellow-soft: #fff3cc;
+        --green: #45613f;
+        --green-soft: #e9ede4;
+        --burgundy: #7a2e5c;
+        --burgundy-soft: #f5eaf0;
+        --shadow: 0 12px 34px rgba(31, 35, 40, 0.07);
+      }
+
+      * { box-sizing: border-box; }
+      html { background: var(--cream); }
+      body {
+        margin: 0;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+      }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+
+      .app { min-height: 100vh; display: grid; grid-template-columns: 1fr 252px; }
+      .sidebar {
+        grid-column: 2;
+        position: fixed;
+        inset: 0 0 0 auto;
+        width: 252px;
+        background: var(--navy-dark);
+        color: white;
+        padding: 26px 18px 20px;
+        display: flex;
+        flex-direction: column;
+        z-index: 20;
+      }
+      .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 22px; }
+      .brand-mark {
+        position: relative; width: 44px; height: 44px; border-radius: 15px;
+        background: white;
+      }
+      .brand-mark::before {
+        content: ""; position: absolute; width: 19px; height: 19px; border: 3px solid var(--navy);
+        border-left-color: transparent; border-radius: 50%; top: 9px; right: 8px;
+      }
+      .brand-mark::after {
+        content: ""; position: absolute; width: 7px; height: 7px; border-radius: 50%;
+        background: var(--yellow); bottom: 7px; left: 8px;
+      }
+      .brand-name { font-size: 27px; font-weight: 800; line-height: 1; }
+      .brand-tag { margin-top: 5px; font-size: 9px; color: rgba(255,255,255,.65); }
+      .workspace-switch {
+        border: 1px solid rgba(255,255,255,.12); border-radius: 13px; padding: 12px;
+        background: rgba(255,255,255,.06); margin-bottom: 20px;
+      }
+      .workspace-switch small { color: rgba(255,255,255,.58); display: block; margin-bottom: 5px; }
+      .workspace-switch strong { font-size: 13px; }
+      .nav { display: flex; flex-direction: column; gap: 5px; }
+      .nav button {
+        border: 0; color: rgba(255,255,255,.7); background: transparent; text-align: right;
+        border-radius: 11px; padding: 11px 12px; display: flex; align-items: center; gap: 11px;
+        transition: .15s ease;
+      }
+      .nav button:hover { color: white; background: rgba(255,255,255,.07); }
+      .nav button.active { color: var(--navy-dark); background: white; font-weight: 700; }
+      .nav-icon {
+        width: 25px; height: 25px; border-radius: 8px; display: inline-flex; align-items: center;
+        justify-content: center; border: 1px solid currentColor; font-size: 12px; flex: 0 0 auto;
+      }
+      .sidebar-footer { margin-top: auto; border-top: 1px solid rgba(255,255,255,.12); padding-top: 17px; }
+      .person { display: flex; align-items: center; gap: 10px; }
+      .avatar {
+        width: 35px; height: 35px; border-radius: 50%; display: inline-flex; align-items: center;
+        justify-content: center; font-size: 11px; font-weight: 800; background: var(--yellow); color: var(--navy-dark);
+      }
+      .person-name { font-size: 12px; font-weight: 700; }
+      .person-role { font-size: 9px; margin-top: 3px; color: rgba(255,255,255,.6); }
+
+      .shell { grid-column: 1; min-width: 0; margin-right: 0; }
+      .topbar {
+        height: 76px; background: rgba(245,242,238,.94); border-bottom: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: space-between; padding: 0 34px;
+        position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px);
+      }
+      .search {
+        width: 290px; border: 1px solid var(--line); background: white; border-radius: 12px;
+        padding: 10px 14px; color: var(--muted); display: flex; gap: 9px; align-items: center; font-size: 12px;
+      }
+      .top-actions { display: flex; align-items: center; gap: 10px; }
+      .icon-btn {
+        width: 39px; height: 39px; border: 1px solid var(--line); border-radius: 11px; background: white;
+        color: var(--navy); position: relative;
+      }
+      .notification-dot { position: absolute; top: 7px; left: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--burgundy); }
+      .content { padding: 32px 34px 48px; max-width: 1450px; margin: auto; }
+      .screen { display: none; }
+      .screen.active { display: block; animation: enter .18s ease; }
+      @keyframes enter { from { opacity: .45; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+      .page-head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 25px; }
+      .eyebrow { color: var(--burgundy); font-size: 11px; font-weight: 800; margin-bottom: 7px; }
+      h1 { font-size: 28px; line-height: 1.25; margin: 0; letter-spacing: -.5px; }
+      h2 { font-size: 18px; margin: 0; }
+      h3 { font-size: 14px; margin: 0; }
+      .sub { color: var(--muted); font-size: 12px; line-height: 1.9; margin: 8px 0 0; }
+      .btns { display: flex; gap: 9px; }
+      .btn {
+        border: 1px solid var(--line); border-radius: 11px; padding: 10px 16px; background: white;
+        color: var(--ink); font-weight: 700; font-size: 12px;
+      }
+      .btn.primary { background: var(--navy); color: white; border-color: var(--navy); }
+      .btn.soft { background: var(--navy-soft); color: var(--navy); border-color: transparent; }
+      .btn.yellow { background: var(--yellow); color: var(--navy-dark); border-color: var(--yellow); }
+
+      .card { background: white; border: 1px solid var(--line); border-radius: 17px; padding: 19px; }
+      .shadow { box-shadow: var(--shadow); }
+      .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .grid-main { display: grid; grid-template-columns: 1.55fr .85fr; gap: 15px; }
+      .muted { color: var(--muted); }
+      .section-row { display: flex; justify-content: space-between; align-items: center; margin: 27px 0 13px; }
+      .link { color: var(--navy); border: 0; background: none; font-weight: 700; font-size: 11px; }
+      .pill {
+        display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 6px 9px;
+        font-size: 10px; font-weight: 700; background: var(--navy-soft); color: var(--navy);
+      }
+      .pill.green { color: var(--green); background: var(--green-soft); }
+      .pill.yellow { color: #806000; background: var(--yellow-soft); }
+      .pill.burgundy { color: var(--burgundy); background: var(--burgundy-soft); }
+      .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .mini-avatars { display: flex; direction: ltr; }
+      .mini-avatars span {
+        width: 25px; height: 25px; margin-left: -6px; border: 2px solid white; border-radius: 50%;
+        background: var(--navy-soft); color: var(--navy); display: flex; align-items: center; justify-content: center;
+        font-size: 8px; font-weight: 800;
+      }
+      .mini-avatars span:nth-child(2) { background: var(--yellow-soft); color: #806000; }
+      .mini-avatars span:nth-child(3) { background: var(--green-soft); color: var(--green); }
+
+      .journey { background: white; border: 1px solid var(--line); border-radius: 17px; padding: 17px 22px; }
+      .journey-track { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; margin-top: 16px; }
+      .stage { text-align: center; position: relative; color: var(--muted); font-size: 10px; }
+      .stage::before {
+        content: ""; position: absolute; top: 10px; right: 50%; width: 100%; height: 2px; background: var(--line); z-index: 0;
+      }
+      .stage:first-child::before { display: none; }
+      .stage-node {
+        width: 22px; height: 22px; border-radius: 50%; margin: 0 auto 8px; background: white;
+        border: 2px solid var(--line); position: relative; z-index: 1;
+      }
+      .stage.active .stage-node { border-color: var(--navy); background: var(--navy); box-shadow: inset 0 0 0 5px white; }
+      .stage.done .stage-node { border-color: var(--green); background: var(--green); }
+      .stage-count { display: block; font-size: 9px; color: #92959a; margin-top: 3px; }
+
+      .next-step { background: var(--navy); color: white; border-radius: 18px; padding: 22px; position: relative; overflow: hidden; }
+      .next-step::after {
+        content: ""; position: absolute; width: 130px; height: 130px; border: 1px solid rgba(255,255,255,.15);
+        border-radius: 50%; left: -35px; bottom: -58px;
+      }
+      .next-step small { color: #cbd5ff; font-weight: 700; }
+      .next-step h2 { margin-top: 12px; max-width: 550px; line-height: 1.75; }
+      .next-meta { display: flex; gap: 17px; margin-top: 21px; align-items: center; font-size: 10px; color: rgba(255,255,255,.72); }
+      .next-meta strong { color: white; }
+      .next-step .btn { margin-top: 17px; border: 0; }
+      .metric { padding: 16px; }
+      .metric-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+      .metric-value { font-size: 25px; font-weight: 800; margin-top: 11px; }
+      .metric-note { font-size: 9px; margin-top: 5px; color: var(--green); }
+      .idea-card { min-height: 190px; display: flex; flex-direction: column; }
+      .idea-card-head { display: flex; justify-content: space-between; gap: 8px; }
+      .idea-title { margin-top: 17px; font-size: 15px; font-weight: 800; }
+      .idea-desc { font-size: 11px; color: var(--muted); line-height: 1.8; margin-top: 8px; }
+      .idea-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 15px; border-top: 1px solid #eee; }
+      .evidence { font-size: 9px; color: var(--muted); }
+      .signal { display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: start; padding: 14px 0; border-bottom: 1px solid #eee; }
+      .signal:last-child { border-bottom: 0; }
+      .signal-mark { width: 38px; height: 38px; background: var(--yellow-soft); color: #806000; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+      .signal p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+      .activity-line { position: relative; padding-right: 20px; margin: 15px 0; font-size: 10px; line-height: 1.7; }
+      .activity-line::before { content: ""; position: absolute; right: 3px; top: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--navy); }
+      .activity-line::after { content: ""; position: absolute; right: 6px; top: 16px; bottom: -18px; width: 1px; background: var(--line); }
+      .activity-line:last-child::after { display: none; }
+
+      .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+      .tab { border: 0; background: transparent; padding: 11px 15px; color: var(--muted); font-size: 11px; font-weight: 700; border-bottom: 2px solid transparent; }
+      .tab.active { color: var(--navy); border-color: var(--navy); }
+      .filters { display: flex; gap: 8px; margin-bottom: 14px; }
+      .filter { border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--muted); padding: 8px 11px; font-size: 10px; }
+      .problem-layout { display: grid; grid-template-columns: 1fr 315px; gap: 15px; }
+      .problem-list { display: flex; flex-direction: column; gap: 11px; }
+      .problem-card { display: grid; grid-template-columns: 1fr 165px; gap: 18px; align-items: center; }
+      .problem-card h3 { font-size: 14px; }
+      .problem-card p { color: var(--muted); font-size: 10px; line-height: 1.7; margin: 7px 0 12px; }
+      .problem-meta { display: flex; gap: 13px; font-size: 9px; color: var(--muted); }
+      .strength { border-right: 1px solid var(--line); padding-right: 18px; }
+      .strength-bars { display: flex; gap: 4px; margin-top: 9px; direction: ltr; }
+      .strength-bars i { height: 5px; flex: 1; border-radius: 4px; background: var(--line); }
+      .strength-bars i.on { background: var(--green); }
+      .inbox-item { padding: 13px; border: 1px solid var(--line); border-radius: 12px; margin-top: 10px; }
+      .inbox-item q { font-size: 10px; line-height: 1.75; display: block; }
+      .inbox-item small { display: block; margin-top: 9px; color: var(--muted); }
+
+      .detail-hero { display: grid; grid-template-columns: 1fr 285px; gap: 16px; }
+      .problem-statement { padding: 24px; }
+      .problem-statement h1 { font-size: 23px; line-height: 1.6; }
+      .hero-meta { display: flex; gap: 8px; margin-top: 18px; }
+      .confidence { padding: 20px; background: var(--green-soft); border-color: transparent; }
+      .confidence strong { display: block; font-size: 19px; color: var(--green); margin: 10px 0 4px; }
+      .detail-grid { display: grid; grid-template-columns: 1fr 1fr 310px; gap: 14px; }
+      .info-box { min-height: 155px; }
+      .info-box p { color: var(--muted); font-size: 11px; line-height: 1.9; }
+      .question-list { margin: 12px 0 0; padding: 0; list-style: none; }
+      .question-list li { padding: 9px 0; border-bottom: 1px solid #eee; font-size: 10px; }
+      .step-card { grid-row: span 2; background: var(--navy); color: white; border: 0; }
+      .step-number { color: var(--yellow); font-size: 38px; font-weight: 800; }
+      .step-card p { color: rgba(255,255,255,.7); line-height: 1.9; font-size: 11px; }
+
+      .pipeline { display: grid; grid-template-columns: repeat(5, minmax(160px, 1fr)); gap: 10px; align-items: start; }
+      .column { background: #edeae5; border-radius: 15px; padding: 11px; min-height: 525px; }
+      .column-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 3px 11px; font-size: 11px; font-weight: 800; }
+      .count { width: 23px; height: 23px; border-radius: 8px; background: white; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); font-size: 9px; }
+      .kanban-card { background: white; border: 1px solid var(--line); border-radius: 12px; padding: 13px; margin-bottom: 9px; }
+      .kanban-card h3 { line-height: 1.6; }
+      .kanban-card p { color: var(--muted); font-size: 9px; line-height: 1.7; margin: 7px 0 12px; }
+      .kanban-foot { display: flex; justify-content: space-between; align-items: center; }
+      .risk-line { height: 4px; border-radius: 4px; background: var(--burgundy-soft); overflow: hidden; margin-top: 10px; }
+      .risk-line i { display: block; height: 100%; background: var(--burgundy); }
+
+      .interviews-layout { display: grid; grid-template-columns: 1.35fr .75fr; gap: 15px; }
+      .interview-row { display: grid; grid-template-columns: 48px 1fr 130px 100px; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid #eee; }
+      .date-box { text-align: center; padding: 7px; border-radius: 11px; background: var(--navy-soft); color: var(--navy); }
+      .date-box strong { display: block; font-size: 15px; }
+      .date-box small { font-size: 8px; }
+      .interview-name { font-size: 12px; font-weight: 800; }
+      .interview-about { margin-top: 5px; font-size: 9px; color: var(--muted); }
+      .theme { margin-top: 13px; padding-bottom: 13px; border-bottom: 1px solid #eee; }
+      .theme-top { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; }
+      .bar { height: 6px; border-radius: 6px; background: #eee; overflow: hidden; margin-top: 8px; direction: ltr; }
+      .bar i { display: block; height: 100%; background: var(--navy); border-radius: 6px; }
+      .quote { background: var(--yellow-soft); border-radius: 13px; padding: 16px; margin-top: 15px; font-size: 11px; line-height: 1.9; color: #574500; }
+
+      .experiment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+      .experiment-card { min-height: 225px; }
+      .experiment-type { width: 39px; height: 39px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--navy-soft); color: var(--navy); font-weight: 800; }
+      .experiment-card h3 { margin-top: 15px; line-height: 1.7; }
+      .hypothesis { background: #f7f7f5; border-radius: 10px; padding: 10px; margin-top: 11px; color: var(--muted); font-size: 9px; line-height: 1.7; }
+      .progress { height: 6px; border-radius: 6px; background: #eee; margin: 16px 0 8px; overflow: hidden; direction: ltr; }
+      .progress i { height: 100%; display: block; background: var(--navy); border-radius: 6px; }
+      .experiment-bottom { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; }
+
+      .compare-wrap { overflow: hidden; padding: 0; }
+      .compare-head { display: grid; grid-template-columns: 180px repeat(3, 1fr); background: var(--navy); color: white; }
+      .compare-head > div { padding: 18px; border-left: 1px solid rgba(255,255,255,.12); }
+      .compare-head small { display: block; margin-top: 6px; color: rgba(255,255,255,.65); }
+      .compare-row { display: grid; grid-template-columns: 180px repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+      .compare-row:last-child { border-bottom: 0; }
+      .compare-row > div { padding: 15px 18px; border-left: 1px solid var(--line); font-size: 10px; }
+      .criterion { font-weight: 800; background: #faf9f7; }
+      .score { display: flex; align-items: center; gap: 9px; }
+      .score-dots { display: flex; gap: 3px; direction: ltr; }
+      .score-dots i { width: 12px; height: 5px; border-radius: 4px; background: #ddd; }
+      .score-dots i.on { background: var(--navy); }
+      .recommendation { margin-top: 16px; display: grid; grid-template-columns: 1fr 245px; gap: 15px; }
+      .recommendation-main { background: var(--green-soft); border-color: transparent; }
+      .recommendation-main h2 { color: var(--green); }
+      .recommendation-main p { font-size: 11px; color: #536051; line-height: 1.9; }
+
+      .sources-card { margin-top: 15px; }
+      .source-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin-top: 15px; }
+      .source-item { border: 1px solid var(--line); border-radius: 13px; padding: 14px; min-height: 150px; display: flex; flex-direction: column; }
+      .source-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+      .source-type { display: inline-flex; align-items: center; gap: 7px; color: var(--navy); font-size: 10px; font-weight: 800; }
+      .source-logo { width: 29px; height: 29px; border-radius: 9px; background: var(--ink); color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+      .source-item h3 { margin-top: 13px; line-height: 1.65; }
+      .source-item p { margin: 7px 0 0; color: var(--muted); font-size: 9px; line-height: 1.75; }
+      .source-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px; }
+
+      .modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,.48); z-index: 70; display: none; padding: 24px; align-items: center; justify-content: center; }
+      .modal-backdrop.open { display: flex; }
+      .composer { width: min(760px, 100%); max-height: calc(100vh - 48px); overflow: auto; background: var(--cream); border-radius: 22px; box-shadow: 0 28px 80px rgba(17,24,39,.28); }
+      .composer-head { padding: 21px 23px 17px; background: white; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; position: sticky; top: 0; z-index: 2; }
+      .close-btn { border: 1px solid var(--line); width: 35px; height: 35px; border-radius: 10px; background: white; color: var(--muted); }
+      .composer-body { padding: 20px 23px 23px; }
+      .kind-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #e8e5df; padding: 5px; border-radius: 12px; margin-bottom: 18px; }
+      .kind-switch button { border: 0; background: transparent; border-radius: 9px; padding: 10px; color: var(--muted); font-size: 11px; font-weight: 800; }
+      .kind-switch button.active { background: white; color: var(--navy); box-shadow: 0 3px 12px rgba(31,35,40,.08); }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+      .field { display: flex; flex-direction: column; gap: 7px; }
+      .field.wide { grid-column: 1 / -1; }
+      .field label { font-size: 10px; font-weight: 800; }
+      .field input, .field textarea, .field select { width: 100%; border: 1px solid var(--line); background: white; border-radius: 11px; padding: 11px 12px; color: var(--ink); font: inherit; font-size: 11px; outline: none; }
+      .field textarea { resize: vertical; min-height: 82px; line-height: 1.7; }
+      .field input:focus, .field textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px var(--navy-soft); }
+      .support-box { grid-column: 1 / -1; border: 1px solid var(--line); background: white; border-radius: 15px; padding: 15px; }
+      .support-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+      .url-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
+      .url-row input { border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; min-width: 0; }
+      .link-preview { display: grid; grid-template-columns: 62px 1fr; gap: 11px; margin-top: 11px; padding: 11px; background: #f7f7f5; border-radius: 12px; }
+      .video-thumb { border-radius: 10px; min-height: 62px; background: linear-gradient(145deg, var(--ink), var(--navy)); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+      .preview-title { font-size: 10px; font-weight: 800; line-height: 1.6; }
+      .preview-url { color: var(--muted); font-size: 8px; margin-top: 4px; direction: ltr; text-align: right; }
+      .ai-option { grid-column: 1 / -1; border-radius: 15px; padding: 15px; background: var(--navy-soft); display: grid; grid-template-columns: auto 1fr auto; gap: 11px; align-items: center; }
+      .ai-mark { width: 39px; height: 39px; border-radius: 12px; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+      .ai-option p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+      .composer-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; }
+      .privacy-note { color: var(--muted); font-size: 9px; max-width: 330px; line-height: 1.6; }
+
+      .prototype-note {
+        position: fixed; bottom: 17px; left: 18px; z-index: 30; background: var(--ink); color: white;
+        padding: 8px 11px; border-radius: 9px; font-size: 9px; opacity: .86;
+      }
+
+      @media (max-width: 1180px) {
+        .content { padding-left: 22px; padding-right: 22px; }
+        .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        .detail-grid { grid-template-columns: 1fr 1fr; }
+        .step-card { grid-column: span 2; grid-row: auto; }
+        .pipeline, .compare-wrap { overflow-x: auto; }
+        .pipeline { grid-template-columns: repeat(5, 190px); padding-bottom: 8px; }
+        .compare-head, .compare-row { min-width: 830px; }
+      }
+
+      @media (max-width: 720px) {
+        .app { display: block; }
+        .sidebar {
+          position: sticky; inset: 0; width: 100%; height: auto; padding: 14px 14px 11px;
+          display: block; z-index: 30; box-shadow: 0 8px 24px rgba(20,40,95,.16);
+        }
+        .brand { padding: 0 4px 11px; }
+        .brand-mark { width: 36px; height: 36px; border-radius: 12px; }
+        .brand-mark::before { width: 16px; height: 16px; top: 7px; right: 7px; }
+        .brand-name { font-size: 22px; }
+        .workspace-switch, .sidebar-footer { display: none; }
+        .nav { flex-direction: row; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
+        .nav::-webkit-scrollbar { display: none; }
+        .nav button { flex: 0 0 auto; padding: 8px 10px; gap: 7px; white-space: nowrap; }
+        .nav-icon { width: 22px; height: 22px; border-radius: 7px; }
+        .shell { width: 100%; }
+        .topbar { height: 60px; padding: 0 15px; }
+        .search { width: min(235px, calc(100vw - 125px)); padding: 9px 11px; }
+        .search span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .top-actions .mini-avatars, .top-actions .icon-btn:first-child { display: none; }
+        .content { padding: 22px 15px 55px; }
+        .page-head { display: block; margin-bottom: 19px; }
+        .page-head .btns, .page-head > .btn { margin-top: 14px; }
+        .btns { flex-wrap: wrap; }
+        h1 { font-size: 24px; }
+        .grid-4, .grid-3, .grid-main, .problem-layout, .detail-hero, .detail-grid,
+        .interviews-layout, .experiment-grid, .recommendation { grid-template-columns: 1fr; }
+        .source-list { grid-template-columns: 1fr; }
+        .grid-4 { gap: 9px; }
+        .journey { padding: 15px 10px; overflow-x: auto; }
+        .journey-track { min-width: 520px; }
+        .next-step h2 { font-size: 16px; }
+        .next-meta, .problem-meta, .hero-meta, .filters, .tabs { overflow-x: auto; white-space: nowrap; }
+        .tabs { padding-bottom: 1px; }
+        .problem-card { grid-template-columns: 1fr; }
+        .strength { border-right: 0; border-top: 1px solid var(--line); padding: 14px 0 0; }
+        .detail-grid .step-card { grid-column: auto; }
+        .interview-row { grid-template-columns: 43px 1fr; }
+        .interview-row > .pill, .interview-row > .btn { grid-column: 2; width: max-content; }
+        .prototype-note { left: 10px; bottom: 10px; }
+        .modal-backdrop { padding: 10px; align-items: flex-end; }
+        .composer { max-height: 92vh; border-radius: 20px 20px 0 0; }
+        .composer-head, .composer-body { padding-left: 16px; padding-right: 16px; }
+        .form-grid { grid-template-columns: 1fr; }
+        .field.wide, .support-box, .ai-option { grid-column: auto; }
+        .ai-option { grid-template-columns: auto 1fr; }
+        .ai-option .btn { grid-column: 1 / -1; }
+        .composer-actions { align-items: stretch; flex-direction: column; }
+        .composer-actions .btns { order: -1; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <div><div class="brand-name">وجهة</div><div class="brand-tag">لكل طموح، وجهة.</div></div>
+        </div>
+        <div class="workspace-switch">
+          <small>مختبر الأفكار</small>
+          <strong>فريق الفرص الجديدة</strong>
+        </div>
+        <nav class="nav">
+          <button class="active" data-screen="compass"><span class="nav-icon">⌖</span>بوصلة الفرص</button>
+          <button data-screen="problems"><span class="nav-icon">!</span>بنك المشكلات</button>
+          <button data-screen="ideas"><span class="nav-icon">◇</span>الأفكار</button>
+          <button data-screen="interviews"><span class="nav-icon">“</span>مقابلات العملاء</button>
+          <button data-screen="experiments"><span class="nav-icon">⌁</span>التجارب</button>
+          <button data-screen="compare"><span class="nav-icon">≋</span>مقارنة الفرص</button>
+          <button><span class="nav-icon">✓</span>سجل القرارات</button>
+          <button><span class="nav-icon">◎</span>الفريق</button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="person"><span class="avatar">RA</span><div><div class="person-name">Rawan Almatham</div><div class="person-role">مديرة المساحة</div></div></div>
+        </div>
+      </aside>
+
+      <main class="shell">
+        <header class="topbar">
+          <div class="search"><span>⌕</span><span>ابحث في المشكلات والأفكار والمقابلات...</span></div>
+          <div class="top-actions">
+            <button class="icon-btn">؟</button>
+            <button class="icon-btn">♢<span class="notification-dot"></span></button>
+            <div class="mini-avatars"><span>RA</span><span>س</span><span>م</span></div>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="screen active" id="compass">
+            <div class="page-head">
+              <div><div class="eyebrow">بوصلة الفرص</div><h1>صباح الخير، إلى أين وصل الفريق؟</h1><p class="sub">نبحث عن فرصة تقنية تحل مشكلة واضحة للشركات الصغيرة والمتوسطة.</p></div>
+              <div class="btns"><button class="btn">تسجيل إشارة</button><button class="btn primary" data-open-composer="problem">+ إضافة مشكلة أو فكرة</button></div>
+            </div>
+
+            <div class="journey shadow">
+              <h3>رحلة الأفكار</h3>
+              <div class="journey-track">
+                <div class="stage done"><div class="stage-node"></div>بذرة<span class="stage-count">٤ أفكار</span></div>
+                <div class="stage active"><div class="stage-node"></div>استكشاف<span class="stage-count">٣ أفكار</span></div>
+                <div class="stage active"><div class="stage-node"></div>مقابلات<span class="stage-count">فكرتان</span></div>
+                <div class="stage"><div class="stage-node"></div>تجربة<span class="stage-count">فكرة واحدة</span></div>
+                <div class="stage"><div class="stage-node"></div>فرصة واعدة<span class="stage-count">—</span></div>
+              </div>
+            </div>
+
+            <div class="grid-main" style="margin-top:15px">
+              <div class="next-step shadow">
+                <small>الخطوة الأهم الآن</small>
+                <h2>اختبروا استعداد فرق الموارد البشرية للدفع مقابل الوصول إلى مدربين موثوقين.</h2>
+                <div class="next-meta"><span>الفكرة: <strong>منصة اختيار المدربين</strong></span><span>المسؤولة: <strong>سارة</strong></span><span>قبل: <strong>الخميس</strong></span></div>
+                <button class="btn yellow">فتح خطة التجربة ←</button>
+              </div>
+              <div class="grid-4" style="grid-template-columns:1fr 1fr">
+                <div class="card metric"><div class="metric-top"><span>أفكار نشطة</span><span>◇</span></div><div class="metric-value">١٠</div><div class="metric-note">٣ في مرحلة الاستكشاف</div></div>
+                <div class="card metric"><div class="metric-top"><span>مقابلات</span><span>“</span></div><div class="metric-value">١٨</div><div class="metric-note">٤ هذا الأسبوع</div></div>
+                <div class="card metric"><div class="metric-top"><span>تجارب جارية</span><span>⌁</span></div><div class="metric-value">٣</div><div class="metric-note">نتيجتان قريبًا</div></div>
+                <div class="card metric"><div class="metric-top"><span>أسئلة مفتوحة</span><span>؟</span></div><div class="metric-value">٧</div><div class="metric-note" style="color:var(--burgundy)">٢ عالية الخطورة</div></div>
+              </div>
+            </div>
+
+            <div class="section-row"><h2>محفظة الأفكار</h2><button class="link" data-go="ideas">عرض جميع الأفكار ←</button></div>
+            <div class="grid-3">
+              <article class="card idea-card shadow"><div class="idea-card-head"><span class="pill yellow"><span class="dot"></span>مقابلات</span><div class="mini-avatars"><span>س</span><span>م</span></div></div><div class="idea-title">منصة اختيار المدربين</div><div class="idea-desc">تساعد فرق الموارد البشرية على إيجاد مدربين موثوقين ومناسبين بسرعة.</div><div class="idea-foot"><span class="evidence">٦ مقابلات · تجربة واحدة</span><span class="pill yellow">ثقة متوسطة</span></div></article>
+              <article class="card idea-card"><div class="idea-card-head"><span class="pill"><span class="dot"></span>استكشاف</span><div class="mini-avatars"><span>RA</span></div></div><div class="idea-title">مساعد إعداد السياسات</div><div class="idea-desc">يبسّط بناء السياسات الداخلية للشركات الصغيرة باللغة العربية.</div><div class="idea-foot"><span class="evidence">٣ مقابلات · ٤ إشارات</span><span class="pill burgundy">ثقة منخفضة</span></div></article>
+              <article class="card idea-card"><div class="idea-card-head"><span class="pill green"><span class="dot"></span>تجربة</span><div class="mini-avatars"><span>ن</span><span>RA</span></div></div><div class="idea-title">رادار الموردين</div><div class="idea-desc">مساحة تجمع تقييم الموردين وخبرات الفرق قبل اتخاذ قرار الشراء.</div><div class="idea-foot"><span class="evidence">٩ مقابلات · تجربتان</span><span class="pill green">ثقة مرتفعة</span></div></article>
+            </div>
+
+            <div class="grid-main" style="margin-top:15px">
+              <div class="card"><div class="section-row" style="margin:0 0 4px"><h2>إشارات العملاء الأخيرة</h2><button class="link">بنك المشكلات ←</button></div><div class="signal"><div class="signal-mark">“</div><div><h3>الثقة أهم من كثرة الخيارات</h3><p>«ما أحتاج مئة اسم، أحتاج ثلاثة أعرف أنهم مجرّبون.»</p></div><span class="pill yellow">مقابلة ١٧</span></div><div class="signal"><div class="signal-mark">!</div><div><h3>الشراء يحتاج أكثر من موافقة</h3><p>ظهر أن مدير الموارد البشرية ليس دائمًا صاحب قرار الدفع النهائي.</p></div><span class="pill burgundy">فجوة بحثية</span></div></div>
+              <div class="card"><h2>نشاط الفريق</h2><div class="activity-line"><strong>سارة</strong> اعتمدت تحليل مقابلة ١٧<br><span class="muted">منذ ٣٥ دقيقة</span></div><div class="activity-line"><strong>محمد</strong> أضاف افتراضًا جديدًا<br><span class="muted">منذ ساعتين</span></div><div class="activity-line"><strong>أنتِ</strong> نقلتِ «رادار الموردين» للتجربة<br><span class="muted">أمس</span></div></div>
+            </div>
+          </section>
+
+          <section class="screen" id="problems">
+            <div class="page-head"><div><div class="eyebrow">من الإشارة إلى الفرصة</div><h1>بنك المشكلات</h1><p class="sub">اجمعوا ما تلاحظونه، وافصلوا بين المشكلة الحقيقية والانطباع الأولي.</p></div><div class="btns"><button class="btn">+ تسجيل إشارة</button><button class="btn primary" data-open-composer="problem">+ إضافة مشكلة</button></div></div>
+            <div class="tabs"><button class="tab active">المشكلات ١٢</button><button class="tab">الإشارات الأولية ٢٤</button><button class="tab">المؤجلة ٣</button></div>
+            <div class="filters"><button class="filter">كل المجالات⌄</button><button class="filter">كل الفئات⌄</button><button class="filter">قوة الأدلة⌄</button><button class="filter">المسؤول⌄</button></div>
+            <div class="problem-layout">
+              <div class="problem-list">
+                <article class="card problem-card shadow" data-go="problem-detail"><div><div class="idea-card-head"><span class="pill green">مشكلة واضحة</span><div class="mini-avatars"><span>س</span><span>م</span></div></div><h3 style="margin-top:14px">العثور على مدرب مناسب وموثوق يستغرق وقتًا طويلًا</h3><p>فرق الموارد البشرية في الشركات المتوسطة · التدريب والتطوير</p><div class="problem-meta"><span>٨ إشارات</span><span>٥ مقابلات</span><span>فكرتان مرتبطتان</span></div></div><div class="strength"><small class="muted">قوة الأدلة</small><strong style="display:block;margin-top:7px">متوسطة إلى قوية</strong><div class="strength-bars"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><button class="link" style="margin-top:14px" data-go="problem-detail">فتح المشكلة ←</button></div></article>
+                <article class="card problem-card"><div><div class="idea-card-head"><span class="pill yellow">قيد الفهم</span><div class="mini-avatars"><span>RA</span></div></div><h3 style="margin-top:14px">الشركات الصغيرة تؤجل كتابة السياسات الداخلية</h3><p>المؤسسون ومديرو العمليات · الحوكمة</p><div class="problem-meta"><span>٤ إشارات</span><span>٣ مقابلات</span><span>فكرة واحدة</span></div></div><div class="strength"><small class="muted">قوة الأدلة</small><strong style="display:block;margin-top:7px">متوسطة</strong><div class="strength-bars"><i class="on"></i><i class="on"></i><i></i><i></i></div><button class="link" style="margin-top:14px">فتح المشكلة ←</button></div></article>
+                <article class="card problem-card"><div><div class="idea-card-head"><span class="pill burgundy">غير مختبرة</span><div class="mini-avatars"><span>ن</span></div></div><h3 style="margin-top:14px">مقارنة عروض الموردين تتم يدويًا وبصورة غير موحدة</h3><p>فرق المشتريات · الشركات الصغيرة</p><div class="problem-meta"><span>إشارة واحدة</span><span>لا توجد مقابلات</span><span>لا توجد أفكار</span></div></div><div class="strength"><small class="muted">قوة الأدلة</small><strong style="display:block;margin-top:7px">منخفضة</strong><div class="strength-bars"><i class="on"></i><i></i><i></i><i></i></div><button class="link" style="margin-top:14px">فتح المشكلة ←</button></div></article>
+              </div>
+              <aside class="card shadow"><div class="section-row" style="margin:0"><h2>صندوق الإشارات</h2><span class="pill yellow">٦ جديدة</span></div><p class="sub">ملاحظات تحتاج إلى ربط أو تحويل.</p><div class="inbox-item"><q>نستخدم إكسل للمقارنة، وكل شخص يرتبه بطريقة مختلفة.</q><small>نموذج تلخيص · محمد</small></div><div class="inbox-item"><q>طلبنا توصيات المدربين في مجموعة واتساب.</q><small>مقابلة ١٨ · سارة</small></div><div class="inbox-item"><q>أكبر مخاوفنا أن يكون تقييم المورد قديمًا.</q><small>ملاحظة بحثية · نورة</small></div><button class="btn soft" style="width:100%;margin-top:13px">مراجعة كل الإشارات</button></aside>
+            </div>
+          </section>
+
+          <section class="screen" id="problem-detail">
+            <div class="page-head"><div><button class="link" data-go="problems">بنك المشكلات ←</button></div><div class="btns"><button class="btn" data-open-composer="source">إضافة دليل أو رابط</button><button class="btn primary" data-open-composer="idea">إنشاء فكرة منها</button></div></div>
+            <div class="detail-hero"><div class="card problem-statement shadow"><span class="pill green">مشكلة واضحة</span><h1 style="margin-top:15px">العثور على مدرب مناسب وموثوق يستغرق وقتًا طويلًا</h1><p class="sub">تواجه فرق الموارد البشرية في الشركات المتوسطة صعوبة في التحقق من جودة المدربين وملاءمتهم قبل التعاقد.</p><div class="hero-meta"><span class="pill">التدريب والتطوير</span><span class="pill">الشركات المتوسطة</span><div class="mini-avatars"><span>س</span><span>م</span></div></div></div><div class="card confidence"><small>قوة الأدلة</small><strong>متوسطة إلى قوية</strong><span class="muted" style="font-size:10px">٨ إشارات · ٥ مقابلات · مصدران مستقلان</span><div class="strength-bars"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div></div>
+            <div class="tabs" style="margin-top:22px"><button class="tab active">نظرة عامة</button><button class="tab">الأدلة والإشارات ٨</button><button class="tab">المقابلات ٥</button><button class="tab">الأفكار المرتبطة ٢</button><button class="tab">النقاش</button><button class="tab">القرارات</button></div>
+            <div class="detail-grid">
+              <div class="card info-box"><h3>من يعاني منها؟</h3><p>مديرو الموارد البشرية ومسؤولو التدريب في الشركات التي لا تملك قائمة مورّدين معتمدة أو فريق مشتريات متخصص.</p></div>
+              <div class="card info-box"><h3>متى وكيف تظهر؟</h3><p>عند إطلاق برنامج تدريبي جديد أو البحث عن تخصص نادر. يبدأ الفريق بالسؤال بين المعارف ثم يقارن الملفات يدويًا.</p></div>
+              <div class="card step-card shadow"><small>الخطوة التالية</small><div class="step-number">01</div><h2>اختبار الاستعداد للدفع</h2><p>نعرف أن المشكلة مؤلمة، لكن لا نعرف إن كانت الشركات ستدفع مقابل التحقق والترشيح.</p><button class="btn yellow">إنشاء تجربة سعر ←</button></div>
+              <div class="card info-box"><h3>كيف تُحل حاليًا؟</h3><p>التوصيات الشخصية، مجموعات واتساب، قوائم قديمة، والبحث المباشر في LinkedIn.</p></div>
+              <div class="card info-box"><h3>أسئلة مفتوحة</h3><ul class="question-list"><li>من يملك ميزانية التدريب؟</li><li>ما تكلفة الاختيار الخاطئ؟</li><li>هل يفضل العميل اشتراكًا أم عمولة؟</li></ul></div>
+            </div>
+            <div class="card sources-card">
+              <div class="section-row" style="margin:0"><div><h2>المصادر والروابط الداعمة</h2><p class="sub">تبقى المادة الأصلية محفوظة، ويظهر ملخص الذكاء الاصطناعي بجانبها بعد اعتمادك.</p></div><button class="btn soft" data-open-composer="source">+ إضافة رابط</button></div>
+              <div class="source-list">
+                <article class="source-item"><div class="source-head"><span class="source-type"><span class="source-logo">♪</span>TikTok</span><span class="pill green">لُخّص بحساب سارة</span></div><h3>كيف تختار الشركات المدرب المناسب؟</h3><p>يلخص المقطع ثلاثة مؤشرات للثقة: تجربة سابقة، توصية موثوقة، ووضوح النتائج المتوقعة.</p><div class="source-foot"><button class="link">عرض المصدر ↗</button><small class="muted">مرتبط بدليلين</small></div></article>
+                <article class="source-item"><div class="source-head"><span class="source-type"><span class="source-logo" style="background:#c4302b">▶</span>YouTube</span><span class="pill yellow">بانتظار المراجعة</span></div><h3>مقابلة مع مسؤولة تدريب</h3><p>استُخرج النص تلقائيًا، واقترح النظام ربطه بافتراض «الثقة أهم من كثرة الخيارات».</p><div class="source-foot"><button class="link">مراجعة الملخص ←</button><small class="muted">١٢:٤٠ دقيقة</small></div></article>
+                <article class="source-item"><div class="source-head"><span class="source-type"><span class="source-logo" style="background:var(--green)">↗</span>مقال</span><span class="pill">مصدر يدوي</span></div><h3>دليل شراء خدمات التدريب</h3><p>أضيف كمصدر سياقي للمشكلة دون تحليل آلي.</p><div class="source-foot"><button class="link">عرض المصدر ↗</button><small class="muted">أضافه محمد</small></div></article>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" id="ideas">
+            <div class="page-head"><div><div class="eyebrow">محفظة الفريق</div><h1>الأفكار</h1><p class="sub">تابعوا كل فكرة بحسب ما تعلمتموه عنها، لا بحسب نسبة إنجاز وهمية.</p></div><div class="btns"><button class="btn">عرض المقارنة</button><button class="btn primary" data-open-composer="idea">+ إضافة فكرة</button></div></div>
+            <div class="filters"><button class="filter">المسار</button><button class="filter">البطاقات</button><button class="filter">الفئة⌄</button><button class="filter">قائد الفكرة⌄</button></div>
+            <div class="pipeline">
+              <div class="column"><div class="column-head"><span>بذرة</span><span class="count">٤</span></div><div class="kanban-card"><span class="pill burgundy">غير مختبرة</span><h3 style="margin-top:10px">سوق خبراء مستقلين</h3><p>منصة للوصول إلى خبرات متخصصة عند الحاجة.</p><div class="kanban-foot"><span class="avatar" style="width:25px;height:25px">RA</span><small class="muted">لا توجد أدلة</small></div></div><div class="kanban-card"><h3>مساعد عروض الأسعار</h3><p>تحويل متطلبات العميل إلى عرض مرتب.</p><div class="kanban-foot"><span class="avatar" style="width:25px;height:25px">م</span><small class="muted">إشارتان</small></div></div></div>
+              <div class="column"><div class="column-head"><span>استكشاف</span><span class="count">٣</span></div><div class="kanban-card"><span class="pill">ثقة منخفضة</span><h3 style="margin-top:10px">مساعد إعداد السياسات</h3><p>يبسّط بناء سياسات الشركات الصغيرة.</p><div class="risk-line"><i style="width:72%"></i></div><small class="muted">أخطر افتراض: الاستعداد للدفع</small></div></div>
+              <div class="column"><div class="column-head"><span>مقابلات</span><span class="count">٢</span></div><div class="kanban-card shadow"><span class="pill yellow">ثقة متوسطة</span><h3 style="margin-top:10px">منصة اختيار المدربين</h3><p>اختيار مدربين موثوقين وفق احتياج الشركة.</p><div class="risk-line"><i style="width:48%"></i></div><div class="kanban-foot" style="margin-top:12px"><div class="mini-avatars"><span>س</span><span>م</span></div><small class="muted">٦ مقابلات</small></div></div></div>
+              <div class="column"><div class="column-head"><span>تجربة</span><span class="count">١</span></div><div class="kanban-card"><span class="pill green">ثقة مرتفعة</span><h3 style="margin-top:10px">رادار الموردين</h3><p>تقييمات حديثة وتجارب موثقة للموردين.</p><div class="progress"><i style="width:63%"></i></div><div class="kanban-foot"><small class="muted">التجربة ٦٣٪</small><span class="avatar" style="width:25px;height:25px">ن</span></div></div></div>
+              <div class="column"><div class="column-head"><span>فرصة واعدة</span><span class="count">—</span></div><div style="padding:38px 10px;text-align:center;color:var(--muted);font-size:10px;line-height:1.8">لم تصل أي فكرة بعد.<br>هذا طبيعي؛ الأدلة أولًا.</div></div>
+            </div>
+          </section>
+
+          <section class="screen" id="interviews">
+            <div class="page-head"><div><div class="eyebrow">استمع قبل أن تبني</div><h1>مقابلات العملاء</h1><p class="sub">خططوا للمقابلات، وثقوها، ثم اربطوا ما تعلمتموه بالأفكار والافتراضات.</p></div><div class="btns"><button class="btn">نسخ رابط نموذج التلخيص</button><button class="btn primary">+ إنشاء مقابلة</button></div></div>
+            <div class="grid-4" style="margin-bottom:15px"><div class="card metric"><div class="metric-top"><span>هذا الأسبوع</span></div><div class="metric-value">٤</div><div class="metric-note">مقابلتان قادمتان</div></div><div class="card metric"><div class="metric-top"><span>بانتظار التفريغ</span></div><div class="metric-value">٢</div><div class="metric-note" style="color:var(--burgundy)">تحتاج مراجعة</div></div><div class="card metric"><div class="metric-top"><span>بانتظار التحليل</span></div><div class="metric-value">٣</div><div class="metric-note">باستخدام API العضو</div></div><div class="card metric"><div class="metric-top"><span>مكتملة</span></div><div class="metric-value">١٨</div><div class="metric-note">٥ فئات عملاء</div></div></div>
+            <div class="interviews-layout"><div class="card"><div class="tabs"><button class="tab active">القادمة</button><button class="tab">تحتاج متابعة</button><button class="tab">المكتملة</button></div><div class="interview-row"><div class="date-box"><strong>٢١</strong><small>أكتوبر</small></div><div><div class="interview-name">مديرة موارد بشرية · شركة متوسطة</div><div class="interview-about">منصة اختيار المدربين · سارة</div></div><span class="pill">مقابلة مشكلة</span><button class="btn soft">فتح</button></div><div class="interview-row"><div class="date-box"><strong>٢٢</strong><small>أكتوبر</small></div><div><div class="interview-name">مدير مشتريات · قطاع الخدمات</div><div class="interview-about">رادار الموردين · محمد</div></div><span class="pill yellow">اختبار افتراض</span><button class="btn soft">فتح</button></div><div class="interview-row"><div class="date-box" style="background:var(--green-soft);color:var(--green)"><strong>١٩</strong><small>أكتوبر</small></div><div><div class="interview-name">مشارك ١٧ · شركة تقنية</div><div class="interview-about">التفريغ جاهز وينتظر الاعتماد</div></div><span class="pill green">تم التفريغ</span><button class="btn">مراجعة</button></div></div><aside class="card shadow"><div class="section-row" style="margin:0"><h2>أنماط متكررة</h2><span class="pill">١٨ مقابلة</span></div><div class="theme"><div class="theme-top"><span>الثقة أهم من كثرة الخيارات</span><span>٧/١٠</span></div><div class="bar"><i style="width:70%"></i></div></div><div class="theme"><div class="theme-top"><span>قرار الشراء مشترك</span><span>٦/١٠</span></div><div class="bar"><i style="width:60%"></i></div></div><div class="theme"><div class="theme-top"><span>السعر ليس المعيار الأول</span><span>٥/١٠</span></div><div class="bar"><i style="width:50%"></i></div></div><div class="quote">«أحتاج شخصًا جرّب المدرب قبلي، وليس ملفًا تعريفيًا أجمل.»</div><button class="btn primary" style="width:100%;margin-top:15px">حلّل المقابلات باستخدام حسابي</button></aside></div>
+          </section>
+
+          <section class="screen" id="experiments">
+            <div class="page-head"><div><div class="eyebrow">حوّل الافتراض إلى دليل</div><h1>التجارب</h1><p class="sub">حدّدوا النجاح مسبقًا، ثم سجلوا ما حدث فعلًا دون تجميل النتائج.</p></div><button class="btn primary">+ إنشاء تجربة</button></div>
+            <div class="tabs"><button class="tab active">جارية ٣</button><button class="tab">تنتظر التحليل ٢</button><button class="tab">مكتملة ٧</button><button class="tab">الافتراضات الخطرة</button></div>
+            <div class="experiment-grid"><article class="card experiment-card shadow"><div class="idea-card-head"><span class="experiment-type">A/B</span><span class="pill green">جارية</span></div><h3>اختبار سعر خدمة ترشيح المدربين</h3><div class="hypothesis">إذا عرضنا الترشيح مقابل ١,٥٠٠ ريال، فسيطلب ٢٠٪ من العملاء اجتماعًا.</div><div class="progress"><i style="width:65%"></i></div><div class="experiment-bottom"><span>١٣ من ٢٠ زيارة</span><span>تنتهي بعد ٣ أيام</span></div></article><article class="card experiment-card"><div class="idea-card-head"><span class="experiment-type">LP</span><span class="pill yellow">تجمع نتائج</span></div><h3>صفحة انتظار لرادار الموردين</h3><div class="hypothesis">ستسجل ١٥ شركة على الأقل خلال أسبوعين إذا كانت المشكلة ملحّة.</div><div class="progress"><i style="width:48%"></i></div><div class="experiment-bottom"><span>٩ تسجيلات</span><span>بقي ٦ أيام</span></div></article><article class="card experiment-card"><div class="idea-card-head"><span class="experiment-type">M</span><span class="pill burgundy">تحتاج قرارًا</span></div><h3>خدمة يدوية لإعداد سياسة الإجازات</h3><div class="hypothesis">سيدفع المؤسس مقابل الحصول على مسودة أولى خلال يوم واحد.</div><div class="progress"><i style="width:100%;background:var(--burgundy)"></i></div><div class="experiment-bottom"><span>عميل واحد من ١٠</span><span>اكتملت</span></div></article></div>
+            <div class="section-row"><h2>افتراضات عالية الخطورة</h2><button class="link">عرض كل الافتراضات ←</button></div>
+            <div class="grid-3"><div class="card"><span class="pill burgundy">إيرادات</span><h3 style="margin-top:12px">الشركات ستدفع اشتراكًا شهريًا</h3><p class="sub">لا توجد تجربة مرتبطة حتى الآن.</p><button class="btn soft">إنشاء تجربة</button></div><div class="card"><span class="pill burgundy">وصول</span><h3 style="margin-top:12px">يمكن الوصول لصاحب القرار مباشرة</h3><p class="sub">دليل واحد ضعيف من مقابلة غير مباشرة.</p><button class="btn soft">إنشاء تجربة</button></div><div class="card"><span class="pill yellow">حل</span><h3 style="margin-top:12px">ثلاثة ترشيحات تكفي لاتخاذ القرار</h3><p class="sub">مدعوم في مقابلتين ويحتاج تحققًا أوسع.</p><button class="btn soft">ربط مقابلة</button></div></div>
+          </section>
+
+          <section class="screen" id="compare">
+            <div class="page-head"><div><div class="eyebrow">قرار مبني على الأدلة</div><h1>مقارنة الفرص</h1><p class="sub">قارنوا بين قوة الأدلة ورأي الفريق، واكتشفوا ما ينقص قبل اتخاذ القرار.</p></div><div class="btns"><button class="btn">تعديل المعايير</button><button class="btn primary">حلّل المقارنة باستخدام حسابي</button></div></div>
+            <div class="card compare-wrap shadow"><div class="compare-head"><div>معيار المقارنة</div><div><strong>منصة اختيار المدربين</strong><small>مرحلة المقابلات</small></div><div><strong>رادار الموردين</strong><small>مرحلة التجربة</small></div><div><strong>مساعد إعداد السياسات</strong><small>مرحلة الاستكشاف</small></div></div>
+              <div class="compare-row"><div class="criterion">قوة المشكلة</div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><strong>قوية</strong></div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><strong>جيدة</strong></div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i></i><i></i></div><strong>متوسطة</strong></div></div>
+              <div class="compare-row"><div class="criterion">الاستعداد للدفع</div><div><span class="pill yellow">غير محسوم</span></div><div><span class="pill green">مدعوم بتجربة</span></div><div><span class="pill burgundy">ضعيف</span></div></div>
+              <div class="compare-row"><div class="criterion">الوصول للعملاء</div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><strong>جيد</strong></div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i></i><i></i></div><strong>متوسط</strong></div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><strong>جيد</strong></div></div>
+              <div class="compare-row"><div class="criterion">ملاءمة خبرات الفريق</div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><strong>جيدة</strong></div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><strong>قوية</strong></div><div class="score"><div class="score-dots"><i class="on"></i><i class="on"></i><i></i><i></i></div><strong>متوسطة</strong></div></div>
+              <div class="compare-row"><div class="criterion">جودة الأدلة</div><div><strong>متوسطة</strong><small class="muted" style="display:block;margin-top:5px">٦ مقابلات، لا يوجد اختبار سعر</small></div><div><strong>مرتفعة</strong><small class="muted" style="display:block;margin-top:5px">٩ مقابلات، تجربتان</small></div><div><strong>منخفضة</strong><small class="muted" style="display:block;margin-top:5px">٣ مقابلات فقط</small></div></div>
+              <div class="compare-row"><div class="criterion">تقييم الفريق</div><div><strong>٤.٣ / ٥</strong><small class="muted" style="display:block;margin-top:5px">اتفاق مرتفع</small></div><div><strong>٤.١ / ٥</strong><small class="muted" style="display:block;margin-top:5px">اختلاف على حجم السوق</small></div><div><strong>٢.٨ / ٥</strong><small class="muted" style="display:block;margin-top:5px">اتفاق متوسط</small></div></div>
+            </div>
+            <div class="recommendation"><div class="card recommendation-main"><div class="eyebrow" style="color:var(--green)">الفرصة الأقرب للتقدم</div><h2>رادار الموردين</h2><p>يمتلك أقوى دليل على الاستعداد للدفع، ويلائم خبرة الفريق. قبل القرار النهائي نحتاج مقابلات إضافية مع الشركات الصغيرة خارج قطاع الخدمات.</p><button class="btn" style="border-color:transparent">فتح تفاصيل التوصية ←</button></div><div class="card"><h3>ما الذي قد يغيّر النتيجة؟</h3><ul class="question-list"><li>نجاح اختبار سعر منصة المدربين</li><li>ظهور عائق تقني في رادار الموردين</li><li>رفض أصحاب القرار لفكرة الاشتراك</li></ul></div></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="composer-modal" role="dialog" aria-modal="true" aria-labelledby="composer-title">
+      <section class="composer">
+        <header class="composer-head">
+          <div><div class="eyebrow" id="composer-eyebrow">توثيق فرصة جديدة</div><h2 id="composer-title">إضافة مشكلة أو فكرة</h2><p class="sub">ابدئي بما لديك الآن؛ يمكن للروابط والمصادر أن تساعدك في صياغتها لاحقًا.</p></div>
+          <button class="close-btn" data-close-composer aria-label="إغلاق">×</button>
+        </header>
+        <div class="composer-body">
+          <div class="kind-switch" id="kind-switch"><button class="active" data-kind="problem">مشكلة</button><button data-kind="idea">فكرة</button></div>
+          <div class="form-grid">
+            <div class="field wide" id="statement-field"><label id="statement-label">اكتبي المشكلة كما فهمتها</label><textarea id="statement-input" placeholder="مثال: فرق الموارد البشرية تستغرق وقتًا طويلًا للعثور على مدربين موثوقين..."></textarea></div>
+            <div class="field" id="category-field"><label>الفئة أو المجال</label><input placeholder="مثال: التدريب والتطوير" /></div>
+            <div class="field" id="audience-field"><label>من يواجهها؟</label><input placeholder="مثال: فرق الموارد البشرية" /></div>
+
+            <div class="support-box">
+              <div class="support-title"><div><h3>روابط داعمة</h3><p class="sub" style="margin-top:3px">TikTok، YouTube، مقال، بودكاست، مستند أو أي رابط ويب.</p></div><span class="pill">اختياري</span></div>
+              <div class="url-row"><input id="source-url" dir="ltr" value="https://www.tiktok.com/@example/video/742..." aria-label="رابط داعم" /><button class="btn" id="read-link">قراءة الرابط</button></div>
+              <div class="link-preview" id="link-preview"><div class="video-thumb">♪</div><div><div class="preview-title">مقطع عن صعوبة اختيار مقدمي الخدمات الموثوقين</div><div class="preview-url">tiktok.com/@example/video/742...</div><p class="sub" style="margin-top:5px">سيُحفظ الرابط الأصلي مع اسم الناشر وتاريخ الإضافة.</p></div></div>
+              <button class="link" style="margin-top:11px">+ إضافة رابط آخر</button>
+            </div>
+
+            <div class="ai-option">
+              <div class="ai-mark">✦</div>
+              <div><strong style="font-size:11px">لخّص الروابط وساعدني في صياغة <span id="ai-object">المشكلة</span></strong><p>يعمل فقط عند طلبك باستخدام مزود الذكاء الاصطناعي المحفوظ في إعدادات حسابك.</p></div>
+              <button class="btn primary" id="ai-summarize">استخدام حسابي</button>
+            </div>
+
+            <div class="field wide" id="transcript-fallback"><label>إن تعذرت قراءة المقطع</label><textarea placeholder="الصقي نص المقطع أو اكتبي ملاحظاتك هنا، وسنستخدمها بدلًا من محتوى الرابط."></textarea></div>
+          </div>
+          <div class="composer-actions"><div class="privacy-note">لن يبدأ التحليل تلقائيًا. يظهر الملخص كمسودة تحتاج اعتمادك، ويبقى المصدر الأصلي مرتبطًا بها.</div><div class="btns"><button class="btn" data-close-composer>إلغاء</button><button class="btn primary" id="save-draft">حفظ كمسودة</button></div></div>
+        </div>
+      </section>
+    </div>
+    <div class="prototype-note">نموذج بصري للاعتماد · لا توجد بيانات حقيقية</div>
+    <script>
+      const navButtons = [...document.querySelectorAll(".nav button[data-screen]")];
+      const screens = [...document.querySelectorAll(".screen")];
+      function showScreen(id) {
+        screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
+        navButtons.forEach((button) => button.classList.toggle("active", button.dataset.screen === id || (id === "problem-detail" && button.dataset.screen === "problems")));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      navButtons.forEach((button) => button.addEventListener("click", () => showScreen(button.dataset.screen)));
+      document.querySelectorAll("[data-go]").forEach((element) => element.addEventListener("click", () => showScreen(element.dataset.go)));
+
+      const modal = document.getElementById("composer-modal");
+      const kindButtons = [...document.querySelectorAll("[data-kind]")];
+      const statementLabel = document.getElementById("statement-label");
+      const statementInput = document.getElementById("statement-input");
+      const aiObject = document.getElementById("ai-object");
+      function setComposerKind(kind) {
+        const idea = kind === "idea";
+        kindButtons.forEach((button) => button.classList.toggle("active", button.dataset.kind === kind));
+        statementLabel.textContent = idea ? "اشرحي الفكرة باختصار" : "اكتبي المشكلة كما فهمتها";
+        statementInput.placeholder = idea ? "مثال: منصة ترشح ثلاثة مدربين موثوقين وفق احتياج الشركة..." : "مثال: فرق الموارد البشرية تستغرق وقتًا طويلًا للعثور على مدربين موثوقين...";
+        aiObject.textContent = idea ? "الفكرة" : "المشكلة";
+        document.getElementById("composer-title").textContent = idea ? "إضافة فكرة" : "إضافة مشكلة";
+      }
+      function openComposer(kind = "problem") {
+        setComposerKind(kind === "source" ? "problem" : kind);
+        document.getElementById("kind-switch").style.display = kind === "source" ? "none" : "grid";
+        document.getElementById("category-field").style.display = kind === "source" ? "none" : "flex";
+        document.getElementById("audience-field").style.display = kind === "source" ? "none" : "flex";
+        document.getElementById("composer-title").textContent = kind === "source" ? "إضافة دليل أو رابط" : (kind === "idea" ? "إضافة فكرة" : "إضافة مشكلة");
+        document.getElementById("composer-eyebrow").textContent = kind === "source" ? "مصدر داعم" : "توثيق فرصة جديدة";
+        if (kind === "source") {
+          statementLabel.textContent = "ملاحظاتك عن المصدر";
+          statementInput.placeholder = "اكتبي سبب ارتباط هذا المصدر بالمشكلة أو الفكرة...";
+          aiObject.textContent = "الدليل المستخلص";
+        }
+        modal.classList.add("open");
+      }
+      document.querySelectorAll("[data-open-composer]").forEach((button) => button.addEventListener("click", () => openComposer(button.dataset.openComposer)));
+      kindButtons.forEach((button) => button.addEventListener("click", () => setComposerKind(button.dataset.kind)));
+      document.querySelectorAll("[data-close-composer]").forEach((button) => button.addEventListener("click", () => modal.classList.remove("open")));
+      modal.addEventListener("click", (event) => { if (event.target === modal) modal.classList.remove("open"); });
+      document.getElementById("read-link").addEventListener("click", () => document.getElementById("link-preview").style.display = "grid");
+      document.getElementById("ai-summarize").addEventListener("click", (event) => {
+        event.currentTarget.textContent = "الملخص جاهز للمراجعة ✓";
+        event.currentTarget.classList.remove("primary");
+        event.currentTarget.classList.add("soft");
+      });
+    </script>
+  </body>
+</html>

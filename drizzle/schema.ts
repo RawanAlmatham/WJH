@@ -121,6 +121,228 @@ export const boardMemberships = mysqlTable(
   ]
 );
 
+/**
+ * Idea Lab is intentionally stored in its own tables.  It does not reuse the
+ * project/task tables so this product can evolve without coupling its workflow
+ * to the work-management template.
+ */
+export const ideaLabProblems = mysqlTable(
+  "ideaLabProblems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    title: varchar("title", { length: 280 }).notNull(),
+    description: text("description"),
+    category: varchar("category", { length: 160 }),
+    audience: varchar("audience", { length: 240 }),
+    stage: mysqlEnum("stage", ["raw", "understanding", "validated"])
+      .default("raw")
+      .notNull(),
+    evidenceStrength: mysqlEnum("evidenceStrength", [
+      "none",
+      "low",
+      "medium",
+      "high",
+    ])
+      .default("none")
+      .notNull(),
+    ownerUserId: int("ownerUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabProblems_board_stage_idx").on(table.boardId, table.stage),
+    index("ideaLabProblems_owner_idx").on(table.ownerUserId),
+  ]
+);
+
+export const ideaLabIdeas = mysqlTable(
+  "ideaLabIdeas",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    problemId: int("problemId").references(() => ideaLabProblems.id, {
+      onDelete: "set null",
+    }),
+    title: varchar("title", { length: 280 }).notNull(),
+    description: text("description"),
+    category: varchar("category", { length: 160 }),
+    audience: varchar("audience", { length: 240 }),
+    stage: mysqlEnum("stage", [
+      "seed",
+      "exploration",
+      "interviews",
+      "experiment",
+      "promising",
+      "archived",
+    ])
+      .default("seed")
+      .notNull(),
+    confidence: mysqlEnum("confidence", ["low", "medium", "high"])
+      .default("low")
+      .notNull(),
+    ownerUserId: int("ownerUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabIdeas_board_stage_idx").on(table.boardId, table.stage),
+    index("ideaLabIdeas_problem_idx").on(table.problemId),
+    index("ideaLabIdeas_owner_idx").on(table.ownerUserId),
+  ]
+);
+
+export const ideaLabSources = mysqlTable(
+  "ideaLabSources",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    problemId: int("problemId").references(() => ideaLabProblems.id, {
+      onDelete: "cascade",
+    }),
+    ideaId: int("ideaId").references(() => ideaLabIdeas.id, {
+      onDelete: "cascade",
+    }),
+    url: varchar("url", { length: 2048 }).notNull(),
+    sourceType: varchar("sourceType", { length: 32 })
+      .default("website")
+      .notNull(),
+    title: varchar("title", { length: 500 }),
+    publisher: varchar("publisher", { length: 240 }),
+    notes: text("notes"),
+    extractedText: text("extractedText"),
+    aiSummary: text("aiSummary"),
+    aiStatus: mysqlEnum("aiStatus", [
+      "not_requested",
+      "draft",
+      "approved",
+      "failed",
+    ])
+      .default("not_requested")
+      .notNull(),
+    analyzedByUserId: int("analyzedByUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabSources_board_idx").on(table.boardId),
+    index("ideaLabSources_problem_idx").on(table.problemId),
+    index("ideaLabSources_idea_idx").on(table.ideaId),
+  ]
+);
+
+export const ideaLabInterviews = mysqlTable(
+  "ideaLabInterviews",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    problemId: int("problemId").references(() => ideaLabProblems.id, {
+      onDelete: "set null",
+    }),
+    ideaId: int("ideaId").references(() => ideaLabIdeas.id, {
+      onDelete: "set null",
+    }),
+    participantLabel: varchar("participantLabel", { length: 180 }).notNull(),
+    interviewDate: timestamp("interviewDate"),
+    status: mysqlEnum("status", [
+      "planned",
+      "completed",
+      "transcribed",
+      "analyzed",
+    ])
+      .default("planned")
+      .notNull(),
+    transcript: text("transcript"),
+    summary: text("summary"),
+    insights: text("insights"),
+    themes: json("themes").$type<string[]>(),
+    ownerUserId: int("ownerUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabInterviews_board_status_idx").on(table.boardId, table.status),
+    index("ideaLabInterviews_idea_idx").on(table.ideaId),
+  ]
+);
+
+export const ideaLabExperiments = mysqlTable(
+  "ideaLabExperiments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    ideaId: int("ideaId")
+      .references(() => ideaLabIdeas.id, { onDelete: "cascade" })
+      .notNull(),
+    title: varchar("title", { length: 280 }).notNull(),
+    hypothesis: text("hypothesis").notNull(),
+    successMetric: varchar("successMetric", { length: 280 }),
+    targetValue: int("targetValue"),
+    currentValue: int("currentValue").default(0),
+    status: mysqlEnum("status", ["planned", "running", "review", "complete"])
+      .default("planned")
+      .notNull(),
+    result: text("result"),
+    ownerUserId: int("ownerUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabExperiments_board_status_idx").on(
+      table.boardId,
+      table.status
+    ),
+    index("ideaLabExperiments_idea_idx").on(table.ideaId),
+  ]
+);
+
+export const userAiSettings = mysqlTable("userAiSettings", {
+  userId: int("userId")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  provider: mysqlEnum("provider", ["openai"]).default("openai").notNull(),
+  model: varchar("model", { length: 120 }).default("gpt-4.1-mini").notNull(),
+  encryptedApiKey: text("encryptedApiKey").notNull(),
+  apiKeyLastFour: varchar("apiKeyLastFour", { length: 4 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const teamMembers = mysqlTable(
   "teamMembers",
   {

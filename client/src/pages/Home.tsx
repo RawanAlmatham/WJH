@@ -107,6 +107,7 @@ import {
 } from "recharts";
 import BoardOnboarding from "./BoardOnboarding";
 import Landing from "./Landing";
+import IdeaLab from "./IdeaLab";
 
 type Page =
   | "home"
@@ -915,7 +916,12 @@ export default function Home() {
   const enabledModules = activeBoard?.enabledModules ?? DEFAULT_BOARD_MODULES;
   const { data, isLoading, error } = trpc.workspace.overview.useQuery(
     undefined,
-    { enabled: Boolean(user && activeBoard), staleTime: 30_000 }
+    {
+      enabled: Boolean(
+        user && activeBoard && activeBoard.template !== "idea_lab"
+      ),
+      staleTime: 30_000,
+    }
   );
   const selectBoard = trpc.boards.select.useMutation({
     onSuccess: async () => {
@@ -924,6 +930,7 @@ export default function Home() {
         utils.auth.me.invalidate(),
         utils.boards.mine.invalidate(),
         utils.workspace.overview.invalidate(),
+        utils.ideaLab.overview.invalidate(),
       ]);
       toast.success("تم الانتقال إلى اللوحة");
     },
@@ -1160,6 +1167,16 @@ export default function Home() {
   if (!user) return <Landing />;
   if (boardsLoading) return <LoadingShell />;
   if (boards && boards.length === 0) return <BoardOnboarding />;
+  if (activeBoard?.template === "idea_lab")
+    return (
+      <IdeaLab
+        user={user}
+        board={activeBoard}
+        boards={boards ?? []}
+        switchingBoard={selectBoard.isPending}
+        onSelectBoard={boardId => selectBoard.mutate({ boardId })}
+      />
+    );
   if (presentation && data)
     return (
       <PresentationMode
