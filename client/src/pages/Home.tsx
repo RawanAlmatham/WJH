@@ -48,6 +48,7 @@ import {
 } from "@shared/presentationSections";
 import {
   BOARD_TEMPLATE_LABELS,
+  EMPTY_BOARD_TEMPLATE_CONFIG,
   type BoardTemplate,
 } from "@shared/boardTemplates";
 import { toast } from "sonner";
@@ -303,8 +304,8 @@ const priorityLabel: Record<string, string> = {
   low: "منخفضة",
 };
 const templateLabel = (template?: BoardTemplate) =>
-  BOARD_TEMPLATE_LABELS[template ?? "work"]?.title ??
-  BOARD_TEMPLATE_LABELS.work.title;
+  BOARD_TEMPLATE_LABELS[template ?? ""]?.title ??
+  EMPTY_BOARD_TEMPLATE_CONFIG.title;
 const priorityClass: Record<string, string> = {
   urgent: "bg-rose-50 text-rose-700 ring-rose-100",
   high: "bg-orange-50 text-orange-700 ring-orange-100",
@@ -1445,8 +1446,9 @@ function Sidebar({
           ? "مشاهد"
           : "عضو";
   const activeTemplate =
-    boards.find(board => board.id === activeBoardId)?.template ?? "work";
-  const activeTemplateConfig = BOARD_TEMPLATE_LABELS[activeTemplate];
+    boards.find(board => board.id === activeBoardId)?.template ?? "";
+  const activeTemplateConfig =
+    BOARD_TEMPLATE_LABELS[activeTemplate] ?? EMPTY_BOARD_TEMPLATE_CONFIG;
   const navLabels = activeTemplateConfig.navigation;
   const entries: {
     id: Page;
@@ -7718,8 +7720,9 @@ function SettingsPage({
   const utils = trpc.useUtils();
   const canManage =
     board?.membershipRole === "manager" || accountRole === "admin";
-  const settingsTemplate = board?.template ?? "work";
-  const settingsTemplateConfig = BOARD_TEMPLATE_LABELS[settingsTemplate];
+  const settingsTemplate = board?.template ?? "";
+  const settingsTemplateConfig =
+    BOARD_TEMPLATE_LABELS[settingsTemplate] ?? EMPTY_BOARD_TEMPLATE_CONFIG;
   const [selectedModules, setSelectedModules] = useState<BoardModule[]>(
     board?.enabledModules ?? DEFAULT_BOARD_MODULES
   );

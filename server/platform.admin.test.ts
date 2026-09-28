@@ -99,24 +99,21 @@ describe("platform administration", () => {
     });
   });
 
-  it("lets a department manager create an independent board", async () => {
+  it("pauses board creation for department managers while templates are rebuilt", async () => {
     const caller = appRouter.createCaller(context("manager"));
     await expect(
       caller.boards.create({ name: "إدارة التواصل", template: "work" })
-    ).resolves.toMatchObject({
-      id: 31,
-      name: "إدارة التواصل",
-      membershipRole: "manager",
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
     });
   });
 
-  it("lets any authenticated user create a board", async () => {
+  it("pauses board creation for regular users while templates are rebuilt", async () => {
     const caller = appRouter.createCaller(context("user"));
     await expect(
       caller.boards.create({ name: "لوحة جديدة", template: "work" })
-    ).resolves.toMatchObject({
-      name: "لوحة جديدة",
-      membershipRole: "manager",
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
     });
   });
 });

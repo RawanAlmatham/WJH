@@ -15,7 +15,6 @@ import { ENV } from "./_core/env";
 import { hashPassword, verifyPassword } from "./_core/password";
 import { boardModules } from "@shared/boardModules";
 import { presentationSections } from "@shared/presentationSections";
-import { boardTemplates } from "@shared/boardTemplates";
 import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
 import {
@@ -338,12 +337,15 @@ export const appRouter = router({
       .input(
         z.object({
           name: z.string().trim().min(2).max(180),
-          template: z.enum(boardTemplates),
+          template: z.string().trim().min(1).max(48),
         })
       )
-      .mutation(({ input, ctx }) =>
-        db.createManagementBoard(input.name, ctx.user.id, input.template)
-      ),
+      .mutation(() => {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "إنشاء المساحات متوقف مؤقتًا حتى يكتمل أول قالب جديد",
+        });
+      }),
     select: protectedProcedure
       .input(z.object({ boardId: z.number().int().positive() }))
       .mutation(({ input, ctx }) =>

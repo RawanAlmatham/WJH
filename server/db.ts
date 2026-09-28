@@ -37,9 +37,7 @@ import {
 } from "../shared/presentationSections";
 import {
   BOARD_TEMPLATE_LABELS,
-  boardTemplates,
   type BoardTemplate,
-  DEFAULT_BOARD_TEMPLATE,
 } from "../shared/boardTemplates";
 import {
   fetchResearchFeed,
@@ -589,9 +587,10 @@ export async function listUserBoards(userId: number) {
 
 function templateConfig(template: BoardTemplate | null | undefined) {
   return (
-    BOARD_TEMPLATE_LABELS[template ?? DEFAULT_BOARD_TEMPLATE] ?? {
+    BOARD_TEMPLATE_LABELS[template ?? ""] ?? {
       modules: DEFAULT_BOARD_MODULES,
       sections: DEFAULT_PRESENTATION_SECTIONS,
+      starterTasks: [],
     }
   );
 }
@@ -599,15 +598,13 @@ function templateConfig(template: BoardTemplate | null | undefined) {
 function normalizeBoardTemplate(
   template: string | null | undefined
 ): BoardTemplate {
-  return boardTemplates.includes(template as BoardTemplate)
-    ? (template as BoardTemplate)
-    : DEFAULT_BOARD_TEMPLATE;
+  return template?.trim() ?? "";
 }
 
 export async function createManagementBoard(
   name: string,
   ownerUserId: number,
-  template: BoardTemplate = DEFAULT_BOARD_TEMPLATE
+  template: BoardTemplate = ""
 ) {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
