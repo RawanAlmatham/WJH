@@ -53,8 +53,22 @@ jobs:
         run: |
           test -n "$WJH_DEPLOY_SSH_KEY"
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$WJH_DEPLOY_SSH_KEY" > ~/.ssh/wjh_deploy
+          if printf '%s' "$WJH_DEPLOY_SSH_KEY" | grep -q -- '-----BEGIN OPENSSH PRIVATE KEY-----'; then
+            key_body="$(printf '%s' "$WJH_DEPLOY_SSH_KEY" \
+              | sed -n '/-----BEGIN OPENSSH PRIVATE KEY-----/,/-----END OPENSSH PRIVATE KEY-----/p' \
+              | sed '1d;$d' \
+              | tr -d '[:space:]')"
+            test -n "$key_body"
+            printf '%s\n%s\n%s\n' \
+              '-----BEGIN OPENSSH PRIVATE KEY-----' \
+              "$key_body" \
+              '-----END OPENSSH PRIVATE KEY-----' \
+              > ~/.ssh/wjh_deploy
+          else
+            printf '%s' "$WJH_DEPLOY_SSH_KEY" | base64 --decode > ~/.ssh/wjh_deploy
+          fi
           chmod 600 ~/.ssh/wjh_deploy
+          ssh-keygen -y -f ~/.ssh/wjh_deploy > /dev/null
           cp .github/known_hosts ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
