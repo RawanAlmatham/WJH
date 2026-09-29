@@ -579,6 +579,50 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         })
       ),
+    createTask: teamMemberProcedure
+      .input(
+        z.object({
+          problemId: z.number().int().positive().nullable().optional(),
+          ideaId: z.number().int().positive().nullable().optional(),
+          interviewId: z.number().int().positive().nullable().optional(),
+          experimentId: z.number().int().positive().nullable().optional(),
+          title: z.string().trim().min(3).max(280),
+          description: z.string().trim().max(20_000).optional(),
+          status: z.enum(["todo", "in_progress", "blocked", "done"]).optional(),
+          priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+          dueDate: z.date().nullable().optional(),
+          assigneeUserId: z.number().int().positive().nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabTask({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    updateTask: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          problemId: z.number().int().positive().nullable().optional(),
+          ideaId: z.number().int().positive().nullable().optional(),
+          interviewId: z.number().int().positive().nullable().optional(),
+          experimentId: z.number().int().positive().nullable().optional(),
+          title: z.string().trim().min(3).max(280).optional(),
+          description: z.string().trim().max(20_000).nullable().optional(),
+          status: z.enum(["todo", "in_progress", "blocked", "done"]).optional(),
+          priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+          dueDate: z.date().nullable().optional(),
+          assigneeUserId: z.number().int().positive().nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabTask({
+          ...input,
+          boardId: ctx.activeBoardId,
+        })
+      ),
     aiSettings: protectedProcedure.query(async ({ ctx }) => {
       const setting = await ideaLab.getUserAiSetting(ctx.user.id);
       return setting

@@ -5,6 +5,7 @@ import {
   ideaLabInterviews,
   ideaLabProblems,
   ideaLabSources,
+  ideaLabTasks,
   managementBoards,
   teamMembers,
   userAiSettings,
@@ -19,46 +20,59 @@ async function database() {
 
 export async function getIdeaLabOverview(boardId: number) {
   const db = await database();
-  const [board, problems, ideas, sources, interviews, experiments, members] =
-    await Promise.all([
-      db
-        .select()
-        .from(managementBoards)
-        .where(eq(managementBoards.id, boardId))
-        .limit(1),
-      db
-        .select()
-        .from(ideaLabProblems)
-        .where(eq(ideaLabProblems.boardId, boardId))
-        .orderBy(desc(ideaLabProblems.updatedAt)),
-      db
-        .select()
-        .from(ideaLabIdeas)
-        .where(eq(ideaLabIdeas.boardId, boardId))
-        .orderBy(desc(ideaLabIdeas.updatedAt)),
-      db
-        .select()
-        .from(ideaLabSources)
-        .where(eq(ideaLabSources.boardId, boardId))
-        .orderBy(desc(ideaLabSources.createdAt)),
-      db
-        .select()
-        .from(ideaLabInterviews)
-        .where(eq(ideaLabInterviews.boardId, boardId))
-        .orderBy(desc(ideaLabInterviews.interviewDate)),
-      db
-        .select()
-        .from(ideaLabExperiments)
-        .where(eq(ideaLabExperiments.boardId, boardId))
-        .orderBy(desc(ideaLabExperiments.updatedAt)),
-      db
-        .select()
-        .from(teamMembers)
-        .where(
-          and(eq(teamMembers.boardId, boardId), eq(teamMembers.isActive, true))
-        )
-        .orderBy(teamMembers.name),
-    ]);
+  const [
+    board,
+    problems,
+    ideas,
+    sources,
+    interviews,
+    experiments,
+    tasks,
+    members,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(managementBoards)
+      .where(eq(managementBoards.id, boardId))
+      .limit(1),
+    db
+      .select()
+      .from(ideaLabProblems)
+      .where(eq(ideaLabProblems.boardId, boardId))
+      .orderBy(desc(ideaLabProblems.updatedAt)),
+    db
+      .select()
+      .from(ideaLabIdeas)
+      .where(eq(ideaLabIdeas.boardId, boardId))
+      .orderBy(desc(ideaLabIdeas.updatedAt)),
+    db
+      .select()
+      .from(ideaLabSources)
+      .where(eq(ideaLabSources.boardId, boardId))
+      .orderBy(desc(ideaLabSources.createdAt)),
+    db
+      .select()
+      .from(ideaLabInterviews)
+      .where(eq(ideaLabInterviews.boardId, boardId))
+      .orderBy(desc(ideaLabInterviews.interviewDate)),
+    db
+      .select()
+      .from(ideaLabExperiments)
+      .where(eq(ideaLabExperiments.boardId, boardId))
+      .orderBy(desc(ideaLabExperiments.updatedAt)),
+    db
+      .select()
+      .from(ideaLabTasks)
+      .where(eq(ideaLabTasks.boardId, boardId))
+      .orderBy(desc(ideaLabTasks.updatedAt)),
+    db
+      .select()
+      .from(teamMembers)
+      .where(
+        and(eq(teamMembers.boardId, boardId), eq(teamMembers.isActive, true))
+      )
+      .orderBy(teamMembers.name),
+  ]);
   if (!board[0]) throw new Error("لم نعثر على اللوحة الحالية");
   if (board[0].template !== "idea_lab")
     throw new Error("هذه اللوحة ليست من نوع مختبر الأفكار");
@@ -69,6 +83,7 @@ export async function getIdeaLabOverview(boardId: number) {
     sources,
     interviews,
     experiments,
+    tasks,
     members,
   };
 }
@@ -361,6 +376,134 @@ export async function updateIdeaLabExperiment(input: {
   return { id: input.id };
 }
 
+type IdeaLabTaskStatus = "todo" | "in_progress" | "blocked" | "done";
+type IdeaLabTaskPriority = "low" | "medium" | "high" | "urgent";
+
+type IdeaLabTaskLinks = {
+  problemId?: number | null;
+  ideaId?: number | null;
+  interviewId?: number | null;
+  experimentId?: number | null;
+};
+
+export async function createIdeaLabTask(
+  input: {
+    boardId: number;
+    userId: number;
+    title: string;
+    description?: string | null;
+    status?: IdeaLabTaskStatus;
+    priority?: IdeaLabTaskPriority;
+    dueDate?: Date | null;
+    assigneeUserId?: number | null;
+  } & IdeaLabTaskLinks
+) {
+  const db = await database();
+  await validateTaskLinks(db, input.boardId, input);
+  if (input.assigneeUserId)
+    await requireTeamUser(db, input.boardId, input.assigneeUserId);
+  const status = input.status ?? "todo";
+  const result = await db.insert(ideaLabTasks).values({
+    boardId: input.boardId,
+    problemId: input.problemId ?? null,
+    ideaId: input.ideaId ?? null,
+    interviewId: input.interviewId ?? null,
+    experimentId: input.experimentId ?? null,
+    title: input.title,
+    description: input.description || null,
+    status,
+    priority: input.priority ?? "medium",
+    dueDate: input.dueDate ?? null,
+    assigneeUserId:
+      input.assigneeUserId === undefined ? input.userId : input.assigneeUserId,
+    createdByUserId: input.userId,
+    completedAt: status === "done" ? new Date() : null,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function updateIdeaLabTask(
+  input: {
+    boardId: number;
+    id: number;
+    title?: string;
+    description?: string | null;
+    status?: IdeaLabTaskStatus;
+    priority?: IdeaLabTaskPriority;
+    dueDate?: Date | null;
+    assigneeUserId?: number | null;
+  } & IdeaLabTaskLinks
+) {
+  const db = await database();
+  const existing = await requireTask(db, input.boardId, input.id);
+  const linksToSet = [
+    input.problemId,
+    input.ideaId,
+    input.interviewId,
+    input.experimentId,
+  ].filter(value => value !== undefined && value !== null);
+  const replacesCurrentLink = linksToSet.length === 1;
+  const nextLinks: IdeaLabTaskLinks = {
+    problemId: replacesCurrentLink
+      ? (input.problemId ?? null)
+      : input.problemId === undefined
+        ? existing.problemId
+        : input.problemId,
+    ideaId: replacesCurrentLink
+      ? (input.ideaId ?? null)
+      : input.ideaId === undefined
+        ? existing.ideaId
+        : input.ideaId,
+    interviewId: replacesCurrentLink
+      ? (input.interviewId ?? null)
+      : input.interviewId === undefined
+        ? existing.interviewId
+        : input.interviewId,
+    experimentId: replacesCurrentLink
+      ? (input.experimentId ?? null)
+      : input.experimentId === undefined
+        ? existing.experimentId
+        : input.experimentId,
+  };
+  await validateTaskLinks(db, input.boardId, nextLinks);
+  if (input.assigneeUserId)
+    await requireTeamUser(db, input.boardId, input.assigneeUserId);
+  const values: Partial<typeof ideaLabTasks.$inferInsert> = {};
+  if (replacesCurrentLink) {
+    values.problemId = nextLinks.problemId;
+    values.ideaId = nextLinks.ideaId;
+    values.interviewId = nextLinks.interviewId;
+    values.experimentId = nextLinks.experimentId;
+  } else {
+    if (input.problemId !== undefined) values.problemId = input.problemId;
+    if (input.ideaId !== undefined) values.ideaId = input.ideaId;
+    if (input.interviewId !== undefined) values.interviewId = input.interviewId;
+    if (input.experimentId !== undefined)
+      values.experimentId = input.experimentId;
+  }
+  if (input.title !== undefined) values.title = input.title;
+  if (input.description !== undefined) values.description = input.description;
+  if (input.status !== undefined) {
+    values.status = input.status;
+    values.completedAt = input.status === "done" ? new Date() : null;
+  }
+  if (input.priority !== undefined) values.priority = input.priority;
+  if (input.dueDate !== undefined) values.dueDate = input.dueDate;
+  if (input.assigneeUserId !== undefined)
+    values.assigneeUserId = input.assigneeUserId;
+  if (!Object.keys(values).length) return { id: input.id };
+  await db
+    .update(ideaLabTasks)
+    .set(values)
+    .where(
+      and(
+        eq(ideaLabTasks.id, input.id),
+        eq(ideaLabTasks.boardId, input.boardId)
+      )
+    );
+  return { id: input.id };
+}
+
 export async function getIdeaLabSource(boardId: number, sourceId: number) {
   const db = await database();
   const rows = await db
@@ -519,4 +662,62 @@ async function requireExperiment(
     )
     .limit(1);
   if (!rows[0]) throw new Error("التجربة غير موجودة في هذه اللوحة");
+}
+
+async function requireTask(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  taskId: number
+) {
+  const rows = await db
+    .select({
+      id: ideaLabTasks.id,
+      problemId: ideaLabTasks.problemId,
+      ideaId: ideaLabTasks.ideaId,
+      interviewId: ideaLabTasks.interviewId,
+      experimentId: ideaLabTasks.experimentId,
+    })
+    .from(ideaLabTasks)
+    .where(and(eq(ideaLabTasks.id, taskId), eq(ideaLabTasks.boardId, boardId)))
+    .limit(1);
+  if (!rows[0]) throw new Error("المهمة غير موجودة في هذه اللوحة");
+  return rows[0];
+}
+
+async function requireTeamUser(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  userId: number
+) {
+  const rows = await db
+    .select({ id: teamMembers.id })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.boardId, boardId),
+        eq(teamMembers.userId, userId),
+        eq(teamMembers.isActive, true)
+      )
+    )
+    .limit(1);
+  if (!rows[0]) throw new Error("المسند إليه ليس عضوًا نشطًا في هذه اللوحة");
+}
+
+async function validateTaskLinks(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  links: IdeaLabTaskLinks
+) {
+  const selectedLinks = [
+    links.problemId,
+    links.ideaId,
+    links.interviewId,
+    links.experimentId,
+  ].filter(value => value !== undefined && value !== null);
+  if (selectedLinks.length > 1) throw new Error("اربط المهمة بسجل واحد فقط");
+  if (links.problemId) await requireProblem(db, boardId, links.problemId);
+  if (links.ideaId) await requireIdea(db, boardId, links.ideaId);
+  if (links.interviewId) await requireInterview(db, boardId, links.interviewId);
+  if (links.experimentId)
+    await requireExperiment(db, boardId, links.experimentId);
 }

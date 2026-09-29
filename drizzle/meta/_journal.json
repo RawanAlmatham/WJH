@@ -183,6 +183,13 @@
       "when": 1790595639568,
       "tag": "0025_medical_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1790663230650,
+      "tag": "0026_naive_scourge",
+      "breakpoints": true
     }
   ]
 }

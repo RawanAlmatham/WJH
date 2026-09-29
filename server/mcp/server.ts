@@ -49,6 +49,9 @@ export const WIJHA_MCP_TOOL_NAMES = [
   "wijha_list_experiments",
   "wijha_create_experiment",
   "wijha_update_experiment",
+  "wijha_list_tasks",
+  "wijha_create_task",
+  "wijha_update_task",
 ] as const;
 
 const readSecurity = [{ type: "oauth2", scopes: [MCP_READ_SCOPE] }];
@@ -73,6 +76,8 @@ const interviewStatus = z.enum([
   "analyzed",
 ]);
 const experimentStatus = z.enum(["planned", "running", "review", "complete"]);
+const taskStatus = z.enum(["todo", "in_progress", "blocked", "done"]);
+const taskPriority = z.enum(["low", "medium", "high", "urgent"]);
 const sourceAiStatus = z.enum(["not_requested", "draft", "approved", "failed"]);
 const dateInput = z
   .string()
@@ -125,13 +130,13 @@ export function showMcpBrowserInfo(
     <main class="card">
       <div class="brand"><span class="mark">و</span><span>وجهة</span></div>
       <h1>MCP مختبر الأفكار</h1>
-      <p class="lead">اربط وجهة بالمساعد الذكي ليقرأ مشكلات المختبر وأفكاره ومصادره ومقابلاته وتجاربِه، ويضيف أو يحدّث السجلات ضمن صلاحيات حسابك.</p>
+      <p class="lead">اربط وجهة بالمساعد الذكي ليقرأ مشكلات المختبر وأفكاره ومصادره ومقابلاته وتجاربِه ومهامه، ويضيف أو يحدّث السجلات ضمن صلاحيات حسابك.</p>
       <div class="status"><span class="dot"></span>الخادم جاهز للربط عبر OAuth</div>
       <div class="endpoint">${MCP_RESOURCE_URL}</div>
       <section class="grid" aria-label="قدرات MCP">
         <div class="item"><strong>استكشاف الفرص</strong><span>قراءة ملخص المختبر والبحث في المشكلات والأفكار.</span></div>
         <div class="item"><strong>جمع الأدلة</strong><span>إضافة الروابط والمقابلات وربطها بالمشكلة أو الفكرة.</span></div>
-        <div class="item"><strong>تشغيل التجارب</strong><span>إنشاء التجارب وتحديث تقدمها ونتائجها.</span></div>
+        <div class="item"><strong>التجارب والمهام</strong><span>إنشاء التجارب وتحديث نتائجها، وترتيب خطوات الفريق وإسنادها.</span></div>
         <div class="item"><strong>تحليل اختياري</strong><span>تحليل المصادر بمفتاح API الخاص بالعضو وبعد طلبه الصريح.</span></div>
       </section>
       <p class="note">أضف الرابط كخادم Remote MCP في ChatGPT أو Claude أو أي عميل متوافق، ثم سجّل الدخول بحساب Google المستخدم في وجهة ووافق على صلاحيات القراءة والتعديل.</p>
@@ -296,7 +301,7 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
     {
       title: "ملخص مختبر الأفكار",
       description:
-        "يعرض أعداد المشكلات والأفكار والمصادر والمقابلات والتجارب وتوزيع المراحل في المختبر الحالي.",
+        "يعرض أعداد المشكلات والأفكار والمصادر والمقابلات والتجارب والمهام وتوزيع المراحل في المختبر الحالي.",
       inputSchema: {},
       annotations: { readOnlyHint: true, openWorldHint: false },
       _meta: { securitySchemes: readSecurity },
@@ -314,12 +319,14 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
               sources: data.sources.length,
               interviews: data.interviews.length,
               experiments: data.experiments.length,
+              tasks: data.tasks.length,
               members: data.members.length,
             },
             problem_stages: countBy(data.problems, item => item.stage),
             idea_stages: countBy(data.ideas, item => item.stage),
             interview_statuses: countBy(data.interviews, item => item.status),
             experiment_statuses: countBy(data.experiments, item => item.status),
+            task_statuses: countBy(data.tasks, item => item.status),
           },
         };
       })
@@ -330,7 +337,7 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
     {
       title: "عرض فريق المختبر",
       description:
-        "يعرض أعضاء المختبر ومعرفات حساباتهم لاستخدامها عند إسناد مشكلة أو فكرة.",
+        "يعرض أعضاء المختبر ومعرفات حساباتهم لاستخدامها عند إسناد مشكلة أو فكرة أو مهمة.",
       inputSchema: { search: z.string().trim().max(160).optional() },
       annotations: { readOnlyHint: true, openWorldHint: false },
       _meta: { securitySchemes: readSecurity },
@@ -963,6 +970,143 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
           result: input.result,
         });
         return { message: "تم تحديث التجربة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_list_tasks",
+    {
+      title: "عرض مهام المختبر",
+      description:
+        "يعرض مهام مختبر الأفكار مع التصفية بحسب الحالة أو الأولوية أو العضو المسند إليه أو السجل المرتبط.",
+      inputSchema: {
+        search: z.string().trim().max(200).optional(),
+        status: taskStatus.optional(),
+        priority: taskPriority.optional(),
+        assignee_user_id: z.number().int().positive().optional(),
+        problem_id: z.number().int().positive().optional(),
+        idea_id: z.number().int().positive().optional(),
+        interview_id: z.number().int().positive().optional(),
+        experiment_id: z.number().int().positive().optional(),
+        limit: resultLimit,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        const search = normalizedSearch(input.search);
+        const rows = data.tasks
+          .filter(
+            item =>
+              includesSearch(search, item.title, item.description) &&
+              (!input.status || item.status === input.status) &&
+              (!input.priority || item.priority === input.priority) &&
+              (!input.assignee_user_id ||
+                item.assigneeUserId === input.assignee_user_id) &&
+              (!input.problem_id || item.problemId === input.problem_id) &&
+              (!input.idea_id || item.ideaId === input.idea_id) &&
+              (!input.interview_id ||
+                item.interviewId === input.interview_id) &&
+              (!input.experiment_id ||
+                item.experimentId === input.experiment_id)
+          )
+          .slice(0, input.limit);
+        return { message: `المهام (${rows.length}):`, result: rows };
+      })
+  );
+
+  server.registerTool(
+    "wijha_create_task",
+    {
+      title: "إضافة مهمة",
+      description:
+        "ينشئ مهمة في المختبر، ويمكن ربطها بسجل واحد: مشكلة أو فكرة أو مقابلة أو تجربة.",
+      inputSchema: {
+        title: z.string().trim().min(3).max(280),
+        description: z.string().trim().max(20_000).optional(),
+        status: taskStatus.default("todo"),
+        priority: taskPriority.default("medium"),
+        due_date: dateInput.nullable().optional(),
+        assignee_user_id: z.number().int().positive().nullable().optional(),
+        problem_id: z.number().int().positive().nullable().optional(),
+        idea_id: z.number().int().positive().nullable().optional(),
+        interview_id: z.number().int().positive().nullable().optional(),
+        experiment_id: z.number().int().positive().nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.createTask({
+          title: input.title,
+          description: input.description,
+          status: input.status,
+          priority: input.priority,
+          dueDate: asDate(input.due_date),
+          assigneeUserId: input.assignee_user_id,
+          problemId: input.problem_id,
+          ideaId: input.idea_id,
+          interviewId: input.interview_id,
+          experimentId: input.experiment_id,
+        });
+        return { message: "تمت إضافة المهمة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_update_task",
+    {
+      title: "تحديث مهمة",
+      description:
+        "يحدّث تفاصيل المهمة أو حالتها أو أولويتها أو موعدها أو إسنادها أو السجل المرتبط بها.",
+      inputSchema: {
+        task_id: z.number().int().positive(),
+        title: z.string().trim().min(3).max(280).optional(),
+        description: z.string().trim().max(20_000).nullable().optional(),
+        status: taskStatus.optional(),
+        priority: taskPriority.optional(),
+        due_date: dateInput.nullable().optional(),
+        assignee_user_id: z.number().int().positive().nullable().optional(),
+        problem_id: z.number().int().positive().nullable().optional(),
+        idea_id: z.number().int().positive().nullable().optional(),
+        interview_id: z.number().int().positive().nullable().optional(),
+        experiment_id: z.number().int().positive().nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.updateTask({
+          id: input.task_id,
+          title: input.title,
+          description: input.description,
+          status: input.status,
+          priority: input.priority,
+          dueDate:
+            input.due_date === undefined ? undefined : asDate(input.due_date),
+          assigneeUserId: input.assignee_user_id,
+          problemId: input.problem_id,
+          ideaId: input.idea_id,
+          interviewId: input.interview_id,
+          experimentId: input.experiment_id,
+        });
+        return { message: "تم تحديث المهمة.", result };
       })
   );
 

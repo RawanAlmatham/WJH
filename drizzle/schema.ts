@@ -331,6 +331,53 @@ export const ideaLabExperiments = mysqlTable(
   ]
 );
 
+export const ideaLabTasks = mysqlTable(
+  "ideaLabTasks",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    problemId: int("problemId").references(() => ideaLabProblems.id, {
+      onDelete: "set null",
+    }),
+    ideaId: int("ideaId").references(() => ideaLabIdeas.id, {
+      onDelete: "set null",
+    }),
+    interviewId: int("interviewId").references(() => ideaLabInterviews.id, {
+      onDelete: "set null",
+    }),
+    experimentId: int("experimentId").references(() => ideaLabExperiments.id, {
+      onDelete: "set null",
+    }),
+    title: varchar("title", { length: 280 }).notNull(),
+    description: text("description"),
+    status: mysqlEnum("status", ["todo", "in_progress", "blocked", "done"])
+      .default("todo")
+      .notNull(),
+    priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"])
+      .default("medium")
+      .notNull(),
+    dueDate: timestamp("dueDate"),
+    assigneeUserId: int("assigneeUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabTasks_board_status_idx").on(table.boardId, table.status),
+    index("ideaLabTasks_assignee_idx").on(table.assigneeUserId),
+    index("ideaLabTasks_due_date_idx").on(table.boardId, table.dueDate),
+    index("ideaLabTasks_problem_idx").on(table.problemId),
+    index("ideaLabTasks_idea_idx").on(table.ideaId),
+  ]
+);
+
 export const userAiSettings = mysqlTable("userAiSettings", {
   userId: int("userId")
     .primaryKey()

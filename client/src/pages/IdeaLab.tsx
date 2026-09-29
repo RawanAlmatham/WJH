@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Beaker,
   Bot,
+  CalendarDays,
   Check,
   ChevronDown,
   ClipboardList,
@@ -27,6 +28,7 @@ import {
   KeyRound,
   Lightbulb,
   Link2,
+  ListTodo,
   Loader2,
   LogOut,
   Menu,
@@ -47,6 +49,7 @@ type LabPage =
   | "ideas"
   | "interviews"
   | "experiments"
+  | "tasks"
   | "compare"
   | "settings";
 
@@ -100,6 +103,20 @@ const experimentStatusLabels: Record<string, string> = {
   running: "جارية",
   review: "تحتاج قرارًا",
   complete: "مكتملة",
+};
+
+const taskStatusLabels: Record<string, string> = {
+  todo: "جديدة",
+  in_progress: "قيد التنفيذ",
+  blocked: "متوقفة",
+  done: "مكتملة",
+};
+
+const taskPriorityLabels: Record<string, string> = {
+  low: "منخفضة",
+  medium: "متوسطة",
+  high: "مرتفعة",
+  urgent: "عاجلة",
 };
 
 const sourceStatusLabels: Record<string, string> = {
@@ -215,6 +232,8 @@ export default function IdeaLab({
   } | null>(null);
   const [interviewOpen, setInterviewOpen] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<any>(null);
   const canEdit = board.membershipRole !== "viewer";
 
   const refresh = () => utils.ideaLab.overview.invalidate();
@@ -223,11 +242,16 @@ export default function IdeaLab({
   const createSource = trpc.ideaLab.createSource.useMutation();
   const createInterview = trpc.ideaLab.createInterview.useMutation();
   const createExperiment = trpc.ideaLab.createExperiment.useMutation();
+  const createTask = trpc.ideaLab.createTask.useMutation();
   const updateProblem = trpc.ideaLab.updateProblem.useMutation({
     onSuccess: refresh,
     onError: issue => toast.error(issue.message),
   });
   const updateIdea = trpc.ideaLab.updateIdea.useMutation({
+    onSuccess: refresh,
+    onError: issue => toast.error(issue.message),
+  });
+  const updateTask = trpc.ideaLab.updateTask.useMutation({
     onSuccess: refresh,
     onError: issue => toast.error(issue.message),
   });
@@ -263,6 +287,7 @@ export default function IdeaLab({
     { id: "ideas", label: "الأفكار", icon: Lightbulb },
     { id: "interviews", label: "مقابلات العملاء", icon: ClipboardList },
     { id: "experiments", label: "التجارب", icon: FlaskConical },
+    { id: "tasks", label: "المهام", icon: ListTodo },
     { id: "compare", label: "مقارنة الفرص", icon: Beaker },
     { id: "settings", label: "الإعدادات", icon: Settings },
   ];
@@ -391,7 +416,7 @@ export default function IdeaLab({
             </button>
             <div className="hidden w-80 items-center gap-2 rounded-xl border border-[#DEDFDC] bg-white px-3 py-2.5 text-xs text-[#696D75] md:flex">
               <Search className="size-4" />
-              ابحث في المشكلات والأفكار والمقابلات...
+              ابحث في المشكلات والأفكار والمقابلات والمهام...
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -495,6 +520,23 @@ export default function IdeaLab({
               data={data}
               canEdit={canEdit}
               onAdd={() => setExperimentOpen(true)}
+            />
+          )}
+          {page === "tasks" && (
+            <TasksPage
+              data={data}
+              canEdit={canEdit}
+              onAdd={() => {
+                setEditingTask(null);
+                setTaskDialogOpen(true);
+              }}
+              onOpen={(task: any) => {
+                setEditingTask(task);
+                setTaskDialogOpen(true);
+              }}
+              onStatus={(id: number, status: string) =>
+                updateTask.mutate({ id, status: status as any })
+              }
             />
           )}
           {page === "compare" && <ComparePage data={data} />}
@@ -622,6 +664,32 @@ export default function IdeaLab({
           } catch (issue) {
             toast.error(
               issue instanceof Error ? issue.message : "تعذر إضافة التجربة"
+            );
+          }
+        }}
+      />
+
+      <TaskDialog
+        open={taskDialogOpen}
+        task={editingTask}
+        data={data}
+        pending={createTask.isPending || updateTask.isPending}
+        onClose={() => {
+          setTaskDialogOpen(false);
+          setEditingTask(null);
+        }}
+        onSubmit={async (input: any) => {
+          try {
+            if (editingTask)
+              await updateTask.mutateAsync({ id: editingTask.id, ...input });
+            else await createTask.mutateAsync(input);
+            await refresh();
+            setTaskDialogOpen(false);
+            setEditingTask(null);
+            toast.success(editingTask ? "تم تحديث المهمة" : "تمت إضافة المهمة");
+          } catch (issue) {
+            toast.error(
+              issue instanceof Error ? issue.message : "تعذر حفظ المهمة"
             );
           }
         }}
@@ -1406,6 +1474,158 @@ function ExperimentsPage({ data, canEdit, onAdd }: any) {
   );
 }
 
+function TasksPage({ data, canEdit, onAdd, onOpen, onStatus }: any) {
+  const columns = ["todo", "in_progress", "blocked", "done"];
+  const priorityTones: Record<string, "gray" | "navy" | "yellow" | "burgundy"> =
+    {
+      low: "gray",
+      medium: "navy",
+      high: "yellow",
+      urgent: "burgundy",
+    };
+  const linkedLabel = (task: any) => {
+    if (task.problemId)
+      return `مشكلة: ${data.problems.find((item: any) => item.id === task.problemId)?.title || "غير متاحة"}`;
+    if (task.ideaId)
+      return `فكرة: ${data.ideas.find((item: any) => item.id === task.ideaId)?.title || "غير متاحة"}`;
+    if (task.interviewId)
+      return `مقابلة: ${data.interviews.find((item: any) => item.id === task.interviewId)?.participantLabel || "غير متاحة"}`;
+    if (task.experimentId)
+      return `تجربة: ${data.experiments.find((item: any) => item.id === task.experimentId)?.title || "غير متاحة"}`;
+    return null;
+  };
+  const memberName = (userId: number | null) =>
+    data.members.find((member: any) => member.userId === userId)?.name ||
+    "غير مسندة";
+  return (
+    <>
+      <PageHeading
+        eyebrow="حوّل التعلم إلى خطوة"
+        title="المهام"
+        description="رتّبوا الخطوات العملية التي تحرّك المشكلة أو الفكرة أو المقابلة أو التجربة إلى الأمام."
+        action={
+          canEdit ? (
+            <Button
+              onClick={onAdd}
+              className="gap-2 bg-[#1E3A8A] hover:bg-[#172E6E]"
+            >
+              <Plus className="size-4" />
+              إضافة مهمة
+            </Button>
+          ) : undefined
+        }
+      />
+      {data.tasks.length ? (
+        <div
+          className="grid items-start gap-3 overflow-x-auto pb-4"
+          style={{ gridTemplateColumns: "repeat(4,minmax(250px,1fr))" }}
+        >
+          {columns.map(status => {
+            const tasks = data.tasks.filter(
+              (task: any) => task.status === status
+            );
+            return (
+              <section
+                key={status}
+                className="min-h-[430px] rounded-2xl bg-[#EDEAE5] p-3"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-bold">
+                    {taskStatusLabels[status]}
+                  </h2>
+                  <span className="rounded-lg bg-white px-2 py-1 text-[10px]">
+                    {tasks.length}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {tasks.map((task: any) => {
+                    const link = linkedLabel(task);
+                    const overdue =
+                      task.status !== "done" &&
+                      task.dueDate &&
+                      new Date(task.dueDate).getTime() < Date.now();
+                    return (
+                      <article
+                        key={task.id}
+                        onClick={() => onOpen(task)}
+                        className="cursor-pointer rounded-2xl border border-[#DEDFDC] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <Pill tone={priorityTones[task.priority]}>
+                            {taskPriorityLabels[task.priority]}
+                          </Pill>
+                          {task.dueDate && (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[10px] font-semibold",
+                                overdue ? "text-[#A23842]" : "text-[#696D75]"
+                              )}
+                            >
+                              <CalendarDays className="size-3" />
+                              {dateLabel(task.dueDate)}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="mt-3 font-bold leading-7">
+                          {task.title}
+                        </h3>
+                        {task.description && (
+                          <p className="mt-1 line-clamp-2 text-xs leading-6 text-[#696D75]">
+                            {task.description}
+                          </p>
+                        )}
+                        {link && (
+                          <p className="mt-3 line-clamp-2 rounded-lg bg-[#F4F5F8] px-2.5 py-2 text-[10px] font-semibold leading-5 text-[#1E3A8A]">
+                            {link}
+                          </p>
+                        )}
+                        <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#EEE] pt-3">
+                          <span className="text-[10px] text-[#696D75]">
+                            {memberName(task.assigneeUserId)}
+                          </span>
+                          {canEdit && (
+                            <select
+                              aria-label={`حالة ${task.title}`}
+                              value={task.status}
+                              onClick={event => event.stopPropagation()}
+                              onChange={event => {
+                                event.stopPropagation();
+                                onStatus(task.id, event.target.value);
+                              }}
+                              className="rounded-lg border border-[#DEDFDC] bg-white px-2 py-1 text-[10px] font-bold"
+                            >
+                              {columns.map(value => (
+                                <option key={value} value={value}>
+                                  {taskStatusLabels[value]}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptyLabState
+          icon={ListTodo}
+          title="لا توجد مهام بعد"
+          description="أضيفوا أول خطوة عملية، واربطوها بالسجل الذي تخدمه ليبقى العمل في سياقه."
+          action={
+            canEdit ? (
+              <Button onClick={onAdd}>إضافة أول مهمة</Button>
+            ) : undefined
+          }
+        />
+      )}
+    </>
+  );
+}
+
 function ComparePage({ data }: any) {
   const rows = data.ideas.filter((idea: any) => idea.stage !== "archived");
   return (
@@ -1625,7 +1845,7 @@ function SettingsPage({ board, aiSettings, canManage }: any) {
                 <p className="mt-1 max-w-2xl text-xs leading-6 text-[#696D75]">
                   اربط مختبر الأفكار مع ChatGPT أو Claude أو أي مساعد يدعم
                   Remote MCP. يستطيع المساعد قراءة المشكلات والأفكار والمصادر
-                  والمقابلات والتجارب، والتعديل ضمن صلاحيات حسابك.
+                  والمقابلات والتجارب والمهام، والتعديل ضمن صلاحيات حسابك.
                 </p>
               </div>
             </div>
@@ -2122,6 +2342,215 @@ function ExperimentDialog({ open, ideas, pending, onClose, onSubmit }: any) {
           >
             {pending && <Loader2 className="ml-2 size-4 animate-spin" />}حفظ
             التجربة
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TaskDialog({ open, task, data, pending, onClose, onSubmit }: any) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("todo");
+  const [priority, setPriority] = useState("medium");
+  const [dueDate, setDueDate] = useState("");
+  const [assigneeUserId, setAssigneeUserId] = useState("");
+  const [linkType, setLinkType] = useState("");
+  const [linkId, setLinkId] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle(task?.title || "");
+    setDescription(task?.description || "");
+    setStatus(task?.status || "todo");
+    setPriority(task?.priority || "medium");
+    if (task?.dueDate) {
+      const value = new Date(task.dueDate);
+      const localValue = new Date(
+        value.getTime() - value.getTimezoneOffset() * 60_000
+      )
+        .toISOString()
+        .slice(0, 16);
+      setDueDate(localValue);
+    } else setDueDate("");
+    setAssigneeUserId(task?.assigneeUserId ? String(task.assigneeUserId) : "");
+    const linked = task?.problemId
+      ? ["problem", task.problemId]
+      : task?.ideaId
+        ? ["idea", task.ideaId]
+        : task?.interviewId
+          ? ["interview", task.interviewId]
+          : task?.experimentId
+            ? ["experiment", task.experimentId]
+            : ["", ""];
+    setLinkType(String(linked[0]));
+    setLinkId(linked[1] ? String(linked[1]) : "");
+  }, [open, task]);
+
+  const linkOptions =
+    linkType === "problem"
+      ? data.problems.map((item: any) => ({ id: item.id, label: item.title }))
+      : linkType === "idea"
+        ? data.ideas.map((item: any) => ({ id: item.id, label: item.title }))
+        : linkType === "interview"
+          ? data.interviews.map((item: any) => ({
+              id: item.id,
+              label: item.participantLabel,
+            }))
+          : linkType === "experiment"
+            ? data.experiments.map((item: any) => ({
+                id: item.id,
+                label: item.title,
+              }))
+            : [];
+
+  return (
+    <Dialog open={open} onOpenChange={value => !value && onClose()}>
+      <DialogContent
+        dir="rtl"
+        className="max-h-[90vh] overflow-y-auto bg-[#F5F2EE] sm:max-w-2xl"
+      >
+        <DialogHeader className="text-right">
+          <DialogTitle>{task ? "تعديل المهمة" : "إضافة مهمة"}</DialogTitle>
+          <DialogDescription>
+            اربط المهمة بما تخدمه، وحدد من يتولاها ومتى تحتاج إلى إنجاز.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field label="عنوان المهمة">
+              <Input
+                value={title}
+                onChange={event => setTitle(event.target.value)}
+                placeholder="مثال: إعداد أسئلة مقابلة العملاء"
+              />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="التفاصيل">
+              <Textarea
+                rows={3}
+                value={description}
+                onChange={event => setDescription(event.target.value)}
+                placeholder="النتيجة المطلوبة أو أي ملاحظات تساعد المنفذ."
+              />
+            </Field>
+          </div>
+          <Field label="الحالة">
+            <select
+              value={status}
+              onChange={event => setStatus(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm"
+            >
+              {Object.entries(taskStatusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="الأولوية">
+            <select
+              value={priority}
+              onChange={event => setPriority(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm"
+            >
+              {Object.entries(taskPriorityLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="المسند إليه">
+            <select
+              value={assigneeUserId}
+              onChange={event => setAssigneeUserId(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm"
+            >
+              <option value="">غير مسندة</option>
+              {data.members
+                .filter((member: any) => member.userId)
+                .map((member: any) => (
+                  <option key={member.id} value={member.userId}>
+                    {member.name}
+                  </option>
+                ))}
+            </select>
+          </Field>
+          <Field label="موعد الإنجاز">
+            <Input
+              type="datetime-local"
+              value={dueDate}
+              onChange={event => setDueDate(event.target.value)}
+            />
+          </Field>
+          <Field label="نوع الارتباط">
+            <select
+              value={linkType}
+              onChange={event => {
+                setLinkType(event.target.value);
+                setLinkId("");
+              }}
+              className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm"
+            >
+              <option value="">مهمة عامة</option>
+              <option value="problem">مشكلة</option>
+              <option value="idea">فكرة</option>
+              <option value="interview">مقابلة</option>
+              <option value="experiment">تجربة</option>
+            </select>
+          </Field>
+          <Field label="السجل المرتبط">
+            <select
+              value={linkId}
+              disabled={!linkType}
+              onChange={event => setLinkId(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm disabled:bg-slate-100"
+            >
+              <option value="">
+                {linkType ? "اختر سجلًا" : "اختر نوع الارتباط أولًا"}
+              </option>
+              {linkOptions.map((item: any) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            إلغاء
+          </Button>
+          <Button
+            disabled={
+              pending ||
+              title.trim().length < 3 ||
+              (Boolean(linkType) && !linkId)
+            }
+            onClick={() =>
+              onSubmit({
+                title: title.trim(),
+                description: description.trim() || (task ? null : undefined),
+                status,
+                priority,
+                dueDate: dueDate ? new Date(dueDate) : null,
+                assigneeUserId: assigneeUserId ? Number(assigneeUserId) : null,
+                problemId:
+                  linkType === "problem" && linkId ? Number(linkId) : null,
+                ideaId: linkType === "idea" && linkId ? Number(linkId) : null,
+                interviewId:
+                  linkType === "interview" && linkId ? Number(linkId) : null,
+                experimentId:
+                  linkType === "experiment" && linkId ? Number(linkId) : null,
+              })
+            }
+            className="bg-[#1E3A8A] hover:bg-[#172E6E]"
+          >
+            {pending && <Loader2 className="ml-2 size-4 animate-spin" />}
+            {task ? "حفظ التعديلات" : "إضافة المهمة"}
           </Button>
         </DialogFooter>
       </DialogContent>
