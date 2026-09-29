@@ -504,6 +504,69 @@ export async function updateIdeaLabTask(
   return { id: input.id };
 }
 
+export async function deleteIdeaLabProblem(boardId: number, id: number) {
+  const db = await database();
+  await requireProblem(db, boardId, id);
+  await db
+    .delete(ideaLabProblems)
+    .where(
+      and(eq(ideaLabProblems.id, id), eq(ideaLabProblems.boardId, boardId))
+    );
+  return { id };
+}
+
+export async function deleteIdeaLabIdea(boardId: number, id: number) {
+  const db = await database();
+  await requireIdea(db, boardId, id);
+  await db
+    .delete(ideaLabIdeas)
+    .where(and(eq(ideaLabIdeas.id, id), eq(ideaLabIdeas.boardId, boardId)));
+  return { id };
+}
+
+export async function deleteIdeaLabSource(boardId: number, id: number) {
+  const db = await database();
+  await getIdeaLabSource(boardId, id);
+  await db
+    .delete(ideaLabSources)
+    .where(and(eq(ideaLabSources.id, id), eq(ideaLabSources.boardId, boardId)));
+  return { id };
+}
+
+export async function deleteIdeaLabInterview(boardId: number, id: number) {
+  const db = await database();
+  await requireInterview(db, boardId, id);
+  await db
+    .delete(ideaLabInterviews)
+    .where(
+      and(eq(ideaLabInterviews.id, id), eq(ideaLabInterviews.boardId, boardId))
+    );
+  return { id };
+}
+
+export async function deleteIdeaLabExperiment(boardId: number, id: number) {
+  const db = await database();
+  await requireExperiment(db, boardId, id);
+  await db
+    .delete(ideaLabExperiments)
+    .where(
+      and(
+        eq(ideaLabExperiments.id, id),
+        eq(ideaLabExperiments.boardId, boardId)
+      )
+    );
+  return { id };
+}
+
+export async function deleteIdeaLabTask(boardId: number, id: number) {
+  const db = await database();
+  await requireTask(db, boardId, id);
+  await db
+    .delete(ideaLabTasks)
+    .where(and(eq(ideaLabTasks.id, id), eq(ideaLabTasks.boardId, boardId)));
+  return { id };
+}
+
 export async function getIdeaLabSource(boardId: number, sourceId: number) {
   const db = await database();
   const rows = await db

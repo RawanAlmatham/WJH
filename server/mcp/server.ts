@@ -52,6 +52,12 @@ export const WIJHA_MCP_TOOL_NAMES = [
   "wijha_list_tasks",
   "wijha_create_task",
   "wijha_update_task",
+  "wijha_delete_problem",
+  "wijha_delete_idea",
+  "wijha_delete_source",
+  "wijha_delete_interview",
+  "wijha_delete_experiment",
+  "wijha_delete_task",
 ] as const;
 
 const readSecurity = [{ type: "oauth2", scopes: [MCP_READ_SCOPE] }];
@@ -229,7 +235,7 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
     { name: "وجهة — مختبر الأفكار", version: "2.0.0" },
     {
       instructions:
-        "هذه الأدوات تخص مختبر الأفكار في وجهة فقط. ابدأ بـ wijha_get_context لمعرفة المختبر الحالي. استخدم المعرفات التي تعيدها أدوات القوائم ولا تخمنها. لا تنفذ أي إضافة أو تعديل إلا بطلب المستخدم. لا تشغّل تحليل المصادر إلا بطلب صريح لأنه يستخدم مفتاح API الخاص بالعضو وتكلفته. مخرجات التحليل مسودات حتى يعتمدها المستخدم. لا توجد أدوات حذف في هذا الخادم.",
+        "هذه الأدوات تخص مختبر الأفكار في وجهة فقط. ابدأ بـ wijha_get_context لمعرفة المختبر الحالي. استخدم المعرفات التي تعيدها أدوات القوائم ولا تخمنها. لا تنفذ أي إضافة أو تعديل إلا بطلب المستخدم. لا تحذف أي سجل إلا بعد طلب صريح من المستخدم وتوضيح أثر الحذف له. لا تشغّل تحليل المصادر إلا بطلب صريح لأنه يستخدم مفتاح API الخاص بالعضو وتكلفته. مخرجات التحليل مسودات حتى يعتمدها المستخدم.",
     }
   );
   const caller = createCaller(user);
@@ -1107,6 +1113,146 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
           experimentId: input.experiment_id,
         });
         return { message: "تم تحديث المهمة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_problem",
+    {
+      title: "حذف مشكلة",
+      description:
+        "يحذف مشكلة نهائيًا. تُحذف مصادرها، وتبقى الأفكار والمقابلات والمهام من دون ارتباط بها. استخدمه فقط بعد طلب صريح.",
+      inputSchema: { problem_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ problem_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteProblem({ id: problem_id });
+        return { message: "تم حذف المشكلة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_idea",
+    {
+      title: "حذف فكرة",
+      description:
+        "يحذف فكرة نهائيًا مع مصادرها وتجاربها. تبقى المقابلات والمهام من دون ارتباط بها. استخدمه فقط بعد طلب صريح.",
+      inputSchema: { idea_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ idea_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteIdea({ id: idea_id });
+        return { message: "تم حذف الفكرة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_source",
+    {
+      title: "حذف مصدر",
+      description: "يحذف رابطًا داعمًا وملخصه نهائيًا بعد طلب صريح.",
+      inputSchema: { source_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ source_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteSource({ id: source_id });
+        return { message: "تم حذف المصدر.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_interview",
+    {
+      title: "حذف مقابلة",
+      description:
+        "يحذف المقابلة وتفريغها وملخصها نهائيًا. تبقى المهام من دون ارتباط بها. استخدمه فقط بعد طلب صريح.",
+      inputSchema: { interview_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ interview_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteInterview({
+          id: interview_id,
+        });
+        return { message: "تم حذف المقابلة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_experiment",
+    {
+      title: "حذف تجربة",
+      description:
+        "يحذف التجربة ونتائجها نهائيًا. تبقى المهام من دون ارتباط بها. استخدمه فقط بعد طلب صريح.",
+      inputSchema: { experiment_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ experiment_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteExperiment({
+          id: experiment_id,
+        });
+        return { message: "تم حذف التجربة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_task",
+    {
+      title: "حذف مهمة",
+      description: "يحذف مهمة من مختبر الأفكار نهائيًا بعد طلب صريح.",
+      inputSchema: { task_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ task_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteTask({ id: task_id });
+        return { message: "تم حذف المهمة.", result };
       })
   );
 

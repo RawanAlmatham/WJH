@@ -37,6 +37,8 @@ describe("WJH MCP browser information page", () => {
     expect(WIJHA_MCP_TOOL_NAMES).toContain("wijha_list_tasks");
     expect(WIJHA_MCP_TOOL_NAMES).toContain("wijha_create_task");
     expect(WIJHA_MCP_TOOL_NAMES).toContain("wijha_update_task");
+    expect(WIJHA_MCP_TOOL_NAMES).toContain("wijha_delete_idea");
+    expect(WIJHA_MCP_TOOL_NAMES).toContain("wijha_delete_task");
     expect(WIJHA_MCP_TOOL_NAMES.every(name => name.startsWith("wijha_"))).toBe(
       true
     );

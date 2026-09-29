@@ -36,6 +36,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -54,6 +55,13 @@ type LabPage =
   | "settings";
 
 type EntityKind = "problem" | "idea";
+type DeletableKind =
+  | "problem"
+  | "idea"
+  | "source"
+  | "interview"
+  | "experiment"
+  | "task";
 
 type IdeaLabProps = {
   user: { id: number; name?: string | null; role?: string | null };
@@ -234,6 +242,12 @@ export default function IdeaLab({
   const [experimentOpen, setExperimentOpen] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    kind: DeletableKind;
+    id: number;
+    title: string;
+    detail?: string;
+  } | null>(null);
   const canEdit = board.membershipRole !== "viewer";
 
   const refresh = () => utils.ideaLab.overview.invalidate();
@@ -243,6 +257,12 @@ export default function IdeaLab({
   const createInterview = trpc.ideaLab.createInterview.useMutation();
   const createExperiment = trpc.ideaLab.createExperiment.useMutation();
   const createTask = trpc.ideaLab.createTask.useMutation();
+  const deleteProblem = trpc.ideaLab.deleteProblem.useMutation();
+  const deleteIdea = trpc.ideaLab.deleteIdea.useMutation();
+  const deleteSource = trpc.ideaLab.deleteSource.useMutation();
+  const deleteInterview = trpc.ideaLab.deleteInterview.useMutation();
+  const deleteExperiment = trpc.ideaLab.deleteExperiment.useMutation();
+  const deleteTask = trpc.ideaLab.deleteTask.useMutation();
   const updateProblem = trpc.ideaLab.updateProblem.useMutation({
     onSuccess: refresh,
     onError: issue => toast.error(issue.message),
@@ -276,6 +296,44 @@ export default function IdeaLab({
   const selectedProblemSources =
     data?.sources.filter(source => source.problemId === selectedProblemId) ??
     [];
+  const deleting =
+    deleteProblem.isPending ||
+    deleteIdea.isPending ||
+    deleteSource.isPending ||
+    deleteInterview.isPending ||
+    deleteExperiment.isPending ||
+    deleteTask.isPending;
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.kind === "problem")
+        await deleteProblem.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "idea")
+        await deleteIdea.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "source")
+        await deleteSource.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "interview")
+        await deleteInterview.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "experiment")
+        await deleteExperiment.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "task")
+        await deleteTask.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "problem") {
+        setSelectedProblemId(null);
+        setPage("problems");
+      }
+      if (deleteTarget.kind === "task" && editingTask?.id === deleteTarget.id) {
+        setTaskDialogOpen(false);
+        setEditingTask(null);
+      }
+      await refresh();
+      setDeleteTarget(null);
+      toast.success("تم الحذف");
+    } catch (issue) {
+      toast.error(issue instanceof Error ? issue.message : "تعذر الحذف");
+    }
+  };
 
   const navItems: Array<{
     id: LabPage;
@@ -486,6 +544,22 @@ export default function IdeaLab({
                 approveSource.mutate({ sourceId })
               }
               onOpenSettings={() => setPage("settings")}
+              onDelete={() =>
+                setDeleteTarget({
+                  kind: "problem",
+                  id: selectedProblem.id,
+                  title: selectedProblem.title,
+                  detail:
+                    "ستُحذف الروابط الداعمة المرتبطة بهذه المشكلة، وستبقى الأفكار والمقابلات والمهام من دون هذا الارتباط.",
+                })
+              }
+              onDeleteSource={(source: any) =>
+                setDeleteTarget({
+                  kind: "source",
+                  id: source.id,
+                  title: source.title || "المصدر الداعم",
+                })
+              }
             />
           )}
           {page === "ideas" && (
@@ -506,6 +580,22 @@ export default function IdeaLab({
               onAddSource={(id: number) =>
                 setSourceTarget({ kind: "idea", id })
               }
+              onDeleteIdea={(idea: any) =>
+                setDeleteTarget({
+                  kind: "idea",
+                  id: idea.id,
+                  title: idea.title,
+                  detail:
+                    "ستُحذف مصادر هذه الفكرة وتجاربها، وستبقى المقابلات والمهام من دون هذا الارتباط.",
+                })
+              }
+              onDeleteSource={(source: any) =>
+                setDeleteTarget({
+                  kind: "source",
+                  id: source.id,
+                  title: source.title || "المصدر الداعم",
+                })
+              }
             />
           )}
           {page === "interviews" && (
@@ -513,6 +603,14 @@ export default function IdeaLab({
               data={data}
               canEdit={canEdit}
               onAdd={() => setInterviewOpen(true)}
+              onDelete={(interview: any) =>
+                setDeleteTarget({
+                  kind: "interview",
+                  id: interview.id,
+                  title: interview.participantLabel,
+                  detail: "ستبقى المهام المرتبطة من دون ارتباط بالمقابلة.",
+                })
+              }
             />
           )}
           {page === "experiments" && (
@@ -520,6 +618,14 @@ export default function IdeaLab({
               data={data}
               canEdit={canEdit}
               onAdd={() => setExperimentOpen(true)}
+              onDelete={(experiment: any) =>
+                setDeleteTarget({
+                  kind: "experiment",
+                  id: experiment.id,
+                  title: experiment.title,
+                  detail: "ستبقى المهام المرتبطة من دون ارتباط بالتجربة.",
+                })
+              }
             />
           )}
           {page === "tasks" && (
@@ -536,6 +642,13 @@ export default function IdeaLab({
               }}
               onStatus={(id: number, status: string) =>
                 updateTask.mutate({ id, status: status as any })
+              }
+              onDelete={(task: any) =>
+                setDeleteTarget({
+                  kind: "task",
+                  id: task.id,
+                  title: task.title,
+                })
               }
             />
           )}
@@ -678,6 +791,14 @@ export default function IdeaLab({
           setTaskDialogOpen(false);
           setEditingTask(null);
         }}
+        onDelete={() => {
+          if (!editingTask) return;
+          setDeleteTarget({
+            kind: "task",
+            id: editingTask.id,
+            title: editingTask.title,
+          });
+        }}
         onSubmit={async (input: any) => {
           try {
             if (editingTask)
@@ -693,6 +814,13 @@ export default function IdeaLab({
             );
           }
         }}
+      />
+
+      <DeleteConfirmationDialog
+        target={deleteTarget}
+        pending={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );
@@ -986,6 +1114,8 @@ function ProblemPage({
   onAnalyze,
   onApprove,
   onOpenSettings,
+  onDelete,
+  onDeleteSource,
 }: any) {
   return (
     <>
@@ -995,6 +1125,14 @@ function ProblemPage({
         </button>
         {canEdit && (
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onDelete}
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+            >
+              <Trash2 className="ml-2 size-4" />
+              حذف المشكلة
+            </Button>
             <Button variant="outline" onClick={onAddSource}>
               <Link2 className="ml-2 size-4" />
               إضافة دليل أو رابط
@@ -1064,6 +1202,7 @@ function ProblemPage({
                 onAnalyze={() => onAnalyze(source.id)}
                 onApprove={() => onApprove(source.id)}
                 onOpenSettings={onOpenSettings}
+                onDelete={() => onDeleteSource(source)}
               />
             ))}
           </div>
@@ -1085,6 +1224,7 @@ function SourceCard({
   onAnalyze,
   onApprove,
   onOpenSettings,
+  onDelete,
 }: any) {
   const tones: any = {
     not_requested: "gray",
@@ -1155,6 +1295,17 @@ function SourceCard({
             اعتماد
           </Button>
         )}
+        {canEdit && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onDelete}
+            className="text-red-700 hover:bg-red-50 hover:text-red-800"
+            aria-label="حذف المصدر"
+          >
+            <Trash2 className="size-3" />
+          </Button>
+        )}
       </div>
     </article>
   );
@@ -1165,6 +1316,8 @@ function IdeaCard({
   sources,
   onStage,
   onAddSource,
+  onDelete,
+  onDeleteSource,
   canEdit = false,
 }: any) {
   return (
@@ -1181,14 +1334,53 @@ function IdeaCard({
         >
           {confidenceLabels[idea.confidence]}
         </Pill>
-        <span className="text-[10px] text-[#696D75]">
-          {sources.length} مصادر
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-[#696D75]">
+            {sources.length} مصادر
+          </span>
+          {canEdit && (
+            <button
+              onClick={onDelete}
+              className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
+              aria-label={`حذف ${idea.title}`}
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
+        </div>
       </div>
       <h3 className="mt-3 font-bold leading-7">{idea.title}</h3>
       <p className="mt-2 line-clamp-3 text-xs leading-6 text-[#696D75]">
         {idea.description || "لا يوجد وصف إضافي."}
       </p>
+      {sources.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {sources.map((source: any) => (
+            <div
+              key={source.id}
+              className="flex items-center gap-2 rounded-lg bg-[#F4F5F8] px-2.5 py-2"
+            >
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noreferrer"
+                className="min-w-0 flex-1 truncate text-[10px] font-semibold text-[#1E3A8A]"
+              >
+                {source.title || "مصدر داعم"}
+              </a>
+              {canEdit && (
+                <button
+                  onClick={() => onDeleteSource(source)}
+                  className="text-red-600 hover:text-red-800"
+                  aria-label="حذف المصدر"
+                >
+                  <Trash2 className="size-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {canEdit && (
         <div className="mt-4 flex gap-2">
           <select
@@ -1216,7 +1408,15 @@ function IdeaCard({
   );
 }
 
-function IdeasPage({ data, canEdit, onAdd, onStage, onAddSource }: any) {
+function IdeasPage({
+  data,
+  canEdit,
+  onAdd,
+  onStage,
+  onAddSource,
+  onDeleteIdea,
+  onDeleteSource,
+}: any) {
   const stages = [
     "seed",
     "exploration",
@@ -1274,6 +1474,8 @@ function IdeasPage({ data, canEdit, onAdd, onStage, onAddSource }: any) {
                       canEdit={canEdit}
                       onStage={onStage}
                       onAddSource={onAddSource}
+                      onDelete={() => onDeleteIdea(idea)}
+                      onDeleteSource={onDeleteSource}
                     />
                   ))}
               </div>
@@ -1296,7 +1498,7 @@ function IdeasPage({ data, canEdit, onAdd, onStage, onAddSource }: any) {
   );
 }
 
-function InterviewsPage({ data, canEdit, onAdd }: any) {
+function InterviewsPage({ data, canEdit, onAdd, onDelete }: any) {
   return (
     <>
       <PageHeading
@@ -1347,13 +1549,24 @@ function InterviewsPage({ data, canEdit, onAdd }: any) {
                     "بانتظار إجراء المقابلة وتوثيقها."}
                 </p>
               </div>
-              <span className="text-xs text-[#696D75]">
-                {interview.ideaId
-                  ? "مرتبطة بفكرة"
-                  : interview.problemId
-                    ? "مرتبطة بمشكلة"
-                    : "مقابلة عامة"}
-              </span>
+              <div className="flex items-center justify-end gap-3">
+                <span className="text-xs text-[#696D75]">
+                  {interview.ideaId
+                    ? "مرتبطة بفكرة"
+                    : interview.problemId
+                      ? "مرتبطة بمشكلة"
+                      : "مقابلة عامة"}
+                </span>
+                {canEdit && (
+                  <button
+                    onClick={() => onDelete(interview)}
+                    className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                    aria-label={`حذف مقابلة ${interview.participantLabel}`}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                )}
+              </div>
             </article>
           ))}
         </div>
@@ -1373,7 +1586,7 @@ function InterviewsPage({ data, canEdit, onAdd }: any) {
   );
 }
 
-function ExperimentsPage({ data, canEdit, onAdd }: any) {
+function ExperimentsPage({ data, canEdit, onAdd, onDelete }: any) {
   return (
     <>
       <PageHeading
@@ -1413,21 +1626,32 @@ function ExperimentsPage({ data, canEdit, onAdd }: any) {
                 key={experiment.id}
                 className="rounded-2xl border border-[#DEDFDC] bg-white p-5"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="flex size-10 items-center justify-center rounded-xl bg-[#E9EDF7] text-[#1E3A8A]">
                     <FlaskConical className="size-5" />
                   </span>
-                  <Pill
-                    tone={
-                      experiment.status === "complete"
-                        ? "green"
-                        : experiment.status === "review"
-                          ? "burgundy"
-                          : "yellow"
-                    }
-                  >
-                    {experimentStatusLabels[experiment.status]}
-                  </Pill>
+                  <div className="flex items-center gap-2">
+                    <Pill
+                      tone={
+                        experiment.status === "complete"
+                          ? "green"
+                          : experiment.status === "review"
+                            ? "burgundy"
+                            : "yellow"
+                      }
+                    >
+                      {experimentStatusLabels[experiment.status]}
+                    </Pill>
+                    {canEdit && (
+                      <button
+                        onClick={() => onDelete(experiment)}
+                        className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                        aria-label={`حذف ${experiment.title}`}
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <h3 className="mt-4 font-bold leading-7">{experiment.title}</h3>
                 <p className="mt-2 rounded-xl bg-[#F7F7F5] p-3 text-xs leading-6 text-[#696D75]">
@@ -1474,7 +1698,7 @@ function ExperimentsPage({ data, canEdit, onAdd }: any) {
   );
 }
 
-function TasksPage({ data, canEdit, onAdd, onOpen, onStatus }: any) {
+function TasksPage({ data, canEdit, onAdd, onOpen, onStatus, onDelete }: any) {
   const columns = ["todo", "in_progress", "blocked", "done"];
   const priorityTones: Record<string, "gray" | "navy" | "yellow" | "burgundy"> =
     {
@@ -1584,22 +1808,34 @@ function TasksPage({ data, canEdit, onAdd, onOpen, onStatus }: any) {
                             {memberName(task.assigneeUserId)}
                           </span>
                           {canEdit && (
-                            <select
-                              aria-label={`حالة ${task.title}`}
-                              value={task.status}
-                              onClick={event => event.stopPropagation()}
-                              onChange={event => {
-                                event.stopPropagation();
-                                onStatus(task.id, event.target.value);
-                              }}
-                              className="rounded-lg border border-[#DEDFDC] bg-white px-2 py-1 text-[10px] font-bold"
-                            >
-                              {columns.map(value => (
-                                <option key={value} value={value}>
-                                  {taskStatusLabels[value]}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="flex items-center gap-1">
+                              <select
+                                aria-label={`حالة ${task.title}`}
+                                value={task.status}
+                                onClick={event => event.stopPropagation()}
+                                onChange={event => {
+                                  event.stopPropagation();
+                                  onStatus(task.id, event.target.value);
+                                }}
+                                className="rounded-lg border border-[#DEDFDC] bg-white px-2 py-1 text-[10px] font-bold"
+                              >
+                                {columns.map(value => (
+                                  <option key={value} value={value}>
+                                    {taskStatusLabels[value]}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  onDelete(task);
+                                }}
+                                className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
+                                aria-label={`حذف ${task.title}`}
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </article>
@@ -2349,7 +2585,15 @@ function ExperimentDialog({ open, ideas, pending, onClose, onSubmit }: any) {
   );
 }
 
-function TaskDialog({ open, task, data, pending, onClose, onSubmit }: any) {
+function TaskDialog({
+  open,
+  task,
+  data,
+  pending,
+  onClose,
+  onSubmit,
+  onDelete,
+}: any) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("todo");
@@ -2521,6 +2765,16 @@ function TaskDialog({ open, task, data, pending, onClose, onSubmit }: any) {
           </Field>
         </div>
         <DialogFooter>
+          {task && (
+            <Button
+              variant="outline"
+              onClick={onDelete}
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 sm:ml-auto"
+            >
+              <Trash2 className="ml-2 size-4" />
+              حذف المهمة
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>
             إلغاء
           </Button>
@@ -2551,6 +2805,43 @@ function TaskDialog({ open, task, data, pending, onClose, onSubmit }: any) {
           >
             {pending && <Loader2 className="ml-2 size-4 animate-spin" />}
             {task ? "حفظ التعديلات" : "إضافة المهمة"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteConfirmationDialog({
+  target,
+  pending,
+  onClose,
+  onConfirm,
+}: any) {
+  return (
+    <Dialog open={Boolean(target)} onOpenChange={value => !value && onClose()}>
+      <DialogContent dir="rtl" className="bg-[#F5F2EE] sm:max-w-md">
+        <DialogHeader className="text-right">
+          <span className="mb-2 flex size-11 items-center justify-center rounded-xl bg-red-100 text-red-700">
+            <Trash2 className="size-5" />
+          </span>
+          <DialogTitle>تأكيد الحذف</DialogTitle>
+          <DialogDescription className="leading-7">
+            هل تريد حذف «{target?.title}»؟ لا يمكن التراجع عن هذه الخطوة.
+          </DialogDescription>
+        </DialogHeader>
+        {target?.detail && (
+          <p className="rounded-xl border border-red-100 bg-red-50 p-3 text-xs leading-6 text-red-800">
+            {target.detail}
+          </p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" disabled={pending} onClick={onClose}>
+            إلغاء
+          </Button>
+          <Button variant="destructive" disabled={pending} onClick={onConfirm}>
+            {pending && <Loader2 className="ml-2 size-4 animate-spin" />}
+            حذف نهائي
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -623,6 +623,36 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         })
       ),
+    deleteProblem: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabProblem(ctx.activeBoardId, input.id)
+      ),
+    deleteIdea: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabIdea(ctx.activeBoardId, input.id)
+      ),
+    deleteSource: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabSource(ctx.activeBoardId, input.id)
+      ),
+    deleteInterview: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabInterview(ctx.activeBoardId, input.id)
+      ),
+    deleteExperiment: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabExperiment(ctx.activeBoardId, input.id)
+      ),
+    deleteTask: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabTask(ctx.activeBoardId, input.id)
+      ),
     aiSettings: protectedProcedure.query(async ({ ctx }) => {
       const setting = await ideaLab.getUserAiSetting(ctx.user.id);
       return setting
