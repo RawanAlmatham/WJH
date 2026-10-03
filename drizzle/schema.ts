@@ -434,6 +434,35 @@ export const ideaLabTasks = mysqlTable(
   ]
 );
 
+export const ideaLabSubtasks = mysqlTable(
+  "ideaLabSubtasks",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    taskId: int("taskId")
+      .references(() => ideaLabTasks.id, { onDelete: "cascade" })
+      .notNull(),
+    title: varchar("title", { length: 280 }).notNull(),
+    description: text("description"),
+    status: mysqlEnum("status", ["todo", "in_progress", "blocked", "done"])
+      .default("todo")
+      .notNull(),
+    assigneeUserId: int("assigneeUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    dueDate: timestamp("dueDate"),
+    completedAt: timestamp("completedAt"),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("ideaLabSubtasks_task_idx").on(table.boardId, table.taskId)]
+);
+
 export const userAiSettings = mysqlTable("userAiSettings", {
   userId: int("userId")
     .primaryKey()

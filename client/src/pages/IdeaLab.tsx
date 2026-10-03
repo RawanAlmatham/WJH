@@ -947,6 +947,7 @@ export default function IdeaLab({
       />
 
       <TaskDialog
+        canEdit={canEdit}
         open={taskDialogOpen}
         task={editingTask}
         initialIdeaId={taskIdeaId}
@@ -963,13 +964,20 @@ export default function IdeaLab({
             kind: "task",
             id: editingTask.id,
             title: editingTask.title,
+            detail: "حذف المهمة سيحذف خطواتها الفرعية أيضًا.",
           });
         }}
         onSubmit={async (input: any) => {
           try {
             if (editingTask)
               await updateTask.mutateAsync({ id: editingTask.id, ...input });
-            else await createTask.mutateAsync(input);
+            else {
+              const created = await createTask.mutateAsync(input);
+              setEditingTask({ id: created.id, ...input });
+              await refresh();
+              toast.success("تم حفظ المهمة، يمكنك الآن إضافة خطواتها الفرعية");
+              return;
+            }
             await refresh();
             setTaskDialogOpen(false);
             setEditingTask(null);
@@ -1676,6 +1684,10 @@ function IdeaWorkspacePage({
                       <p className="mt-1 text-[11px] text-[#696D75]">
                         {dateLabel(task.dueDate)}
                       </p>
+                      <SubtaskProgress
+                        taskId={task.id}
+                        subtasks={data.subtasks}
+                      />
                     </div>
                     <Pill
                       tone={
@@ -1849,7 +1861,13 @@ function MyIdeaTasksPage({
   onOpen,
   onStatus,
 }: any) {
-  const mine = data.tasks.filter((task: any) => task.assigneeUserId === userId);
+  const mine = data.tasks.filter(
+    (task: any) =>
+      task.assigneeUserId === userId ||
+      data.subtasks?.some(
+        (item: any) => item.taskId === task.id && item.assigneeUserId === userId
+      )
+  );
   return (
     <div>
       <PageHeading
@@ -1883,6 +1901,12 @@ function MyIdeaTasksPage({
               >
                 <button onClick={() => onOpen(task)} className="text-right">
                   <p className="font-bold">{task.title}</p>
+                  {task.assigneeUserId !== userId && (
+                    <p className="mt-1 text-xs text-blue-700">
+                      لديك خطوات مسندة لك داخل هذه المهمة
+                    </p>
+                  )}
+                  <SubtaskProgress taskId={task.id} subtasks={data.subtasks} />
                   <p className="mt-1 text-xs text-[#696D75]">
                     {idea?.title || "مهمة عامة"} · {dateLabel(task.dueDate)}
                   </p>
@@ -3788,6 +3812,7 @@ function ExperimentDialog({
 }
 
 function TaskDialog({
+  canEdit,
   open,
   task,
   initialIdeaId,
@@ -3861,7 +3886,7 @@ function TaskDialog({
         className="max-h-[90vh] overflow-y-auto bg-[#F5F2EE] sm:max-w-2xl"
       >
         <DialogHeader className="text-right">
-          <DialogTitle>{task ? "تعديل المهمة" : "إضافة مهمة"}</DialogTitle>
+          <DialogTitle>{task ? "تفاصيل المهمة" : "إضافة مهمة"}</DialogTitle>
           <DialogDescription>
             اربط المهمة بما تخدمه، وحدد من يتولاها ومتى تحتاج إلى إنجاز.
           </DialogDescription>
@@ -3877,9 +3902,9 @@ function TaskDialog({
             </Field>
           </div>
           <div className="sm:col-span-2">
-            <Field label="التفاصيل">
+            <Field label="تفاصيل المهمة والنتيجة المطلوبة">
               <Textarea
-                rows={3}
+                rows={5}
                 value={description}
                 onChange={event => setDescription(event.target.value)}
                 placeholder="النتيجة المطلوبة أو أي ملاحظات تساعد المنفذ."
@@ -3969,8 +3994,9 @@ function TaskDialog({
             </select>
           </Field>
         </div>
+        <TaskSubtasks task={task} data={data} canEdit={canEdit} />
         <DialogFooter>
-          {task && (
+          {task && canEdit && (
             <Button
               variant="outline"
               onClick={onDelete}
@@ -3986,6 +4012,7 @@ function TaskDialog({
           <Button
             disabled={
               pending ||
+              !canEdit ||
               title.trim().length < 3 ||
               (Boolean(linkType) && !linkId)
             }
@@ -4014,6 +4041,255 @@ function TaskDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SubtaskProgress({ taskId, subtasks = [] }: any) {
+  const items = subtasks.filter((item: any) => item.taskId === taskId);
+  if (!items.length) return null;
+  return (
+    <p className="mt-1 text-xs text-slate-500">
+      {items.filter((item: any) => item.status === "done").length} /{" "}
+      {items.length} خطوات مكتملة
+    </p>
+  );
+}
+
+function TaskSubtasks({ task, data, canEdit }: any) {
+  const utils = trpc.useUtils();
+  const create = trpc.ideaLab.createSubtask.useMutation();
+  const update = trpc.ideaLab.updateSubtask.useMutation();
+  const remove = trpc.ideaLab.deleteSubtask.useMutation();
+  const [editing, setEditing] = useState<any>(null);
+  const [deleting, setDeleting] = useState<any>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [assignee, setAssignee] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [status, setStatus] = useState("todo");
+  const items = (data.subtasks || []).filter(
+    (item: any) => item.taskId === task?.id
+  );
+  const completed = items.filter((item: any) => item.status === "done").length;
+  const pending =
+    !canEdit || create.isPending || update.isPending || remove.isPending;
+  useEffect(() => {
+    setEditing(null);
+  }, [task?.id]);
+  const start = (item: any = {}) => {
+    setEditing(item);
+    setTitle(item.title || "");
+    setDescription(item.description || "");
+    setAssignee(item.assigneeUserId ? String(item.assigneeUserId) : "");
+    setStatus(item.status || "todo");
+    const date = item.dueDate ? new Date(item.dueDate) : null;
+    setDueDate(
+      date
+        ? new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16)
+        : ""
+    );
+  };
+  const run = async (action: () => Promise<unknown>) => {
+    try {
+      await action();
+      await utils.ideaLab.overview.invalidate();
+      return true;
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "تعذر حفظ المهمة الفرعية"
+      );
+      return false;
+    }
+  };
+  return (
+    <section className="space-y-3 rounded-xl border bg-white p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-bold">
+          المهام الفرعية{" "}
+          <span className="text-sm font-normal text-slate-500">
+            {completed} / {items.length} مكتملة
+          </span>
+        </h3>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!task?.id || pending}
+          onClick={() => start()}
+        >
+          إضافة خطوة
+        </Button>
+      </div>
+      {items.length > 0 && (
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full bg-emerald-500"
+            style={{ width: `${(completed / items.length) * 100}%` }}
+          />
+        </div>
+      )}
+      {!task?.id && (
+        <p className="text-sm text-slate-500">
+          احفظ المهمة أولًا، ثم أضف خطواتها الفرعية هنا.
+        </p>
+      )}
+      {task?.id && !items.length && !editing && (
+        <p className="text-sm text-slate-500">
+          قسّم المهمة إلى خطوات صغيرة وواضحة.
+        </p>
+      )}
+      {items.map((item: any) => (
+        <div
+          key={item.id}
+          className="flex items-start gap-3 rounded-lg border p-3"
+        >
+          <input
+            type="checkbox"
+            aria-label={`إنجاز ${item.title}`}
+            checked={item.status === "done"}
+            disabled={pending}
+            className="mt-1 size-4"
+            onChange={event => {
+              void run(() =>
+                update.mutateAsync({
+                  id: item.id,
+                  status: event.target.checked ? "done" : "todo",
+                })
+              );
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => start(item)}
+            className="flex-1 text-right"
+          >
+            <p
+              className={`font-medium ${item.status === "done" ? "text-slate-400 line-through" : ""}`}
+            >
+              {item.title}
+            </p>
+            {item.description && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-slate-500">
+                {item.description}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-slate-500">
+              {taskStatusLabels[item.status as keyof typeof taskStatusLabels]} ·{" "}
+              {data.members.find(
+                (member: any) => member.userId === item.assigneeUserId
+              )?.name || "غير مسندة"}
+              {item.dueDate
+                ? ` · ${new Date(item.dueDate).toLocaleDateString("ar-SA")}`
+                : ""}
+            </p>
+          </button>
+          <Button
+            size="icon"
+            variant="ghost"
+            disabled={pending}
+            aria-label={`حذف ${item.title}`}
+            onClick={() => setDeleting(item)}
+          >
+            <Trash2 className="size-4 text-red-600" />
+          </Button>
+        </div>
+      ))}
+      {editing && (
+        <div className="space-y-3 rounded-lg bg-slate-50 p-3">
+          <Field label="عنوان الخطوة">
+            <Input
+              maxLength={280}
+              value={title}
+              onChange={event => setTitle(event.target.value)}
+            />
+          </Field>
+          <Field label="تفاصيل الخطوة">
+            <Textarea
+              value={description}
+              onChange={event => setDescription(event.target.value)}
+            />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="المسؤول">
+              <select
+                className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                value={assignee}
+                onChange={event => setAssignee(event.target.value)}
+              >
+                <option value="">غير مسندة</option>
+                {data.members
+                  .filter((member: any) => member.userId)
+                  .map((member: any) => (
+                    <option key={member.id} value={member.userId}>
+                      {member.name}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="موعد الإنجاز">
+              <Input
+                type="datetime-local"
+                value={dueDate}
+                onChange={event => setDueDate(event.target.value)}
+              />
+            </Field>
+            <Field label="الحالة">
+              <select
+                className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                value={status}
+                onChange={event => setStatus(event.target.value)}
+              >
+                {Object.entries(taskStatusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={pending || !title.trim()}
+              onClick={async () => {
+                const values = {
+                  title: title.trim(),
+                  description: description.trim() || null,
+                  status: status as "todo" | "in_progress" | "blocked" | "done",
+                  assigneeUserId: assignee ? Number(assignee) : null,
+                  dueDate: dueDate ? new Date(dueDate) : null,
+                };
+                if (
+                  await run(() =>
+                    editing.id
+                      ? update.mutateAsync({ id: editing.id, ...values })
+                      : create.mutateAsync({ taskId: task.id, ...values })
+                  )
+                )
+                  setEditing(null);
+              }}
+            >
+              حفظ الخطوة
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+              إلغاء
+            </Button>
+          </div>
+        </div>
+      )}
+      <DeleteConfirmationDialog
+        target={deleting}
+        pending={pending}
+        onClose={() => setDeleting(null)}
+        onConfirm={async () => {
+          if (await run(() => remove.mutateAsync({ id: deleting.id }))) {
+            setDeleting(null);
+            setEditing(null);
+          }
+        }}
+      />
+    </section>
   );
 }
 

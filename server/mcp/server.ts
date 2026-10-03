@@ -55,6 +55,10 @@ export const WIJHA_MCP_TOOL_NAMES = [
   "wijha_list_tasks",
   "wijha_create_task",
   "wijha_update_task",
+  "wijha_list_subtasks",
+  "wijha_create_subtask",
+  "wijha_update_subtask",
+  "wijha_delete_subtask",
   "wijha_delete_problem",
   "wijha_delete_idea",
   "wijha_delete_source",
@@ -1165,7 +1169,13 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
               (!input.experiment_id ||
                 item.experimentId === input.experiment_id)
           )
-          .slice(0, input.limit);
+          .slice(0, input.limit)
+          .map(item => ({
+            ...item,
+            subtasks: data.subtasks.filter(
+              subtask => subtask.taskId === item.id
+            ),
+          }));
         return { message: `المهام (${rows.length}):`, result: rows };
       })
   );
@@ -1263,6 +1273,121 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
       })
   );
 
+  server.registerTool(
+    "wijha_list_subtasks",
+    {
+      title: "عرض المهام الفرعية",
+      description:
+        "يعرض خطوات مهمة في المختبر الحالي مع تفاصيلها ومسؤوليها وحالاتها.",
+      inputSchema: { task_id: z.number().int().positive() },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        return {
+          result: data.subtasks.filter(item => item.taskId === input.task_id),
+          message: "المهام الفرعية",
+        };
+      })
+  );
+  server.registerTool(
+    "wijha_create_subtask",
+    {
+      title: "إضافة مهمة فرعية",
+      description: "يضيف خطوة لمهمة موجودة مع تفاصيل ومسؤول وموعد اختياريين.",
+      inputSchema: {
+        task_id: z.number().int().positive(),
+        title: z.string().trim().min(1).max(280),
+        description: z.string().max(20000).optional(),
+        status: taskStatus.optional(),
+        assignee_user_id: z.number().int().positive().nullable().optional(),
+        due_date: dateInput.nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        return {
+          result: await caller.ideaLab.createSubtask({
+            taskId: input.task_id,
+            title: input.title,
+            description: input.description,
+            status: input.status,
+            assigneeUserId: input.assignee_user_id,
+            dueDate:
+              input.due_date === undefined ? undefined : asDate(input.due_date),
+          }),
+          message: "تمت إضافة المهمة الفرعية",
+        };
+      })
+  );
+  server.registerTool(
+    "wijha_update_subtask",
+    {
+      title: "تحديث مهمة فرعية",
+      description: "يحدّث تفاصيل خطوة وحالتها ومسؤولها وموعدها.",
+      inputSchema: {
+        subtask_id: z.number().int().positive(),
+        title: z.string().trim().min(1).max(280).optional(),
+        description: z.string().max(20000).nullable().optional(),
+        status: taskStatus.optional(),
+        assignee_user_id: z.number().int().positive().nullable().optional(),
+        due_date: dateInput.nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        return {
+          result: await caller.ideaLab.updateSubtask({
+            id: input.subtask_id,
+            title: input.title,
+            description: input.description,
+            status: input.status,
+            assigneeUserId: input.assignee_user_id,
+            dueDate:
+              input.due_date === undefined ? undefined : asDate(input.due_date),
+          }),
+          message: "تم تحديث المهمة الفرعية",
+        };
+      })
+  );
+  server.registerTool(
+    "wijha_delete_subtask",
+    {
+      title: "حذف مهمة فرعية",
+      description: "يحذف خطوة نهائيًا بعد طلب صريح.",
+      inputSchema: { subtask_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        return {
+          result: await caller.ideaLab.deleteSubtask({ id: input.subtask_id }),
+          message: "تم حذف المهمة الفرعية",
+        };
+      })
+  );
   server.registerTool(
     "wijha_delete_problem",
     {
@@ -1385,7 +1510,7 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
     "wijha_delete_task",
     {
       title: "حذف مهمة",
-      description: "يحذف مهمة من مختبر الأفكار نهائيًا بعد طلب صريح.",
+      description: "يحذف المهمة وخطواتها الفرعية نهائيًا بعد طلب صريح.",
       inputSchema: { task_id: z.number().int().positive() },
       annotations: {
         readOnlyHint: false,

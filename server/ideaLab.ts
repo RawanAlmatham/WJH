@@ -7,6 +7,7 @@ import {
   ideaLabProblems,
   ideaLabSources,
   ideaLabTasks,
+  ideaLabSubtasks,
   managementBoards,
   teamMembers,
   userAiSettings,
@@ -31,6 +32,7 @@ export async function getIdeaLabOverview(boardId: number) {
     tasks,
     captures,
     members,
+    subtasks,
   ] = await Promise.all([
     db
       .select()
@@ -79,6 +81,11 @@ export async function getIdeaLabOverview(boardId: number) {
         and(eq(teamMembers.boardId, boardId), eq(teamMembers.isActive, true))
       )
       .orderBy(teamMembers.name),
+    db
+      .select()
+      .from(ideaLabSubtasks)
+      .where(eq(ideaLabSubtasks.boardId, boardId))
+      .orderBy(ideaLabSubtasks.createdAt, ideaLabSubtasks.id),
   ]);
   if (!board[0]) throw new Error("لم نعثر على اللوحة الحالية");
   if (board[0].template !== "idea_lab")
@@ -93,7 +100,89 @@ export async function getIdeaLabOverview(boardId: number) {
     tasks,
     captures,
     members,
+    subtasks,
   };
+}
+
+export async function createIdeaLabSubtask(input: {
+  boardId: number;
+  taskId: number;
+  userId: number;
+  title: string;
+  description?: string | null;
+  status?: IdeaLabTaskStatus;
+  assigneeUserId?: number | null;
+  dueDate?: Date | null;
+}) {
+  const db = await database();
+  await requireTask(db, input.boardId, input.taskId);
+  if (input.assigneeUserId)
+    await requireTeamUser(db, input.boardId, input.assigneeUserId);
+  const { userId, ...values } = input;
+  const result = await db
+    .insert(ideaLabSubtasks)
+    .values({
+      ...values,
+      createdByUserId: userId,
+      completedAt: input.status === "done" ? new Date() : null,
+    });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function updateIdeaLabSubtask(input: {
+  boardId: number;
+  id: number;
+  title?: string;
+  description?: string | null;
+  status?: IdeaLabTaskStatus;
+  assigneeUserId?: number | null;
+  dueDate?: Date | null;
+}) {
+  const db = await database();
+  await requireSubtask(db, input.boardId, input.id);
+  if (input.assigneeUserId)
+    await requireTeamUser(db, input.boardId, input.assigneeUserId);
+  const { boardId, id, ...values } = input;
+  if (!Object.keys(values).length) return { id };
+  await db
+    .update(ideaLabSubtasks)
+    .set({
+      ...values,
+      ...(input.status === undefined
+        ? {}
+        : { completedAt: input.status === "done" ? new Date() : null }),
+    })
+    .where(
+      and(eq(ideaLabSubtasks.boardId, boardId), eq(ideaLabSubtasks.id, id))
+    );
+  return { id };
+}
+
+export async function deleteIdeaLabSubtask(boardId: number, id: number) {
+  const db = await database();
+  await requireSubtask(db, boardId, id);
+  await db
+    .delete(ideaLabSubtasks)
+    .where(
+      and(eq(ideaLabSubtasks.boardId, boardId), eq(ideaLabSubtasks.id, id))
+    );
+  return { id };
+}
+
+async function requireSubtask(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  id: number
+) {
+  const [item] = await db
+    .select()
+    .from(ideaLabSubtasks)
+    .where(
+      and(eq(ideaLabSubtasks.boardId, boardId), eq(ideaLabSubtasks.id, id))
+    )
+    .limit(1);
+  if (!item) throw new Error("لم نعثر على المهمة الفرعية في هذه اللوحة");
+  return item;
 }
 
 export async function createIdeaLabProblem(input: {

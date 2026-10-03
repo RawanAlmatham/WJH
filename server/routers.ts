@@ -649,6 +649,43 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         })
       ),
+    createSubtask: teamMemberProcedure
+      .input(
+        z.object({
+          taskId: z.number().int().positive(),
+          title: z.string().trim().min(1).max(280),
+          description: z.string().trim().max(20_000).nullable().optional(),
+          status: z.enum(["todo", "in_progress", "blocked", "done"]).optional(),
+          assigneeUserId: z.number().int().positive().nullable().optional(),
+          dueDate: z.date().nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabSubtask({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    updateSubtask: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          title: z.string().trim().min(1).max(280).optional(),
+          description: z.string().trim().max(20_000).nullable().optional(),
+          status: z.enum(["todo", "in_progress", "blocked", "done"]).optional(),
+          assigneeUserId: z.number().int().positive().nullable().optional(),
+          dueDate: z.date().nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabSubtask({ ...input, boardId: ctx.activeBoardId })
+      ),
+    deleteSubtask: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabSubtask(ctx.activeBoardId, input.id)
+      ),
     createCapture: teamMemberProcedure
       .input(
         z.object({
