@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Beaker,
   Bot,
   CalendarDays,
@@ -32,10 +33,14 @@ import {
   Loader2,
   LogOut,
   Menu,
+  MessageSquare,
+  Inbox,
+  LayoutGrid,
   Plus,
   Search,
   Settings,
   Sparkles,
+  Target,
   Trash2,
   Users,
   X,
@@ -44,6 +49,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type LabPage =
+  | "portfolio"
+  | "inbox"
+  | "idea"
+  | "my_tasks"
+  | "team"
   | "compass"
   | "problems"
   | "problem"
@@ -61,7 +71,8 @@ type DeletableKind =
   | "source"
   | "interview"
   | "experiment"
-  | "task";
+  | "task"
+  | "capture";
 
 type IdeaLabProps = {
   user: { id: number; name?: string | null; role?: string | null };
@@ -228,7 +239,10 @@ export default function IdeaLab({
     staleTime: 15_000,
   });
   const { data: aiSettings } = trpc.ideaLab.aiSettings.useQuery();
-  const [page, setPage] = useState<LabPage>("compass");
+  const [page, setPage] = useState<LabPage>("portfolio");
+  const [selectedIdeaId, setSelectedIdeaId] = useState<number | null>(null);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureIdeaId, setCaptureIdeaId] = useState<number | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [composerKind, setComposerKind] = useState<EntityKind | null>(null);
   const [selectedProblemId, setSelectedProblemId] = useState<number | null>(
@@ -242,6 +256,7 @@ export default function IdeaLab({
   const [experimentOpen, setExperimentOpen] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
+  const [taskIdeaId, setTaskIdeaId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     kind: DeletableKind;
     id: number;
@@ -257,17 +272,24 @@ export default function IdeaLab({
   const createInterview = trpc.ideaLab.createInterview.useMutation();
   const createExperiment = trpc.ideaLab.createExperiment.useMutation();
   const createTask = trpc.ideaLab.createTask.useMutation();
+  const createCapture = trpc.ideaLab.createCapture.useMutation();
+  const updateCapture = trpc.ideaLab.updateCapture.useMutation();
   const deleteProblem = trpc.ideaLab.deleteProblem.useMutation();
   const deleteIdea = trpc.ideaLab.deleteIdea.useMutation();
   const deleteSource = trpc.ideaLab.deleteSource.useMutation();
   const deleteInterview = trpc.ideaLab.deleteInterview.useMutation();
   const deleteExperiment = trpc.ideaLab.deleteExperiment.useMutation();
   const deleteTask = trpc.ideaLab.deleteTask.useMutation();
+  const deleteCapture = trpc.ideaLab.deleteCapture.useMutation();
   const updateProblem = trpc.ideaLab.updateProblem.useMutation({
     onSuccess: refresh,
     onError: issue => toast.error(issue.message),
   });
   const updateIdea = trpc.ideaLab.updateIdea.useMutation({
+    onSuccess: refresh,
+    onError: issue => toast.error(issue.message),
+  });
+  const updateInterview = trpc.ideaLab.updateInterview.useMutation({
     onSuccess: refresh,
     onError: issue => toast.error(issue.message),
   });
@@ -296,13 +318,15 @@ export default function IdeaLab({
   const selectedProblemSources =
     data?.sources.filter(source => source.problemId === selectedProblemId) ??
     [];
+  const selectedIdea = data?.ideas.find(idea => idea.id === selectedIdeaId);
   const deleting =
     deleteProblem.isPending ||
     deleteIdea.isPending ||
     deleteSource.isPending ||
     deleteInterview.isPending ||
     deleteExperiment.isPending ||
-    deleteTask.isPending;
+    deleteTask.isPending ||
+    deleteCapture.isPending;
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -319,6 +343,8 @@ export default function IdeaLab({
         await deleteExperiment.mutateAsync({ id: deleteTarget.id });
       if (deleteTarget.kind === "task")
         await deleteTask.mutateAsync({ id: deleteTarget.id });
+      if (deleteTarget.kind === "capture")
+        await deleteCapture.mutateAsync({ id: deleteTarget.id });
       if (deleteTarget.kind === "problem") {
         setSelectedProblemId(null);
         setPage("problems");
@@ -340,13 +366,10 @@ export default function IdeaLab({
     label: string;
     icon: typeof Compass;
   }> = [
-    { id: "compass", label: "بوصلة الفرص", icon: Compass },
-    { id: "problems", label: "بنك المشكلات", icon: AlertTriangle },
-    { id: "ideas", label: "الأفكار", icon: Lightbulb },
-    { id: "interviews", label: "مقابلات العملاء", icon: ClipboardList },
-    { id: "experiments", label: "التجارب", icon: FlaskConical },
-    { id: "tasks", label: "المهام", icon: ListTodo },
-    { id: "compare", label: "مقارنة الفرص", icon: Beaker },
+    { id: "portfolio", label: "محفظة الأفكار", icon: LayoutGrid },
+    { id: "inbox", label: "صندوق الالتقاط", icon: Inbox },
+    { id: "my_tasks", label: "مهامي", icon: ListTodo },
+    { id: "team", label: "الفريق", icon: Users },
     { id: "settings", label: "الإعدادات", icon: Settings },
   ];
 
@@ -420,8 +443,7 @@ export default function IdeaLab({
         <nav className="mt-5 flex-1 space-y-1 overflow-y-auto">
           {navItems.map(item => {
             const active =
-              page === item.id ||
-              (item.id === "problems" && page === "problem");
+              page === item.id || (item.id === "portfolio" && page === "idea");
             return (
               <button
                 key={item.id}
@@ -474,17 +496,24 @@ export default function IdeaLab({
             </button>
             <div className="hidden w-80 items-center gap-2 rounded-xl border border-[#DEDFDC] bg-white px-3 py-2.5 text-xs text-[#696D75] md:flex">
               <Search className="size-4" />
-              ابحث في المشكلات والأفكار والمقابلات والمهام...
+              ابحث في الأفكار وما جمعه الفريق...
             </div>
           </div>
           <div className="flex items-center gap-2">
             {canEdit && (
               <Button
-                onClick={() => setComposerKind("problem")}
+                onClick={() => {
+                  if (page === "inbox") {
+                    setCaptureIdeaId(null);
+                    setCaptureOpen(true);
+                  } else setComposerKind("idea");
+                }}
                 className="gap-2 bg-[#1E3A8A] hover:bg-[#172E6E]"
               >
                 <Plus className="size-4" />
-                <span className="hidden sm:inline">إضافة مشكلة أو فكرة</span>
+                <span className="hidden sm:inline">
+                  {page === "inbox" ? "التقاط جديد" : "فكرة جديدة"}
+                </span>
               </Button>
             )}
             <BrandMark className="size-9 lg:hidden" />
@@ -492,6 +521,135 @@ export default function IdeaLab({
         </header>
 
         <div className="mx-auto max-w-[1450px] px-4 py-7 lg:px-8 lg:py-9">
+          {page === "portfolio" && (
+            <IdeaPortfolioPage
+              data={data}
+              canEdit={canEdit}
+              onAdd={() => setComposerKind("idea")}
+              onOpen={(id: number) => {
+                setSelectedIdeaId(id);
+                setPage("idea");
+              }}
+            />
+          )}
+          {page === "inbox" && (
+            <CaptureInboxPage
+              data={data}
+              canEdit={canEdit}
+              onAdd={() => {
+                setCaptureIdeaId(null);
+                setCaptureOpen(true);
+              }}
+              onAttach={async (captureId: number, ideaId: number) => {
+                await updateCapture.mutateAsync({ id: captureId, ideaId });
+                await refresh();
+                toast.success("أُضيف العنصر إلى مساحة الفكرة");
+              }}
+              onAttachProblem={async (problemId: number, ideaId: number) => {
+                await updateIdea.mutateAsync({ id: ideaId, problemId });
+                await refresh();
+                toast.success("أُضيفت المشكلة إلى مساحة الفكرة");
+              }}
+              onAttachInterview={async (
+                interviewId: number,
+                ideaId: number
+              ) => {
+                await updateInterview.mutateAsync({ id: interviewId, ideaId });
+                await refresh();
+                toast.success("أُضيفت المقابلة إلى مساحة الفكرة");
+              }}
+              onDelete={(capture: any) =>
+                setDeleteTarget({
+                  kind: "capture",
+                  id: capture.id,
+                  title: capture.title,
+                })
+              }
+            />
+          )}
+          {page === "idea" && selectedIdea && (
+            <IdeaWorkspacePage
+              idea={selectedIdea}
+              data={data}
+              canEdit={canEdit}
+              aiConfigured={Boolean(aiSettings?.configured)}
+              onBack={() => setPage("portfolio")}
+              onStage={(stage: any) =>
+                updateIdea.mutate({ id: selectedIdea.id, stage })
+              }
+              onUpdateDetails={(values: any) =>
+                updateIdea.mutate({ id: selectedIdea.id, ...values })
+              }
+              onDecision={(decision: any, decisionRationale?: string) =>
+                updateIdea.mutate({
+                  id: selectedIdea.id,
+                  decision,
+                  decisionRationale,
+                  stage:
+                    decision === "stop"
+                      ? "archived"
+                      : decision === "approved"
+                        ? "promising"
+                        : undefined,
+                })
+              }
+              onAddCapture={() => {
+                setCaptureIdeaId(selectedIdea.id);
+                setCaptureOpen(true);
+              }}
+              onAddSource={() =>
+                setSourceTarget({ kind: "idea", id: selectedIdea.id })
+              }
+              onAddInterview={() => setInterviewOpen(true)}
+              onAddExperiment={() => setExperimentOpen(true)}
+              onAddTask={() => {
+                setEditingTask(null);
+                setTaskIdeaId(selectedIdea.id);
+                setTaskDialogOpen(true);
+              }}
+              onOpenTask={(task: any) => {
+                setEditingTask(task);
+                setTaskDialogOpen(true);
+              }}
+              onAnalyze={(sourceId: number) =>
+                analyzeSource.mutate({ sourceId })
+              }
+              onApprove={(sourceId: number) =>
+                approveSource.mutate({ sourceId })
+              }
+              onOpenSettings={() => setPage("settings")}
+            />
+          )}
+          {page === "idea" && !selectedIdea && (
+            <IdeaPortfolioPage
+              data={data}
+              canEdit={canEdit}
+              onAdd={() => setComposerKind("idea")}
+              onOpen={(id: number) => {
+                setSelectedIdeaId(id);
+                setPage("idea");
+              }}
+            />
+          )}
+          {page === "my_tasks" && (
+            <MyIdeaTasksPage
+              data={data}
+              userId={user.id}
+              canEdit={canEdit}
+              onAdd={() => {
+                setEditingTask(null);
+                setTaskDialogOpen(true);
+              }}
+              onOpen={(task: any) => {
+                setEditingTask(task);
+                setTaskDialogOpen(true);
+              }}
+              onStatus={(id: number, status: any) =>
+                updateTask.mutate({ id, status })
+              }
+            />
+          )}
+          {page === "team" && <IdeaTeamPage data={data} />}
           {page === "compass" && (
             <CompassPage
               data={data}
@@ -703,6 +861,10 @@ export default function IdeaLab({
               });
             await refresh();
             setComposerKind(null);
+            if (input.kind === "idea") {
+              setSelectedIdeaId(created.id);
+              setPage("idea");
+            }
             toast.success(
               input.kind === "problem"
                 ? "تمت إضافة المشكلة"
@@ -747,6 +909,7 @@ export default function IdeaLab({
       <InterviewDialog
         open={interviewOpen}
         data={data}
+        initialIdeaId={page === "idea" ? selectedIdeaId : null}
         pending={createInterview.isPending}
         onClose={() => setInterviewOpen(false)}
         onSubmit={async (input: any) => {
@@ -766,6 +929,7 @@ export default function IdeaLab({
       <ExperimentDialog
         open={experimentOpen}
         ideas={data.ideas}
+        initialIdeaId={page === "idea" ? selectedIdeaId : null}
         pending={createExperiment.isPending}
         onClose={() => setExperimentOpen(false)}
         onSubmit={async (input: any) => {
@@ -785,11 +949,13 @@ export default function IdeaLab({
       <TaskDialog
         open={taskDialogOpen}
         task={editingTask}
+        initialIdeaId={taskIdeaId}
         data={data}
         pending={createTask.isPending || updateTask.isPending}
         onClose={() => {
           setTaskDialogOpen(false);
           setEditingTask(null);
+          setTaskIdeaId(null);
         }}
         onDelete={() => {
           if (!editingTask) return;
@@ -807,10 +973,41 @@ export default function IdeaLab({
             await refresh();
             setTaskDialogOpen(false);
             setEditingTask(null);
+            setTaskIdeaId(null);
             toast.success(editingTask ? "تم تحديث المهمة" : "تمت إضافة المهمة");
           } catch (issue) {
             toast.error(
               issue instanceof Error ? issue.message : "تعذر حفظ المهمة"
+            );
+          }
+        }}
+      />
+
+      <CaptureDialog
+        open={captureOpen}
+        ideaId={captureIdeaId}
+        pending={createCapture.isPending}
+        onClose={() => {
+          setCaptureOpen(false);
+          setCaptureIdeaId(null);
+        }}
+        onSubmit={async (input: any) => {
+          try {
+            await createCapture.mutateAsync({
+              ...input,
+              ideaId: captureIdeaId ?? undefined,
+            });
+            await refresh();
+            setCaptureOpen(false);
+            setCaptureIdeaId(null);
+            toast.success(
+              captureIdeaId
+                ? "أُضيف العنصر إلى مساحة الفكرة"
+                : "حُفظ العنصر في صندوق الالتقاط"
+            );
+          } catch (issue) {
+            toast.error(
+              issue instanceof Error ? issue.message : "تعذر حفظ العنصر"
             );
           }
         }}
@@ -847,6 +1044,897 @@ function PageHeading({
         </p>
       </div>
       {action}
+    </div>
+  );
+}
+
+const journeyStages = [
+  { id: "seed", label: "تحديد المشكلة" },
+  { id: "exploration", label: "جمع الأدلة" },
+  { id: "interviews", label: "فهم العملاء" },
+  { id: "experiment", label: "اختبار الحل" },
+  { id: "promising", label: "اتخاذ القرار" },
+] as const;
+
+const captureTypeLabels: Record<string, string> = {
+  problem: "مشكلة",
+  idea: "فكرة أولية",
+  link: "رابط",
+  note: "ملاحظة",
+  feedback: "رأي عميل",
+  statistic: "رقم أو إحصائية",
+  competitor: "منافس",
+};
+
+function IdeaPortfolioPage({ data, canEdit, onAdd, onOpen }: any) {
+  const active = data.ideas.filter((idea: any) => idea.stage !== "archived");
+  const archived = data.ideas.filter((idea: any) => idea.stage === "archived");
+
+  return (
+    <div>
+      <PageHeading
+        eyebrow="من الاستكشاف إلى القرار"
+        title="محفظة الأفكار"
+        description="كل فكرة هنا مساحة عمل متكاملة تجمع المشكلة والأدلة والمقابلات والتجارب والمهام والقرار في مكان واحد."
+        action={
+          canEdit ? (
+            <Button onClick={onAdd} className="gap-2 bg-[#1E3A8A]">
+              <Plus className="size-4" /> فكرة جديدة
+            </Button>
+          ) : undefined
+        }
+      />
+      {active.length === 0 ? (
+        <EmptyLabState
+          icon={Lightbulb}
+          title="ابدأ بأول فكرة"
+          description="يمكنك البدء من مشكلة واضحة أو من فكرة مباشرة، ثم جمع كل ما يدعمها داخل مساحتها."
+          action={
+            canEdit ? <Button onClick={onAdd}>إنشاء مساحة فكرة</Button> : null
+          }
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {active.map((idea: any) => {
+            const stageIndex = Math.max(
+              0,
+              journeyStages.findIndex(step => step.id === idea.stage)
+            );
+            const sourceCount = data.sources.filter(
+              (item: any) =>
+                item.ideaId === idea.id ||
+                (idea.problemId && item.problemId === idea.problemId)
+            ).length;
+            const interviewCount = data.interviews.filter(
+              (item: any) =>
+                item.ideaId === idea.id ||
+                (idea.problemId && item.problemId === idea.problemId)
+            ).length;
+            const taskCount = data.tasks.filter(
+              (item: any) => item.ideaId === idea.id && item.status !== "done"
+            ).length;
+            return (
+              <button
+                key={idea.id}
+                onClick={() => onOpen(idea.id)}
+                className="group rounded-3xl border border-[#D9DDE7] bg-white p-5 text-right shadow-sm transition hover:-translate-y-0.5 hover:border-[#9EABD0] hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="flex size-11 items-center justify-center rounded-2xl bg-[#E9EDF7] text-[#1E3A8A]">
+                    <Lightbulb className="size-5" />
+                  </span>
+                  <Pill tone={idea.confidence === "high" ? "green" : "navy"}>
+                    {confidenceLabels[idea.confidence]}
+                  </Pill>
+                </div>
+                <h2 className="mt-5 text-lg font-extrabold leading-7 group-hover:text-[#1E3A8A]">
+                  {idea.title}
+                </h2>
+                <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-[#696D75]">
+                  {idea.description || "مساحة جاهزة لصياغة الفكرة وجمع أدلتها."}
+                </p>
+                <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#E9EDF2]">
+                  <div
+                    className="h-full rounded-full bg-[#F6B801]"
+                    style={{
+                      width: `${((stageIndex + 1) / journeyStages.length) * 100}%`,
+                    }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[11px] text-[#696D75]">
+                  <span>
+                    {journeyStages[stageIndex]?.label || "تحديد المشكلة"}
+                  </span>
+                  <span>
+                    {stageIndex + 1} من {journeyStages.length}
+                  </span>
+                </div>
+                <div className="mt-5 flex gap-4 border-t border-[#ECEDEB] pt-4 text-xs text-[#5E6470]">
+                  <span>{sourceCount} أدلة</span>
+                  <span>{interviewCount} مقابلات</span>
+                  <span>{taskCount} مهام مفتوحة</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {archived.length > 0 && (
+        <div className="mt-8 rounded-2xl border border-[#DEDFDC] bg-white/60 p-5">
+          <p className="text-sm font-bold">أفكار متوقفة أو مؤرشفة</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {archived.map((idea: any) => (
+              <button
+                key={idea.id}
+                onClick={() => onOpen(idea.id)}
+                className="rounded-full border bg-white px-4 py-2 text-xs hover:border-[#1E3A8A]"
+              >
+                {idea.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CaptureInboxPage({
+  data,
+  canEdit,
+  onAdd,
+  onAttach,
+  onAttachProblem,
+  onAttachInterview,
+  onDelete,
+}: any) {
+  const inbox = data.captures.filter((item: any) => item.status === "inbox");
+  const linkedProblemIds = new Set(
+    data.ideas.map((idea: any) => idea.problemId).filter(Boolean)
+  );
+  const orphanProblems = data.problems.filter(
+    (problem: any) => !linkedProblemIds.has(problem.id)
+  );
+  const orphanInterviews = data.interviews.filter(
+    (interview: any) => !interview.ideaId && !interview.problemId
+  );
+  return (
+    <div>
+      <PageHeading
+        eyebrow="التقط الآن ورتّب لاحقًا"
+        title="صندوق الالتقاط"
+        description="احفظ أي مشكلة أو رابط أو ملاحظة بسرعة، ثم اربطها بالفكرة المناسبة عندما تتضح الصورة."
+        action={
+          canEdit ? (
+            <Button onClick={onAdd} className="gap-2 bg-[#1E3A8A]">
+              <Plus className="size-4" /> التقاط جديد
+            </Button>
+          ) : undefined
+        }
+      />
+      {inbox.length === 0 &&
+      orphanProblems.length === 0 &&
+      orphanInterviews.length === 0 ? (
+        <EmptyLabState
+          icon={Inbox}
+          title="صندوقك مرتب"
+          description="لا توجد عناصر تنتظر التصنيف. يمكنك التقاط أي شيء جديد من هنا."
+        />
+      ) : (
+        <div className="space-y-3">
+          {inbox.map((capture: any) => (
+            <InboxRow
+              key={`capture-${capture.id}`}
+              label={captureTypeLabels[capture.captureType] || "ملاحظة"}
+              title={capture.title}
+              description={capture.content}
+              url={capture.url}
+              ideas={data.ideas}
+              canEdit={canEdit}
+              onAttach={(ideaId: number) => onAttach(capture.id, ideaId)}
+              onDelete={() => onDelete(capture)}
+            />
+          ))}
+          {orphanProblems.map((problem: any) => (
+            <InboxRow
+              key={`problem-${problem.id}`}
+              label="مشكلة محفوظة سابقًا"
+              title={problem.title}
+              description={problem.description}
+              ideas={data.ideas}
+              canEdit={canEdit && Boolean(onAttachProblem)}
+              onAttach={(ideaId: number) =>
+                onAttachProblem?.(problem.id, ideaId)
+              }
+            />
+          ))}
+          {orphanInterviews.map((interview: any) => (
+            <InboxRow
+              key={`interview-${interview.id}`}
+              label="مقابلة محفوظة سابقًا"
+              title={interview.participantLabel}
+              description={interview.summary || interview.transcript}
+              ideas={data.ideas}
+              canEdit={canEdit && Boolean(onAttachInterview)}
+              onAttach={(ideaId: number) =>
+                onAttachInterview?.(interview.id, ideaId)
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InboxRow({
+  label,
+  title,
+  description,
+  url,
+  ideas,
+  canEdit,
+  onAttach,
+  onDelete,
+}: any) {
+  const [ideaId, setIdeaId] = useState("");
+  return (
+    <div className="rounded-2xl border border-[#DEDFDC] bg-white p-4 md:flex md:items-center md:gap-5">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF3CC] text-[#806000]">
+        <Inbox className="size-4" />
+      </span>
+      <div className="mt-3 min-w-0 flex-1 md:mt-0">
+        <p className="text-[11px] font-bold text-[#7A2E5C]">{label}</p>
+        <p className="mt-1 font-bold">{title}</p>
+        {description && (
+          <p className="mt-1 line-clamp-2 text-xs leading-6 text-[#696D75]">
+            {description}
+          </p>
+        )}
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 inline-flex items-center gap-1 text-xs text-[#1E3A8A]"
+          >
+            فتح الرابط <ExternalLink className="size-3" />
+          </a>
+        )}
+      </div>
+      {canEdit && (
+        <div className="mt-4 flex items-center gap-2 md:mt-0">
+          <select
+            value={ideaId}
+            onChange={e => setIdeaId(e.target.value)}
+            className="h-9 max-w-48 rounded-lg border bg-white px-2 text-xs"
+          >
+            <option value="">اختر فكرة...</option>
+            {ideas.map((idea: any) => (
+              <option key={idea.id} value={idea.id}>
+                {idea.title}
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            disabled={!ideaId}
+            onClick={() => onAttach(Number(ideaId))}
+          >
+            ربط
+          </Button>
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IdeaWorkspacePage({
+  idea,
+  data,
+  canEdit,
+  aiConfigured,
+  onBack,
+  onStage,
+  onUpdateDetails,
+  onDecision,
+  onAddCapture,
+  onAddSource,
+  onAddInterview,
+  onAddExperiment,
+  onAddTask,
+  onOpenTask,
+  onAnalyze,
+  onApprove,
+  onOpenSettings,
+}: any) {
+  const problem = data.problems.find((item: any) => item.id === idea.problemId);
+  const belongs = (item: any) =>
+    item.ideaId === idea.id ||
+    (idea.problemId && item.problemId === idea.problemId);
+  const captures = data.captures.filter(
+    (item: any) => item.ideaId === idea.id && item.status !== "archived"
+  );
+  const sources = data.sources.filter(belongs);
+  const interviews = data.interviews.filter(belongs);
+  const experiments = data.experiments.filter(
+    (item: any) => item.ideaId === idea.id
+  );
+  const relatedInterviewIds = new Set(interviews.map((item: any) => item.id));
+  const relatedExperimentIds = new Set(experiments.map((item: any) => item.id));
+  const tasks = data.tasks.filter(
+    (item: any) =>
+      item.ideaId === idea.id ||
+      (idea.problemId && item.problemId === idea.problemId) ||
+      relatedInterviewIds.has(item.interviewId) ||
+      relatedExperimentIds.has(item.experimentId)
+  );
+  const stageIndex =
+    idea.stage === "archived"
+      ? -1
+      : journeyStages.findIndex(step => step.id === idea.stage);
+  const [decisionNote, setDecisionNote] = useState(
+    idea.decisionRationale || ""
+  );
+
+  return (
+    <div>
+      <button
+        onClick={onBack}
+        className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[#1E3A8A]"
+      >
+        <ArrowRight className="size-4" /> محفظة الأفكار
+      </button>
+      <div className="rounded-3xl bg-[#14285F] p-6 text-white md:p-8">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
+          <div>
+            <div className="flex flex-wrap gap-2">
+              <Pill tone="yellow">{stageLabels[idea.stage]}</Pill>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px]">
+                {confidenceLabels[idea.confidence]}
+              </span>
+            </div>
+            <h1 className="mt-4 text-2xl font-extrabold md:text-3xl">
+              {idea.title}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-white/70">
+              {idea.description ||
+                "ابدأ بصياغة الفكرة ثم اجمع ما يدعمها خطوة بخطوة."}
+            </p>
+          </div>
+          {canEdit && (
+            <Button
+              onClick={onAddCapture}
+              className="gap-2 bg-[#F6B801] text-[#14285F] hover:bg-[#FFD044]"
+            >
+              <Plus className="size-4" /> أضف لهذه الفكرة
+            </Button>
+          )}
+        </div>
+        <div className="mt-7 grid gap-2 sm:grid-cols-5">
+          {journeyStages.map((step, index) => (
+            <button
+              key={step.id}
+              disabled={!canEdit}
+              onClick={() => onStage(step.id)}
+              className={cn(
+                "rounded-xl border px-3 py-3 text-right text-xs transition",
+                index <= stageIndex
+                  ? "border-[#F6B801]/50 bg-[#F6B801]/15 text-white"
+                  : "border-white/10 bg-white/5 text-white/45",
+                canEdit && "hover:border-white/40"
+              )}
+            >
+              <span className="mb-1 block text-[10px]">{index + 1}</span>
+              {step.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-4">
+        {[
+          [sources.length + captures.length, "دليل ومعلومة", Link2],
+          [interviews.length, "مقابلات", MessageSquare],
+          [experiments.length, "تجارب", FlaskConical],
+          [
+            tasks.filter((item: any) => item.status !== "done").length,
+            "مهام مفتوحة",
+            ListTodo,
+          ],
+        ].map(([value, label, Icon]: any) => (
+          <div
+            key={label}
+            className="rounded-2xl border border-[#DEDFDC] bg-white p-4"
+          >
+            <Icon className="size-4 text-[#7A2E5C]" />
+            <p className="mt-3 text-2xl font-extrabold">{value}</p>
+            <p className="text-xs text-[#696D75]">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+        <div className="space-y-5">
+          <WorkspaceSection
+            icon={Target}
+            title="1. المشكلة التي نعمل عليها"
+            action={null}
+          >
+            {problem ? (
+              <div>
+                <h3 className="font-bold">{problem.title}</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#62635F]">
+                  {problem.description || "لم يُضف وصف بعد."}
+                </p>
+                {problem.audience && (
+                  <div className="mt-3">
+                    <Pill tone="navy">الفئة: {problem.audience}</Pill>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm leading-7 text-[#696D75]">
+                بدأت هذه المساحة من فكرة مباشرة. أضف ملاحظة تصف المشكلة أو
+                اربطها بمشكلة محفوظة من صندوق الالتقاط.
+              </p>
+            )}
+          </WorkspaceSection>
+
+          <WorkspaceSection
+            icon={Link2}
+            title="2. الأدلة وما جمعناه"
+            action={
+              canEdit ? (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={onAddCapture}>
+                    ملاحظة
+                  </Button>
+                  <Button size="sm" onClick={onAddSource}>
+                    رابط
+                  </Button>
+                </div>
+              ) : null
+            }
+          >
+            {captures.length + sources.length === 0 ? (
+              <WorkspaceEmpty text="أضف رابطًا أو ملاحظة أو رأي عميل يدعم الفكرة أو يعارضها." />
+            ) : (
+              <div className="space-y-3">
+                {captures.map((item: any) => (
+                  <div
+                    key={`c-${item.id}`}
+                    className="rounded-xl bg-[#F7F7F5] p-3"
+                  >
+                    <Pill tone="gray">
+                      {captureTypeLabels[item.captureType]}
+                    </Pill>
+                    <p className="mt-2 text-sm font-bold">{item.title}</p>
+                    {item.content && (
+                      <p className="mt-1 whitespace-pre-wrap text-xs leading-6 text-[#696D75]">
+                        {item.content}
+                      </p>
+                    )}
+                    {item.url && (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-[#1E3A8A]"
+                      >
+                        فتح الرابط <ExternalLink className="size-3" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+                {sources.map((source: any) => (
+                  <SourceCard
+                    key={source.id}
+                    source={source}
+                    aiConfigured={aiConfigured}
+                    canEdit={canEdit}
+                    pending={false}
+                    onAnalyze={() => onAnalyze(source.id)}
+                    onApprove={() => onApprove(source.id)}
+                    onOpenSettings={onOpenSettings}
+                  />
+                ))}
+              </div>
+            )}
+          </WorkspaceSection>
+
+          <WorkspaceSection
+            icon={MessageSquare}
+            title="3. فهم العملاء"
+            action={
+              canEdit ? (
+                <Button size="sm" onClick={onAddInterview}>
+                  إضافة مقابلة
+                </Button>
+              ) : null
+            }
+          >
+            {interviews.length === 0 ? (
+              <WorkspaceEmpty text="خطط مقابلاتك أو أضف التفريغ والنتائج هنا؛ ستظل كلها مرتبطة بهذه الفكرة." />
+            ) : (
+              <div className="space-y-3">
+                {interviews.map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-[#E3E4E1] p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold">
+                        {item.participantLabel}
+                      </p>
+                      <Pill tone="gray">
+                        {interviewStatusLabels[item.status]}
+                      </Pill>
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-[#696D75]">
+                      {item.summary ||
+                        item.insights ||
+                        item.transcript ||
+                        "مقابلة مخططة — لم تُضف النتائج بعد."}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </WorkspaceSection>
+
+          <WorkspaceSection
+            icon={FlaskConical}
+            title="4. الاختبارات والتجارب"
+            action={
+              canEdit ? (
+                <Button size="sm" onClick={onAddExperiment}>
+                  تجربة جديدة
+                </Button>
+              ) : null
+            }
+          >
+            {experiments.length === 0 ? (
+              <WorkspaceEmpty text="حوّل أهم افتراض إلى تجربة لها فرضية ومقياس نجاح واضح." />
+            ) : (
+              <div className="space-y-3">
+                {experiments.map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-[#E3E4E1] p-3"
+                  >
+                    <div className="flex justify-between gap-3">
+                      <p className="text-sm font-bold">{item.title}</p>
+                      <Pill
+                        tone={item.status === "complete" ? "green" : "yellow"}
+                      >
+                        {experimentStatusLabels[item.status]}
+                      </Pill>
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-[#696D75]">
+                      {item.hypothesis}
+                    </p>
+                    {item.result && (
+                      <p className="mt-2 rounded-lg bg-[#E9EDE4] p-2 text-xs text-[#45613F]">
+                        النتيجة: {item.result}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </WorkspaceSection>
+        </div>
+
+        <div className="space-y-5">
+          <WorkspaceSection icon={Sparkles} title="صياغة الحل" action={null}>
+            <IdeaStrategyForm
+              idea={idea}
+              canEdit={canEdit}
+              onSave={onUpdateDetails}
+            />
+          </WorkspaceSection>
+          <WorkspaceSection
+            icon={ListTodo}
+            title="مهام الفكرة"
+            action={
+              canEdit ? (
+                <Button size="sm" onClick={onAddTask}>
+                  مهمة جديدة
+                </Button>
+              ) : null
+            }
+          >
+            {tasks.length === 0 ? (
+              <WorkspaceEmpty text="لا توجد مهام لهذه الفكرة بعد." />
+            ) : (
+              <div className="space-y-2">
+                {tasks.map((task: any) => (
+                  <button
+                    key={task.id}
+                    onClick={() => onOpenTask(task)}
+                    className="flex w-full items-center justify-between rounded-xl border border-[#E3E4E1] p-3 text-right"
+                  >
+                    <div>
+                      <p
+                        className={cn(
+                          "text-sm font-bold",
+                          task.status === "done" &&
+                            "line-through text-slate-400"
+                        )}
+                      >
+                        {task.title}
+                      </p>
+                      <p className="mt-1 text-[11px] text-[#696D75]">
+                        {dateLabel(task.dueDate)}
+                      </p>
+                    </div>
+                    <Pill
+                      tone={
+                        task.status === "done"
+                          ? "green"
+                          : task.priority === "urgent"
+                            ? "burgundy"
+                            : "gray"
+                      }
+                    >
+                      {taskStatusLabels[task.status]}
+                    </Pill>
+                  </button>
+                ))}
+              </div>
+            )}
+          </WorkspaceSection>
+          <WorkspaceSection icon={Check} title="5. قرار الفريق" action={null}>
+            <p className="text-sm leading-7 text-[#696D75]">
+              سجّل سبب القرار كي يفهم الفريق لاحقًا لماذا استمررتم أو غيّرتم
+              الاتجاه.
+            </p>
+            <Textarea
+              className="mt-3"
+              rows={4}
+              value={decisionNote}
+              onChange={e => setDecisionNote(e.target.value)}
+              placeholder="ما الذي تعلمناه؟ وما القرار؟"
+              disabled={!canEdit}
+            />
+            {canEdit && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => onDecision("test_more", decisionNote)}
+                >
+                  نحتاج اختبارًا آخر
+                </Button>
+                <Button
+                  onClick={() => onDecision("approved", decisionNote)}
+                  className="bg-[#45613F] hover:bg-[#354C30]"
+                >
+                  اعتماد الفكرة
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onDecision("pivot", decisionNote)}
+                >
+                  تغيير الاتجاه
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onDecision("stop", decisionNote)}
+                  className="text-red-700"
+                >
+                  إيقاف الفكرة
+                </Button>
+              </div>
+            )}
+          </WorkspaceSection>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceSection({ icon: Icon, title, action, children }: any) {
+  return (
+    <section className="rounded-2xl border border-[#DEDFDC] bg-white p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-[#E9EDF7] text-[#1E3A8A]">
+            <Icon className="size-4" />
+          </span>
+          <h2 className="font-extrabold">{title}</h2>
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function WorkspaceEmpty({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-[#D7D9D5] bg-[#FAFAF8] p-4 text-center text-xs leading-6 text-[#696D75]">
+      {text}
+    </div>
+  );
+}
+
+function IdeaStrategyForm({ idea, canEdit, onSave }: any) {
+  const [valueProposition, setValueProposition] = useState(
+    idea.valueProposition || ""
+  );
+  const [proposedSolution, setProposedSolution] = useState(
+    idea.proposedSolution || ""
+  );
+  const [differentiator, setDifferentiator] = useState(
+    idea.differentiator || ""
+  );
+  const [mvpScope, setMvpScope] = useState(idea.mvpScope || "");
+  if (
+    !canEdit &&
+    !valueProposition &&
+    !proposedSolution &&
+    !differentiator &&
+    !mvpScope
+  )
+    return <WorkspaceEmpty text="لم تُصغ تفاصيل الحل بعد." />;
+  return (
+    <div className="space-y-3">
+      <Field label="القيمة التي نقدمها">
+        <Textarea
+          rows={2}
+          value={valueProposition}
+          onChange={e => setValueProposition(e.target.value)}
+          disabled={!canEdit}
+          placeholder="ما القيمة التي سيحصل عليها العميل؟"
+        />
+      </Field>
+      <Field label="الحل المقترح">
+        <Textarea
+          rows={2}
+          value={proposedSolution}
+          onChange={e => setProposedSolution(e.target.value)}
+          disabled={!canEdit}
+          placeholder="كيف سنحل المشكلة؟"
+        />
+      </Field>
+      <Field label="ما الذي يميزنا؟">
+        <Textarea
+          rows={2}
+          value={differentiator}
+          onChange={e => setDifferentiator(e.target.value)}
+          disabled={!canEdit}
+        />
+      </Field>
+      <Field label="أصغر نسخة قابلة للاختبار">
+        <Textarea
+          rows={2}
+          value={mvpScope}
+          onChange={e => setMvpScope(e.target.value)}
+          disabled={!canEdit}
+        />
+      </Field>
+      {canEdit && (
+        <Button
+          className="w-full bg-[#1E3A8A]"
+          onClick={() =>
+            onSave({
+              valueProposition,
+              proposedSolution,
+              differentiator,
+              mvpScope,
+            })
+          }
+        >
+          حفظ صياغة الحل
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MyIdeaTasksPage({
+  data,
+  userId,
+  canEdit,
+  onAdd,
+  onOpen,
+  onStatus,
+}: any) {
+  const mine = data.tasks.filter((task: any) => task.assigneeUserId === userId);
+  return (
+    <div>
+      <PageHeading
+        eyebrow="ما يحتاج انتباهك"
+        title="مهامي"
+        description="مهامك من كل الأفكار، مع بقاء كل مهمة داخل سياق الفكرة التي تنتمي إليها."
+        action={
+          canEdit ? (
+            <Button onClick={onAdd} className="gap-2 bg-[#1E3A8A]">
+              <Plus className="size-4" /> مهمة جديدة
+            </Button>
+          ) : undefined
+        }
+      />
+      {mine.length === 0 ? (
+        <EmptyLabState
+          icon={ListTodo}
+          title="لا توجد مهام مسندة لك"
+          description="عندما تُسند إليك مهمة ستظهر هنا وفي مساحة الفكرة المرتبطة."
+        />
+      ) : (
+        <div className="space-y-3">
+          {mine.map((task: any) => {
+            const idea = data.ideas.find(
+              (item: any) => item.id === task.ideaId
+            );
+            return (
+              <div
+                key={task.id}
+                className="rounded-2xl border border-[#DEDFDC] bg-white p-4 md:flex md:items-center md:justify-between"
+              >
+                <button onClick={() => onOpen(task)} className="text-right">
+                  <p className="font-bold">{task.title}</p>
+                  <p className="mt-1 text-xs text-[#696D75]">
+                    {idea?.title || "مهمة عامة"} · {dateLabel(task.dueDate)}
+                  </p>
+                </button>
+                {canEdit && (
+                  <select
+                    value={task.status}
+                    onChange={e => onStatus(task.id, e.target.value)}
+                    className="mt-3 h-9 rounded-lg border bg-white px-2 text-xs md:mt-0"
+                  >
+                    {Object.entries(taskStatusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IdeaTeamPage({ data }: any) {
+  return (
+    <div>
+      <PageHeading
+        eyebrow="العمل معًا"
+        title="الفريق"
+        description="أعضاء مساحة مختبر الأفكار. يظهر مالك كل فكرة والمسؤول عن كل مهمة داخل سياقها."
+      />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {data.members.map((member: any) => (
+          <div
+            key={member.id}
+            className="rounded-2xl border border-[#DEDFDC] bg-white p-5"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 items-center justify-center rounded-full bg-[#E9EDF7] font-extrabold text-[#1E3A8A]">
+                {member.avatarInitials || initials(member.name)}
+              </span>
+              <div>
+                <p className="font-bold">{member.name}</p>
+                <p className="text-xs text-[#696D75]">{member.role}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1123,7 +2211,7 @@ function ProblemPage({
         <button onClick={onBack} className="text-xs font-bold text-[#1E3A8A]">
           بنك المشكلات ←
         </button>
-        {canEdit && (
+        {canEdit && onDelete && (
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -1295,7 +2383,7 @@ function SourceCard({
             اعتماد
           </Button>
         )}
-        {canEdit && (
+        {canEdit && onDelete && (
           <Button
             size="sm"
             variant="ghost"
@@ -2388,12 +3476,116 @@ function SourceDialog({ target, pending, onClose, onSubmit }: any) {
   );
 }
 
-function InterviewDialog({ open, data, pending, onClose, onSubmit }: any) {
+function CaptureDialog({ open, ideaId, pending, onClose, onSubmit }: any) {
+  const [captureType, setCaptureType] = useState("note");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    setCaptureType("note");
+    setTitle("");
+    setContent("");
+    setUrl("");
+  }, [open]);
+  return (
+    <Dialog open={open} onOpenChange={value => !value && onClose()}>
+      <DialogContent dir="rtl" className="bg-[#F5F2EE] sm:max-w-xl">
+        <DialogHeader className="text-right">
+          <DialogTitle>
+            {ideaId ? "أضف لهذه الفكرة" : "التقاط جديد"}
+          </DialogTitle>
+          <DialogDescription>
+            {ideaId
+              ? "احفظ معلومة أو ملاحظة داخل مساحة الفكرة."
+              : "احفظها الآن في الصندوق، ثم اربطها بفكرة عندما تكون جاهزًا."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Field label="نوع العنصر">
+            <select
+              value={captureType}
+              onChange={e => setCaptureType(e.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm"
+            >
+              {Object.entries(captureTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="العنوان">
+            <Input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="وصف مختصر وواضح"
+            />
+          </Field>
+          <Field label="التفاصيل">
+            <Textarea
+              rows={5}
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder="ماذا لاحظت؟ ولماذا قد يكون مهمًا؟"
+            />
+          </Field>
+          <Field label="رابط داعم — اختياري">
+            <Input
+              dir="ltr"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            إلغاء
+          </Button>
+          <Button
+            disabled={
+              pending ||
+              title.trim().length < 2 ||
+              Boolean(url && !/^https?:\/\//i.test(url.trim()))
+            }
+            onClick={() =>
+              onSubmit({
+                captureType,
+                title: title.trim(),
+                content: content.trim() || undefined,
+                url: url.trim() || undefined,
+              })
+            }
+            className="bg-[#1E3A8A]"
+          >
+            {pending && <Loader2 className="ml-2 size-4 animate-spin" />}حفظ
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function InterviewDialog({
+  open,
+  data,
+  initialIdeaId,
+  pending,
+  onClose,
+  onSubmit,
+}: any) {
   const [participantLabel, setParticipantLabel] = useState("");
   const [ideaId, setIdeaId] = useState("");
   const [problemId, setProblemId] = useState("");
   const [date, setDate] = useState("");
   const [transcript, setTranscript] = useState("");
+  useEffect(() => {
+    if (open && initialIdeaId) {
+      setIdeaId(String(initialIdeaId));
+      setProblemId("");
+    }
+  }, [open, initialIdeaId]);
   return (
     <Dialog open={open} onOpenChange={value => !value && onClose()}>
       <DialogContent
@@ -2490,12 +3682,22 @@ function InterviewDialog({ open, data, pending, onClose, onSubmit }: any) {
   );
 }
 
-function ExperimentDialog({ open, ideas, pending, onClose, onSubmit }: any) {
+function ExperimentDialog({
+  open,
+  ideas,
+  initialIdeaId,
+  pending,
+  onClose,
+  onSubmit,
+}: any) {
   const [ideaId, setIdeaId] = useState("");
   const [title, setTitle] = useState("");
   const [hypothesis, setHypothesis] = useState("");
   const [metric, setMetric] = useState("");
   const [target, setTarget] = useState("");
+  useEffect(() => {
+    if (open && initialIdeaId) setIdeaId(String(initialIdeaId));
+  }, [open, initialIdeaId]);
   return (
     <Dialog open={open} onOpenChange={value => !value && onClose()}>
       <DialogContent dir="rtl" className="bg-[#F5F2EE] sm:max-w-xl">
@@ -2588,6 +3790,7 @@ function ExperimentDialog({ open, ideas, pending, onClose, onSubmit }: any) {
 function TaskDialog({
   open,
   task,
+  initialIdeaId,
   data,
   pending,
   onClose,
@@ -2627,10 +3830,12 @@ function TaskDialog({
           ? ["interview", task.interviewId]
           : task?.experimentId
             ? ["experiment", task.experimentId]
-            : ["", ""];
+            : initialIdeaId
+              ? ["idea", initialIdeaId]
+              : ["", ""];
     setLinkType(String(linked[0]));
     setLinkId(linked[1] ? String(linked[1]) : "");
-  }, [open, task]);
+  }, [open, task, initialIdeaId]);
 
   const linkOptions =
     linkType === "problem"

@@ -429,6 +429,8 @@ export const appRouter = router({
           category: z.string().trim().max(160).optional(),
           audience: z.string().trim().max(240).optional(),
           ownerUserId: z.number().int().positive().nullable().optional(),
+          valueProposition: z.string().trim().max(20_000).optional(),
+          proposedSolution: z.string().trim().max(20_000).optional(),
         })
       )
       .mutation(({ input, ctx }) =>
@@ -459,6 +461,30 @@ export const appRouter = router({
             ])
             .optional(),
           confidence: z.enum(["low", "medium", "high"]).optional(),
+          valueProposition: z.string().trim().max(20_000).nullable().optional(),
+          proposedSolution: z.string().trim().max(20_000).nullable().optional(),
+          differentiator: z.string().trim().max(20_000).nullable().optional(),
+          mvpScope: z.string().trim().max(20_000).nullable().optional(),
+          assumptions: z
+            .array(z.string().trim().min(1).max(500))
+            .max(100)
+            .optional(),
+          decision: z
+            .enum([
+              "undecided",
+              "continue",
+              "pivot",
+              "test_more",
+              "stop",
+              "approved",
+            ])
+            .optional(),
+          decisionRationale: z
+            .string()
+            .trim()
+            .max(20_000)
+            .nullable()
+            .optional(),
         })
       )
       .mutation(({ input, ctx }) =>
@@ -623,6 +649,61 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         })
       ),
+    createCapture: teamMemberProcedure
+      .input(
+        z.object({
+          ideaId: z.number().int().positive().nullable().optional(),
+          captureType: z
+            .enum([
+              "problem",
+              "idea",
+              "link",
+              "note",
+              "feedback",
+              "statistic",
+              "competitor",
+            ])
+            .optional(),
+          title: z.string().trim().min(2).max(500),
+          content: z.string().trim().max(50_000).optional(),
+          url: z.string().trim().url().max(2048).nullable().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.createIdeaLabCapture({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    updateCapture: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          ideaId: z.number().int().positive().nullable().optional(),
+          captureType: z
+            .enum([
+              "problem",
+              "idea",
+              "link",
+              "note",
+              "feedback",
+              "statistic",
+              "competitor",
+            ])
+            .optional(),
+          title: z.string().trim().min(2).max(500).optional(),
+          content: z.string().trim().max(50_000).nullable().optional(),
+          url: z.string().trim().url().max(2048).nullable().optional(),
+          status: z.enum(["inbox", "attached", "archived"]).optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        ideaLab.updateIdeaLabCapture({
+          ...input,
+          boardId: ctx.activeBoardId,
+        })
+      ),
     deleteProblem: teamMemberProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ input, ctx }) =>
@@ -652,6 +733,11 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ input, ctx }) =>
         ideaLab.deleteIdeaLabTask(ctx.activeBoardId, input.id)
+      ),
+    deleteCapture: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        ideaLab.deleteIdeaLabCapture(ctx.activeBoardId, input.id)
       ),
     aiSettings: protectedProcedure.query(async ({ ctx }) => {
       const setting = await ideaLab.getUserAiSetting(ctx.user.id);

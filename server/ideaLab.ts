@@ -1,5 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import {
+  ideaLabCaptures,
   ideaLabExperiments,
   ideaLabIdeas,
   ideaLabInterviews,
@@ -28,6 +29,7 @@ export async function getIdeaLabOverview(boardId: number) {
     interviews,
     experiments,
     tasks,
+    captures,
     members,
   ] = await Promise.all([
     db
@@ -67,6 +69,11 @@ export async function getIdeaLabOverview(boardId: number) {
       .orderBy(desc(ideaLabTasks.updatedAt)),
     db
       .select()
+      .from(ideaLabCaptures)
+      .where(eq(ideaLabCaptures.boardId, boardId))
+      .orderBy(desc(ideaLabCaptures.updatedAt)),
+    db
+      .select()
       .from(teamMembers)
       .where(
         and(eq(teamMembers.boardId, boardId), eq(teamMembers.isActive, true))
@@ -84,6 +91,7 @@ export async function getIdeaLabOverview(boardId: number) {
     interviews,
     experiments,
     tasks,
+    captures,
     members,
   };
 }
@@ -119,6 +127,8 @@ export async function createIdeaLabIdea(input: {
   category?: string | null;
   audience?: string | null;
   ownerUserId?: number | null;
+  valueProposition?: string | null;
+  proposedSolution?: string | null;
 }) {
   const db = await database();
   if (input.problemId) await requireProblem(db, input.boardId, input.problemId);
@@ -129,6 +139,8 @@ export async function createIdeaLabIdea(input: {
     description: input.description || null,
     category: input.category || null,
     audience: input.audience || null,
+    valueProposition: input.valueProposition || null,
+    proposedSolution: input.proposedSolution || null,
     ownerUserId: input.ownerUserId ?? input.userId,
     createdByUserId: input.userId,
   });
@@ -186,6 +198,19 @@ export async function updateIdeaLabIdea(input: {
     | "promising"
     | "archived";
   confidence?: "low" | "medium" | "high";
+  valueProposition?: string | null;
+  proposedSolution?: string | null;
+  differentiator?: string | null;
+  mvpScope?: string | null;
+  assumptions?: string[];
+  decision?:
+    | "undecided"
+    | "continue"
+    | "pivot"
+    | "test_more"
+    | "stop"
+    | "approved";
+  decisionRationale?: string | null;
 }) {
   const db = await database();
   await requireIdea(db, input.boardId, input.id);
@@ -199,6 +224,20 @@ export async function updateIdeaLabIdea(input: {
   if (input.ownerUserId !== undefined) values.ownerUserId = input.ownerUserId;
   if (input.stage) values.stage = input.stage;
   if (input.confidence) values.confidence = input.confidence;
+  if (input.valueProposition !== undefined)
+    values.valueProposition = input.valueProposition;
+  if (input.proposedSolution !== undefined)
+    values.proposedSolution = input.proposedSolution;
+  if (input.differentiator !== undefined)
+    values.differentiator = input.differentiator;
+  if (input.mvpScope !== undefined) values.mvpScope = input.mvpScope;
+  if (input.assumptions !== undefined) values.assumptions = input.assumptions;
+  if (input.decision !== undefined) {
+    values.decision = input.decision;
+    values.decisionAt = input.decision === "undecided" ? null : new Date();
+  }
+  if (input.decisionRationale !== undefined)
+    values.decisionRationale = input.decisionRationale;
   if (!Object.keys(values).length) return { id: input.id };
   await db
     .update(ideaLabIdeas)
@@ -504,6 +543,86 @@ export async function updateIdeaLabTask(
   return { id: input.id };
 }
 
+type IdeaLabCaptureType =
+  | "problem"
+  | "idea"
+  | "link"
+  | "note"
+  | "feedback"
+  | "statistic"
+  | "competitor";
+
+export async function createIdeaLabCapture(input: {
+  boardId: number;
+  userId: number;
+  ideaId?: number | null;
+  captureType?: IdeaLabCaptureType;
+  title: string;
+  content?: string | null;
+  url?: string | null;
+}) {
+  const db = await database();
+  if (input.ideaId) await requireIdea(db, input.boardId, input.ideaId);
+  const result = await db.insert(ideaLabCaptures).values({
+    boardId: input.boardId,
+    ideaId: input.ideaId ?? null,
+    captureType: input.captureType ?? "note",
+    title: input.title,
+    content: input.content || null,
+    url: input.url || null,
+    status: input.ideaId ? "attached" : "inbox",
+    createdByUserId: input.userId,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function updateIdeaLabCapture(input: {
+  boardId: number;
+  id: number;
+  ideaId?: number | null;
+  captureType?: IdeaLabCaptureType;
+  title?: string;
+  content?: string | null;
+  url?: string | null;
+  status?: "inbox" | "attached" | "archived";
+}) {
+  const db = await database();
+  await requireCapture(db, input.boardId, input.id);
+  if (input.ideaId) await requireIdea(db, input.boardId, input.ideaId);
+  const values: Partial<typeof ideaLabCaptures.$inferInsert> = {};
+  if (input.ideaId !== undefined) {
+    values.ideaId = input.ideaId;
+    values.status = input.ideaId ? "attached" : "inbox";
+  }
+  if (input.captureType !== undefined) values.captureType = input.captureType;
+  if (input.title !== undefined) values.title = input.title;
+  if (input.content !== undefined) values.content = input.content;
+  if (input.url !== undefined) values.url = input.url;
+  if (input.status !== undefined) values.status = input.status;
+  if (!Object.keys(values).length) return { id: input.id };
+  await db
+    .update(ideaLabCaptures)
+    .set(values)
+    .where(
+      and(
+        eq(ideaLabCaptures.id, input.id),
+        eq(ideaLabCaptures.boardId, input.boardId)
+      )
+    );
+  return { id: input.id };
+}
+
+export async function deleteIdeaLabCapture(boardId: number, id: number) {
+  const db = await database();
+  await requireCapture(db, boardId, id);
+  await db
+    .delete(ideaLabCaptures)
+    .where(
+      and(eq(ideaLabCaptures.id, id), eq(ideaLabCaptures.boardId, boardId))
+    );
+  return { id };
+}
+
 export async function deleteIdeaLabProblem(boardId: number, id: number) {
   const db = await database();
   await requireProblem(db, boardId, id);
@@ -689,6 +808,24 @@ async function requireIdea(
     .where(and(eq(ideaLabIdeas.id, ideaId), eq(ideaLabIdeas.boardId, boardId)))
     .limit(1);
   if (!rows[0]) throw new Error("الفكرة غير موجودة في هذه اللوحة");
+}
+
+async function requireCapture(
+  db: Awaited<ReturnType<typeof database>>,
+  boardId: number,
+  captureId: number
+) {
+  const rows = await db
+    .select({ id: ideaLabCaptures.id })
+    .from(ideaLabCaptures)
+    .where(
+      and(
+        eq(ideaLabCaptures.id, captureId),
+        eq(ideaLabCaptures.boardId, boardId)
+      )
+    )
+    .limit(1);
+  if (!rows[0]) throw new Error("العنصر غير موجود في صندوق الالتقاط");
 }
 
 async function requireInterview(

@@ -39,6 +39,9 @@ export const WIJHA_MCP_TOOL_NAMES = [
   "wijha_list_ideas",
   "wijha_create_idea",
   "wijha_update_idea",
+  "wijha_list_captures",
+  "wijha_create_capture",
+  "wijha_update_capture",
   "wijha_list_sources",
   "wijha_add_source",
   "wijha_analyze_source",
@@ -58,6 +61,7 @@ export const WIJHA_MCP_TOOL_NAMES = [
   "wijha_delete_interview",
   "wijha_delete_experiment",
   "wijha_delete_task",
+  "wijha_delete_capture",
 ] as const;
 
 const readSecurity = [{ type: "oauth2", scopes: [MCP_READ_SCOPE] }];
@@ -75,6 +79,24 @@ const ideaStage = z.enum([
   "archived",
 ]);
 const confidence = z.enum(["low", "medium", "high"]);
+const ideaDecision = z.enum([
+  "undecided",
+  "continue",
+  "pivot",
+  "test_more",
+  "stop",
+  "approved",
+]);
+const captureType = z.enum([
+  "problem",
+  "idea",
+  "link",
+  "note",
+  "feedback",
+  "statistic",
+  "competitor",
+]);
+const captureStatus = z.enum(["inbox", "attached", "archived"]);
 const interviewStatus = z.enum([
   "planned",
   "completed",
@@ -535,6 +557,8 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
         category: z.string().trim().max(160).optional(),
         audience: z.string().trim().max(240).optional(),
         owner_user_id: z.number().int().positive().nullable().optional(),
+        value_proposition: z.string().trim().max(20_000).optional(),
+        proposed_solution: z.string().trim().max(20_000).optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -554,6 +578,8 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
           category: input.category,
           audience: input.audience,
           ownerUserId: input.owner_user_id,
+          valueProposition: input.value_proposition,
+          proposedSolution: input.proposed_solution,
         });
         return { message: "تمت إضافة الفكرة.", result };
       })
@@ -575,6 +601,16 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
         owner_user_id: z.number().int().positive().nullable().optional(),
         stage: ideaStage.optional(),
         confidence: confidence.optional(),
+        value_proposition: z.string().trim().max(20_000).nullable().optional(),
+        proposed_solution: z.string().trim().max(20_000).nullable().optional(),
+        differentiator: z.string().trim().max(20_000).nullable().optional(),
+        mvp_scope: z.string().trim().max(20_000).nullable().optional(),
+        assumptions: z
+          .array(z.string().trim().min(1).max(500))
+          .max(100)
+          .optional(),
+        decision: ideaDecision.optional(),
+        decision_rationale: z.string().trim().max(20_000).nullable().optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -597,8 +633,119 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
           ownerUserId: input.owner_user_id,
           stage: input.stage,
           confidence: input.confidence,
+          valueProposition: input.value_proposition,
+          proposedSolution: input.proposed_solution,
+          differentiator: input.differentiator,
+          mvpScope: input.mvp_scope,
+          assumptions: input.assumptions,
+          decision: input.decision,
+          decisionRationale: input.decision_rationale,
         });
         return { message: "تم تحديث الفكرة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_list_captures",
+    {
+      title: "عرض صندوق الالتقاط",
+      description:
+        "يعرض الملاحظات والروابط والمشكلات الأولية الملتقطة، سواء كانت في الصندوق أو مرتبطة بفكرة.",
+      inputSchema: {
+        idea_id: z.number().int().positive().optional(),
+        type: captureType.optional(),
+        status: captureStatus.optional(),
+        limit: resultLimit,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        const rows = data.captures
+          .filter(
+            item =>
+              (!input.idea_id || item.ideaId === input.idea_id) &&
+              (!input.type || item.captureType === input.type) &&
+              (!input.status || item.status === input.status)
+          )
+          .slice(0, input.limit);
+        return { message: `عناصر الالتقاط (${rows.length}):`, result: rows };
+      })
+  );
+
+  server.registerTool(
+    "wijha_create_capture",
+    {
+      title: "التقاط معلومة",
+      description:
+        "يحفظ مشكلة أو فكرة أولية أو رابطًا أو ملاحظة بسرعة، ويمكن ربطها مباشرة بفكرة.",
+      inputSchema: {
+        idea_id: z.number().int().positive().nullable().optional(),
+        type: captureType.optional(),
+        title: z.string().trim().min(2).max(500),
+        content: z.string().trim().max(50_000).optional(),
+        url: z.string().trim().url().max(2048).nullable().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.createCapture({
+          ideaId: input.idea_id,
+          captureType: input.type,
+          title: input.title,
+          content: input.content,
+          url: input.url,
+        });
+        return { message: "تم حفظ العنصر.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_update_capture",
+    {
+      title: "تحديث أو ربط عنصر ملتقط",
+      description:
+        "يحدّث عنصرًا في صندوق الالتقاط أو يربطه بمساحة فكرة موجودة.",
+      inputSchema: {
+        capture_id: z.number().int().positive(),
+        idea_id: z.number().int().positive().nullable().optional(),
+        type: captureType.optional(),
+        title: z.string().trim().min(2).max(500).optional(),
+        content: z.string().trim().max(50_000).nullable().optional(),
+        url: z.string().trim().url().max(2048).nullable().optional(),
+        status: captureStatus.optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.updateCapture({
+          id: input.capture_id,
+          ideaId: input.idea_id,
+          captureType: input.type,
+          title: input.title,
+          content: input.content,
+          url: input.url,
+          status: input.status,
+        });
+        return { message: "تم تحديث العنصر.", result };
       })
   );
 
@@ -1253,6 +1400,28 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
         requireWriteScope(authInfo);
         const result = await caller.ideaLab.deleteTask({ id: task_id });
         return { message: "تم حذف المهمة.", result };
+      })
+  );
+
+  server.registerTool(
+    "wijha_delete_capture",
+    {
+      title: "حذف عنصر ملتقط",
+      description: "يحذف عنصرًا من صندوق الالتقاط نهائيًا بعد طلب صريح.",
+      inputSchema: { capture_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    ({ capture_id }) =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const result = await caller.ideaLab.deleteCapture({ id: capture_id });
+        return { message: "تم حذف العنصر.", result };
       })
   );
 

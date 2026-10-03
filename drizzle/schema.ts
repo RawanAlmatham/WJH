@@ -190,6 +190,23 @@ export const ideaLabIdeas = mysqlTable(
     confidence: mysqlEnum("confidence", ["low", "medium", "high"])
       .default("low")
       .notNull(),
+    valueProposition: text("valueProposition"),
+    proposedSolution: text("proposedSolution"),
+    differentiator: text("differentiator"),
+    mvpScope: text("mvpScope"),
+    assumptions: json("assumptions").$type<string[]>(),
+    decision: mysqlEnum("decision", [
+      "undecided",
+      "continue",
+      "pivot",
+      "test_more",
+      "stop",
+      "approved",
+    ])
+      .default("undecided")
+      .notNull(),
+    decisionRationale: text("decisionRationale"),
+    decisionAt: timestamp("decisionAt"),
     ownerUserId: int("ownerUserId").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -203,6 +220,45 @@ export const ideaLabIdeas = mysqlTable(
     index("ideaLabIdeas_board_stage_idx").on(table.boardId, table.stage),
     index("ideaLabIdeas_problem_idx").on(table.problemId),
     index("ideaLabIdeas_owner_idx").on(table.ownerUserId),
+  ]
+);
+
+export const ideaLabCaptures = mysqlTable(
+  "ideaLabCaptures",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    ideaId: int("ideaId").references(() => ideaLabIdeas.id, {
+      onDelete: "set null",
+    }),
+    captureType: mysqlEnum("captureType", [
+      "problem",
+      "idea",
+      "link",
+      "note",
+      "feedback",
+      "statistic",
+      "competitor",
+    ])
+      .default("note")
+      .notNull(),
+    title: varchar("title", { length: 500 }).notNull(),
+    content: text("content"),
+    url: varchar("url", { length: 2048 }),
+    status: mysqlEnum("status", ["inbox", "attached", "archived"])
+      .default("inbox")
+      .notNull(),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabCaptures_board_status_idx").on(table.boardId, table.status),
+    index("ideaLabCaptures_idea_idx").on(table.ideaId),
   ]
 );
 
