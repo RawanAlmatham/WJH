@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { z } from "zod";
+import { consultationFieldsSchema } from "../../shared/consultations";
 import type { User } from "../../drizzle/schema";
 import type { TrpcContext } from "../_core/context";
 import { appRouter } from "../routers";
@@ -59,6 +60,10 @@ export const WIJHA_MCP_TOOL_NAMES = [
   "wijha_create_subtask",
   "wijha_update_subtask",
   "wijha_delete_subtask",
+  "wijha_list_consultations",
+  "wijha_save_consultation",
+  "wijha_delete_consultation",
+  "wijha_consultation_to_task",
   "wijha_delete_problem",
   "wijha_delete_idea",
   "wijha_delete_source",
@@ -1273,6 +1278,110 @@ async function createWijhaMcpServer(user: User, authInfo: AuthInfo) {
       })
   );
 
+  server.registerTool(
+    "wijha_list_consultations",
+    {
+      title: "عرض استشارات الأفكار",
+      description:
+        "يعرض الاستشارات والأسئلة المرتبة والإجابات والتوصيات، مع التصفية حسب الفكرة.",
+      inputSchema: { idea_id: z.number().int().positive().optional() },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      _meta: { securitySchemes: readSecurity },
+    },
+    input =>
+      runTool(async () => {
+        const data = await caller.ideaLab.overview();
+        return {
+          message: "الاستشارات",
+          result: data.consultations.filter(
+            item => !input.idea_id || item.ideaId === input.idea_id
+          ),
+        };
+      })
+  );
+  server.registerTool(
+    "wijha_save_consultation",
+    {
+      title: "حفظ استشارة",
+      description:
+        "ينشئ استشارة أو يحفظ حقولها وأسئلتها كاملة. للتحديث اقرأ الاستشارة أولًا ومرر المعرّف والإصدار وجميع الأسئلة بإجاباتها بالترتيب المطلوب؛ لا تحذف أسئلة أو إجابات إلا بطلب المستخدم.",
+      inputSchema: {
+        ...consultationFieldsSchema.shape,
+        idea_id: z.number().int().positive(),
+        consultation_id: z.number().int().positive().optional(),
+        version: z.number().int().positive().optional(),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        const { idea_id, consultation_id, ...fields } = input;
+        return {
+          message: "تم حفظ الاستشارة",
+          result: await caller.ideaLab.saveConsultation({
+            ...fields,
+            ideaId: idea_id,
+            id: consultation_id,
+          }),
+        };
+      })
+  );
+  server.registerTool(
+    "wijha_delete_consultation",
+    {
+      title: "حذف استشارة",
+      description:
+        "يحذف الاستشارة وأسئلتها وإجاباتها نهائيًا بعد طلب صريح، وتبقى مهمة المتابعة.",
+      inputSchema: { consultation_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        return {
+          message: "تم حذف الاستشارة",
+          result: await caller.ideaLab.deleteConsultation({
+            id: input.consultation_id,
+          }),
+        };
+      })
+  );
+  server.registerTool(
+    "wijha_consultation_to_task",
+    {
+      title: "تحويل التوصيات إلى مهمة",
+      description:
+        "ينشئ مهمة متابعة مرتبطة بالفكرة من التوصيات المحفوظة أو يعيد المهمة الموجودة.",
+      inputSchema: { consultation_id: z.number().int().positive() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: { securitySchemes: writeSecurity },
+    },
+    input =>
+      runTool(async () => {
+        requireWriteScope(authInfo);
+        return {
+          message: "مهمة متابعة الاستشارة",
+          result: await caller.ideaLab.consultationToTask({
+            id: input.consultation_id,
+          }),
+        };
+      })
+  );
   server.registerTool(
     "wijha_list_subtasks",
     {

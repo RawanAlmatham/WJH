@@ -14,6 +14,7 @@ import {
 import type { BoardModule } from "../shared/boardModules";
 import type { PresentationSection } from "../shared/presentationSections";
 import type { NotificationType } from "../shared/notificationTypes";
+import type { ConsultationQuestion } from "../shared/consultations";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -461,6 +462,40 @@ export const ideaLabSubtasks = mysqlTable(
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   table => [index("ideaLabSubtasks_task_idx").on(table.boardId, table.taskId)]
+);
+
+export const ideaLabConsultations = mysqlTable(
+  "ideaLabConsultations",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    ideaId: int("ideaId")
+      .references(() => ideaLabIdeas.id, { onDelete: "cascade" })
+      .notNull(),
+    title: varchar("title", { length: 280 }).notNull(),
+    consultant: varchar("consultant", { length: 280 }).notNull(),
+    goal: text("goal").notNull(),
+    status: mysqlEnum("status", ["preparing", "ready", "completed"])
+      .default("preparing")
+      .notNull(),
+    questions: json("questions").$type<ConsultationQuestion[]>().notNull(),
+    summary: text("summary").notNull(),
+    recommendations: text("recommendations").notNull(),
+    taskId: int("taskId").references(() => ideaLabTasks.id, {
+      onDelete: "set null",
+    }),
+    version: int("version").default(1).notNull(),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id, { onDelete: "restrict" })
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("ideaLabConsultations_idea_idx").on(table.boardId, table.ideaId),
+  ]
 );
 
 export const userAiSettings = mysqlTable("userAiSettings", {

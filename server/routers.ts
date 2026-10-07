@@ -18,11 +18,14 @@ import { presentationSections } from "@shared/presentationSections";
 import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
 import * as ideaLab from "./ideaLab";
+import * as consultationService from "./consultations";
+import { consultationFieldsSchema } from "../shared/consultations";
 import {
   decryptPersonalApiKey,
   encryptPersonalApiKey,
   extractPublicSource,
   summarizeWithOpenAi,
+  suggestConsultationQuestions,
 } from "./aiProvider";
 import {
   listOAuthConnections,
@@ -649,6 +652,88 @@ export const appRouter = router({
           boardId: ctx.activeBoardId,
         })
       ),
+    saveConsultation: teamMemberProcedure
+      .input(
+        consultationFieldsSchema.extend({
+          ideaId: z.number().int().positive(),
+          id: z.number().int().positive().optional(),
+          version: z.number().int().positive().optional(),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        consultationService.saveConsultation({
+          ...input,
+          boardId: ctx.activeBoardId,
+          userId: ctx.user.id,
+        })
+      ),
+    deleteConsultation: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        consultationService.deleteConsultation(ctx.activeBoardId, input.id)
+      ),
+    consultationToTask: teamMemberProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        consultationService.consultationToTask(
+          ctx.activeBoardId,
+          input.id,
+          ctx.user.id
+        )
+      ),
+    suggestConsultationQuestions: teamMemberProcedure
+      .input(
+        z.object({
+          ideaId: z.number().int().positive(),
+          goal: z.string().max(5000),
+          consultant: z.string().max(280),
+          existingQuestions: z.array(z.string().max(2000)).max(60),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const data = await ideaLab.getIdeaLabOverview(ctx.activeBoardId);
+        const idea = data.ideas.find(item => item.id === input.ideaId);
+        if (!idea)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "الفكرة غير موجودة في هذه اللوحة",
+          });
+        const setting = await ideaLab.getUserAiSetting(ctx.user.id);
+        if (!setting)
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "أضف مفتاح OpenAI في إعدادات حسابك أولًا",
+          });
+        return {
+          questions: await suggestConsultationQuestions({
+            apiKey: decryptPersonalApiKey(setting.encryptedApiKey),
+            model: setting.model,
+            context: JSON.stringify({
+              idea,
+              problem: data.problems.find(item => item.id === idea.problemId),
+              goal: input.goal,
+              consultant: input.consultant,
+              evidence: data.captures
+                .filter(
+                  item => item.ideaId === idea.id && item.status !== "archived"
+                )
+                .slice(0, 8)
+                .map(item => ({
+                  title: item.title,
+                  content: item.content?.slice(0, 1000),
+                })),
+              sources: data.sources
+                .filter(item => item.ideaId === idea.id)
+                .slice(0, 8)
+                .map(item => ({
+                  title: item.title,
+                  notes: item.notes?.slice(0, 1000),
+                })),
+              existingQuestions: input.existingQuestions,
+            }),
+          }),
+        };
+      }),
     createSubtask: teamMemberProcedure
       .input(
         z.object({

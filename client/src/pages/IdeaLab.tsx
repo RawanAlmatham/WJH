@@ -1,4 +1,5 @@
 import { BrandLogo, BrandMark } from "@/components/Brand";
+import { IdeaConsultations } from "@/components/IdeaConsultations";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -1364,6 +1365,7 @@ function IdeaWorkspacePage({
   onApprove,
   onOpenSettings,
 }: any) {
+  const [workspaceTab, setWorkspaceTab] = useState("overview");
   const problem = data.problems.find((item: any) => item.id === idea.problemId);
   const belongs = (item: any) =>
     item.ideaId === idea.id ||
@@ -1448,306 +1450,349 @@ function IdeaWorkspacePage({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-4">
-        {[
-          [sources.length + captures.length, "دليل ومعلومة", Link2],
-          [interviews.length, "مقابلات", MessageSquare],
-          [experiments.length, "تجارب", FlaskConical],
-          [
-            tasks.filter((item: any) => item.status !== "done").length,
-            "مهام مفتوحة",
-            ListTodo,
-          ],
-        ].map(([value, label, Icon]: any) => (
-          <div
-            key={label}
-            className="rounded-2xl border border-[#DEDFDC] bg-white p-4"
-          >
-            <Icon className="size-4 text-[#7A2E5C]" />
-            <p className="mt-3 text-2xl font-extrabold">{value}</p>
-            <p className="text-xs text-[#696D75]">{label}</p>
-          </div>
-        ))}
+      <nav
+        className="mt-5 flex gap-6 border-b border-[#DEDFDC]"
+        aria-label="أقسام الفكرة"
+      >
+        <button
+          aria-pressed={workspaceTab === "overview"}
+          onClick={() => setWorkspaceTab("overview")}
+          className={cn(
+            "border-b-2 py-3 text-sm",
+            workspaceTab === "overview"
+              ? "border-[#1E3A8A] font-bold text-[#1E3A8A]"
+              : "border-transparent text-[#696D75]"
+          )}
+        >
+          مساحة الفكرة
+        </button>
+        <button
+          aria-pressed={workspaceTab === "consultations"}
+          onClick={() => setWorkspaceTab("consultations")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 py-3 text-sm",
+            workspaceTab === "consultations"
+              ? "border-[#1E3A8A] font-bold text-[#1E3A8A]"
+              : "border-transparent text-[#696D75]"
+          )}
+        >
+          <MessageSquare className="size-4" />
+          الاستشارات
+        </button>
+      </nav>
+      <div hidden={workspaceTab !== "consultations"}>
+        <IdeaConsultations
+          key={idea.id}
+          ideaId={idea.id}
+          consultations={data.consultations || []}
+          canEdit={canEdit}
+          aiConfigured={aiConfigured}
+          onOpenSettings={onOpenSettings}
+          onOpenTask={onOpenTask}
+        />
       </div>
-
-      <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
-        <div className="space-y-5">
-          <WorkspaceSection
-            icon={Target}
-            title="1. المشكلة التي نعمل عليها"
-            action={null}
-          >
-            {problem ? (
-              <div>
-                <h3 className="font-bold">{problem.title}</h3>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#62635F]">
-                  {problem.description || "لم يُضف وصف بعد."}
-                </p>
-                {problem.audience && (
-                  <div className="mt-3">
-                    <Pill tone="navy">الفئة: {problem.audience}</Pill>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm leading-7 text-[#696D75]">
-                بدأت هذه المساحة من فكرة مباشرة. أضف ملاحظة تصف المشكلة أو
-                اربطها بمشكلة محفوظة من صندوق الالتقاط.
-              </p>
-            )}
-          </WorkspaceSection>
-
-          <WorkspaceSection
-            icon={Link2}
-            title="2. الأدلة وما جمعناه"
-            action={
-              canEdit ? (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={onAddCapture}>
-                    ملاحظة
-                  </Button>
-                  <Button size="sm" onClick={onAddSource}>
-                    رابط
-                  </Button>
-                </div>
-              ) : null
-            }
-          >
-            {captures.length + sources.length === 0 ? (
-              <WorkspaceEmpty text="أضف رابطًا أو ملاحظة أو رأي عميل يدعم الفكرة أو يعارضها." />
-            ) : (
-              <div className="space-y-3">
-                {captures.map((item: any) => (
-                  <div
-                    key={`c-${item.id}`}
-                    className="rounded-xl bg-[#F7F7F5] p-3"
-                  >
-                    <Pill tone="gray">
-                      {captureTypeLabels[item.captureType]}
-                    </Pill>
-                    <p className="mt-2 text-sm font-bold">{item.title}</p>
-                    {item.content && (
-                      <p className="mt-1 whitespace-pre-wrap text-xs leading-6 text-[#696D75]">
-                        {item.content}
-                      </p>
-                    )}
-                    {item.url && (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-xs text-[#1E3A8A]"
-                      >
-                        فتح الرابط <ExternalLink className="size-3" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-                {sources.map((source: any) => (
-                  <SourceCard
-                    key={source.id}
-                    source={source}
-                    aiConfigured={aiConfigured}
-                    canEdit={canEdit}
-                    pending={false}
-                    onAnalyze={() => onAnalyze(source.id)}
-                    onApprove={() => onApprove(source.id)}
-                    onOpenSettings={onOpenSettings}
-                  />
-                ))}
-              </div>
-            )}
-          </WorkspaceSection>
-
-          <WorkspaceSection
-            icon={MessageSquare}
-            title="3. فهم العملاء"
-            action={
-              canEdit ? (
-                <Button size="sm" onClick={onAddInterview}>
-                  إضافة مقابلة
-                </Button>
-              ) : null
-            }
-          >
-            {interviews.length === 0 ? (
-              <WorkspaceEmpty text="خطط مقابلاتك أو أضف التفريغ والنتائج هنا؛ ستظل كلها مرتبطة بهذه الفكرة." />
-            ) : (
-              <div className="space-y-3">
-                {interviews.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="rounded-xl border border-[#E3E4E1] p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold">
-                        {item.participantLabel}
-                      </p>
-                      <Pill tone="gray">
-                        {interviewStatusLabels[item.status]}
-                      </Pill>
-                    </div>
-                    <p className="mt-2 text-xs leading-6 text-[#696D75]">
-                      {item.summary ||
-                        item.insights ||
-                        item.transcript ||
-                        "مقابلة مخططة — لم تُضف النتائج بعد."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </WorkspaceSection>
-
-          <WorkspaceSection
-            icon={FlaskConical}
-            title="4. الاختبارات والتجارب"
-            action={
-              canEdit ? (
-                <Button size="sm" onClick={onAddExperiment}>
-                  تجربة جديدة
-                </Button>
-              ) : null
-            }
-          >
-            {experiments.length === 0 ? (
-              <WorkspaceEmpty text="حوّل أهم افتراض إلى تجربة لها فرضية ومقياس نجاح واضح." />
-            ) : (
-              <div className="space-y-3">
-                {experiments.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="rounded-xl border border-[#E3E4E1] p-3"
-                  >
-                    <div className="flex justify-between gap-3">
-                      <p className="text-sm font-bold">{item.title}</p>
-                      <Pill
-                        tone={item.status === "complete" ? "green" : "yellow"}
-                      >
-                        {experimentStatusLabels[item.status]}
-                      </Pill>
-                    </div>
-                    <p className="mt-2 text-xs leading-6 text-[#696D75]">
-                      {item.hypothesis}
-                    </p>
-                    {item.result && (
-                      <p className="mt-2 rounded-lg bg-[#E9EDE4] p-2 text-xs text-[#45613F]">
-                        النتيجة: {item.result}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </WorkspaceSection>
+      <div hidden={workspaceTab !== "overview"}>
+        <div className="mt-5 grid gap-4 sm:grid-cols-4">
+          {[
+            [sources.length + captures.length, "دليل ومعلومة", Link2],
+            [interviews.length, "مقابلات", MessageSquare],
+            [experiments.length, "تجارب", FlaskConical],
+            [
+              tasks.filter((item: any) => item.status !== "done").length,
+              "مهام مفتوحة",
+              ListTodo,
+            ],
+          ].map(([value, label, Icon]: any) => (
+            <div
+              key={label}
+              className="rounded-2xl border border-[#DEDFDC] bg-white p-4"
+            >
+              <Icon className="size-4 text-[#7A2E5C]" />
+              <p className="mt-3 text-2xl font-extrabold">{value}</p>
+              <p className="text-xs text-[#696D75]">{label}</p>
+            </div>
+          ))}
         </div>
 
-        <div className="space-y-5">
-          <WorkspaceSection icon={Sparkles} title="صياغة الحل" action={null}>
-            <IdeaStrategyForm
-              idea={idea}
-              canEdit={canEdit}
-              onSave={onUpdateDetails}
-            />
-          </WorkspaceSection>
-          <WorkspaceSection
-            icon={ListTodo}
-            title="مهام الفكرة"
-            action={
-              canEdit ? (
-                <Button size="sm" onClick={onAddTask}>
-                  مهمة جديدة
-                </Button>
-              ) : null
-            }
-          >
-            {tasks.length === 0 ? (
-              <WorkspaceEmpty text="لا توجد مهام لهذه الفكرة بعد." />
-            ) : (
-              <div className="space-y-2">
-                {tasks.map((task: any) => (
-                  <button
-                    key={task.id}
-                    onClick={() => onOpenTask(task)}
-                    className="flex w-full items-center justify-between rounded-xl border border-[#E3E4E1] p-3 text-right"
-                  >
-                    <div>
-                      <p
-                        className={cn(
-                          "text-sm font-bold",
-                          task.status === "done" &&
-                            "line-through text-slate-400"
-                        )}
-                      >
-                        {task.title}
-                      </p>
-                      <p className="mt-1 text-[11px] text-[#696D75]">
-                        {dateLabel(task.dueDate)}
-                      </p>
-                      <SubtaskProgress
-                        taskId={task.id}
-                        subtasks={data.subtasks}
-                      />
+        <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+          <div className="space-y-5">
+            <WorkspaceSection
+              icon={Target}
+              title="1. المشكلة التي نعمل عليها"
+              action={null}
+            >
+              {problem ? (
+                <div>
+                  <h3 className="font-bold">{problem.title}</h3>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#62635F]">
+                    {problem.description || "لم يُضف وصف بعد."}
+                  </p>
+                  {problem.audience && (
+                    <div className="mt-3">
+                      <Pill tone="navy">الفئة: {problem.audience}</Pill>
                     </div>
-                    <Pill
-                      tone={
-                        task.status === "done"
-                          ? "green"
-                          : task.priority === "urgent"
-                            ? "burgundy"
-                            : "gray"
-                      }
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm leading-7 text-[#696D75]">
+                  بدأت هذه المساحة من فكرة مباشرة. أضف ملاحظة تصف المشكلة أو
+                  اربطها بمشكلة محفوظة من صندوق الالتقاط.
+                </p>
+              )}
+            </WorkspaceSection>
+
+            <WorkspaceSection
+              icon={Link2}
+              title="2. الأدلة وما جمعناه"
+              action={
+                canEdit ? (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={onAddCapture}>
+                      ملاحظة
+                    </Button>
+                    <Button size="sm" onClick={onAddSource}>
+                      رابط
+                    </Button>
+                  </div>
+                ) : null
+              }
+            >
+              {captures.length + sources.length === 0 ? (
+                <WorkspaceEmpty text="أضف رابطًا أو ملاحظة أو رأي عميل يدعم الفكرة أو يعارضها." />
+              ) : (
+                <div className="space-y-3">
+                  {captures.map((item: any) => (
+                    <div
+                      key={`c-${item.id}`}
+                      className="rounded-xl bg-[#F7F7F5] p-3"
                     >
-                      {taskStatusLabels[task.status]}
-                    </Pill>
-                  </button>
-                ))}
-              </div>
-            )}
-          </WorkspaceSection>
-          <WorkspaceSection icon={Check} title="5. قرار الفريق" action={null}>
-            <p className="text-sm leading-7 text-[#696D75]">
-              سجّل سبب القرار كي يفهم الفريق لاحقًا لماذا استمررتم أو غيّرتم
-              الاتجاه.
-            </p>
-            <Textarea
-              className="mt-3"
-              rows={4}
-              value={decisionNote}
-              onChange={e => setDecisionNote(e.target.value)}
-              placeholder="ما الذي تعلمناه؟ وما القرار؟"
-              disabled={!canEdit}
-            />
-            {canEdit && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => onDecision("test_more", decisionNote)}
-                >
-                  نحتاج اختبارًا آخر
-                </Button>
-                <Button
-                  onClick={() => onDecision("approved", decisionNote)}
-                  className="bg-[#45613F] hover:bg-[#354C30]"
-                >
-                  اعتماد الفكرة
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onDecision("pivot", decisionNote)}
-                >
-                  تغيير الاتجاه
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onDecision("stop", decisionNote)}
-                  className="text-red-700"
-                >
-                  إيقاف الفكرة
-                </Button>
-              </div>
-            )}
-          </WorkspaceSection>
+                      <Pill tone="gray">
+                        {captureTypeLabels[item.captureType]}
+                      </Pill>
+                      <p className="mt-2 text-sm font-bold">{item.title}</p>
+                      {item.content && (
+                        <p className="mt-1 whitespace-pre-wrap text-xs leading-6 text-[#696D75]">
+                          {item.content}
+                        </p>
+                      )}
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-xs text-[#1E3A8A]"
+                        >
+                          فتح الرابط <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                  {sources.map((source: any) => (
+                    <SourceCard
+                      key={source.id}
+                      source={source}
+                      aiConfigured={aiConfigured}
+                      canEdit={canEdit}
+                      pending={false}
+                      onAnalyze={() => onAnalyze(source.id)}
+                      onApprove={() => onApprove(source.id)}
+                      onOpenSettings={onOpenSettings}
+                    />
+                  ))}
+                </div>
+              )}
+            </WorkspaceSection>
+
+            <WorkspaceSection
+              icon={MessageSquare}
+              title="3. فهم العملاء"
+              action={
+                canEdit ? (
+                  <Button size="sm" onClick={onAddInterview}>
+                    إضافة مقابلة
+                  </Button>
+                ) : null
+              }
+            >
+              {interviews.length === 0 ? (
+                <WorkspaceEmpty text="خطط مقابلاتك أو أضف التفريغ والنتائج هنا؛ ستظل كلها مرتبطة بهذه الفكرة." />
+              ) : (
+                <div className="space-y-3">
+                  {interviews.map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-[#E3E4E1] p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-bold">
+                          {item.participantLabel}
+                        </p>
+                        <Pill tone="gray">
+                          {interviewStatusLabels[item.status]}
+                        </Pill>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-[#696D75]">
+                        {item.summary ||
+                          item.insights ||
+                          item.transcript ||
+                          "مقابلة مخططة — لم تُضف النتائج بعد."}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </WorkspaceSection>
+
+            <WorkspaceSection
+              icon={FlaskConical}
+              title="4. الاختبارات والتجارب"
+              action={
+                canEdit ? (
+                  <Button size="sm" onClick={onAddExperiment}>
+                    تجربة جديدة
+                  </Button>
+                ) : null
+              }
+            >
+              {experiments.length === 0 ? (
+                <WorkspaceEmpty text="حوّل أهم افتراض إلى تجربة لها فرضية ومقياس نجاح واضح." />
+              ) : (
+                <div className="space-y-3">
+                  {experiments.map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-[#E3E4E1] p-3"
+                    >
+                      <div className="flex justify-between gap-3">
+                        <p className="text-sm font-bold">{item.title}</p>
+                        <Pill
+                          tone={item.status === "complete" ? "green" : "yellow"}
+                        >
+                          {experimentStatusLabels[item.status]}
+                        </Pill>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-[#696D75]">
+                        {item.hypothesis}
+                      </p>
+                      {item.result && (
+                        <p className="mt-2 rounded-lg bg-[#E9EDE4] p-2 text-xs text-[#45613F]">
+                          النتيجة: {item.result}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </WorkspaceSection>
+          </div>
+
+          <div className="space-y-5">
+            <WorkspaceSection icon={Sparkles} title="صياغة الحل" action={null}>
+              <IdeaStrategyForm
+                idea={idea}
+                canEdit={canEdit}
+                onSave={onUpdateDetails}
+              />
+            </WorkspaceSection>
+            <WorkspaceSection
+              icon={ListTodo}
+              title="مهام الفكرة"
+              action={
+                canEdit ? (
+                  <Button size="sm" onClick={onAddTask}>
+                    مهمة جديدة
+                  </Button>
+                ) : null
+              }
+            >
+              {tasks.length === 0 ? (
+                <WorkspaceEmpty text="لا توجد مهام لهذه الفكرة بعد." />
+              ) : (
+                <div className="space-y-2">
+                  {tasks.map((task: any) => (
+                    <button
+                      key={task.id}
+                      onClick={() => onOpenTask(task)}
+                      className="flex w-full items-center justify-between rounded-xl border border-[#E3E4E1] p-3 text-right"
+                    >
+                      <div>
+                        <p
+                          className={cn(
+                            "text-sm font-bold",
+                            task.status === "done" &&
+                              "line-through text-slate-400"
+                          )}
+                        >
+                          {task.title}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#696D75]">
+                          {dateLabel(task.dueDate)}
+                        </p>
+                        <SubtaskProgress
+                          taskId={task.id}
+                          subtasks={data.subtasks}
+                        />
+                      </div>
+                      <Pill
+                        tone={
+                          task.status === "done"
+                            ? "green"
+                            : task.priority === "urgent"
+                              ? "burgundy"
+                              : "gray"
+                        }
+                      >
+                        {taskStatusLabels[task.status]}
+                      </Pill>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </WorkspaceSection>
+            <WorkspaceSection icon={Check} title="5. قرار الفريق" action={null}>
+              <p className="text-sm leading-7 text-[#696D75]">
+                سجّل سبب القرار كي يفهم الفريق لاحقًا لماذا استمررتم أو غيّرتم
+                الاتجاه.
+              </p>
+              <Textarea
+                className="mt-3"
+                rows={4}
+                value={decisionNote}
+                onChange={e => setDecisionNote(e.target.value)}
+                placeholder="ما الذي تعلمناه؟ وما القرار؟"
+                disabled={!canEdit}
+              />
+              {canEdit && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => onDecision("test_more", decisionNote)}
+                  >
+                    نحتاج اختبارًا آخر
+                  </Button>
+                  <Button
+                    onClick={() => onDecision("approved", decisionNote)}
+                    className="bg-[#45613F] hover:bg-[#354C30]"
+                  >
+                    اعتماد الفكرة
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => onDecision("pivot", decisionNote)}
+                  >
+                    تغيير الاتجاه
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => onDecision("stop", decisionNote)}
+                    className="text-red-700"
+                  >
+                    إيقاف الفكرة
+                  </Button>
+                </div>
+              )}
+            </WorkspaceSection>
+          </div>
         </div>
       </div>
     </div>

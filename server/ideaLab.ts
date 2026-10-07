@@ -8,6 +8,7 @@ import {
   ideaLabSources,
   ideaLabTasks,
   ideaLabSubtasks,
+  ideaLabConsultations,
   managementBoards,
   teamMembers,
   userAiSettings,
@@ -33,6 +34,7 @@ export async function getIdeaLabOverview(boardId: number) {
     captures,
     members,
     subtasks,
+    consultations,
   ] = await Promise.all([
     db
       .select()
@@ -86,6 +88,11 @@ export async function getIdeaLabOverview(boardId: number) {
       .from(ideaLabSubtasks)
       .where(eq(ideaLabSubtasks.boardId, boardId))
       .orderBy(ideaLabSubtasks.createdAt, ideaLabSubtasks.id),
+    db
+      .select()
+      .from(ideaLabConsultations)
+      .where(eq(ideaLabConsultations.boardId, boardId))
+      .orderBy(desc(ideaLabConsultations.createdAt)),
   ]);
   if (!board[0]) throw new Error("لم نعثر على اللوحة الحالية");
   if (board[0].template !== "idea_lab")
@@ -101,6 +108,7 @@ export async function getIdeaLabOverview(boardId: number) {
     captures,
     members,
     subtasks,
+    consultations,
   };
 }
 
@@ -119,13 +127,11 @@ export async function createIdeaLabSubtask(input: {
   if (input.assigneeUserId)
     await requireTeamUser(db, input.boardId, input.assigneeUserId);
   const { userId, ...values } = input;
-  const result = await db
-    .insert(ideaLabSubtasks)
-    .values({
-      ...values,
-      createdByUserId: userId,
-      completedAt: input.status === "done" ? new Date() : null,
-    });
+  const result = await db.insert(ideaLabSubtasks).values({
+    ...values,
+    createdByUserId: userId,
+    completedAt: input.status === "done" ? new Date() : null,
+  });
   return { id: Number(result[0].insertId) };
 }
 
