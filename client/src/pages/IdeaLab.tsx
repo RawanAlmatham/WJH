@@ -48,6 +48,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  initialTaskAssignee,
+  matchesIdeaTaskView,
+  type IdeaTaskView,
+} from "@shared/ideaTaskVisibility";
 
 type LabPage =
   | "portfolio"
@@ -949,6 +954,7 @@ export default function IdeaLab({
 
       <TaskDialog
         canEdit={canEdit}
+        userId={user.id}
         open={taskDialogOpen}
         task={editingTask}
         initialIdeaId={taskIdeaId}
@@ -1906,12 +1912,9 @@ function MyIdeaTasksPage({
   onOpen,
   onStatus,
 }: any) {
-  const mine = data.tasks.filter(
-    (task: any) =>
-      task.assigneeUserId === userId ||
-      data.subtasks?.some(
-        (item: any) => item.taskId === task.id && item.assigneeUserId === userId
-      )
+  const [view, setView] = useState<IdeaTaskView>("mine");
+  const mine = data.tasks.filter((task: any) =>
+    matchesIdeaTaskView(task, data.subtasks ?? [], userId, view)
   );
   return (
     <div>
@@ -1927,11 +1930,37 @@ function MyIdeaTasksPage({
           ) : undefined
         }
       />
+      <div
+        className="mb-5 flex flex-wrap gap-2"
+        role="group"
+        aria-label="عرض المهام"
+      >
+        {(
+          [
+            ["mine", "المسندة لي"],
+            ["unassigned", "غير المسندة"],
+            ["all", "كل مهام الفريق"],
+          ] as const
+        ).map(([value, label]) => (
+          <Button
+            key={value}
+            variant={view === value ? "default" : "outline"}
+            aria-pressed={view === value}
+            onClick={() => setView(value)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
       {mine.length === 0 ? (
         <EmptyLabState
           icon={ListTodo}
-          title="لا توجد مهام مسندة لك"
-          description="عندما تُسند إليك مهمة ستظهر هنا وفي مساحة الفكرة المرتبطة."
+          title={
+            view === "mine"
+              ? "لا توجد مهام مسندة لك"
+              : "لا توجد مهام في هذا العرض"
+          }
+          description="يمكنك تغيير العرض للوصول إلى مهام الفريق والمهام غير المسندة."
         />
       ) : (
         <div className="space-y-3">
@@ -1946,7 +1975,7 @@ function MyIdeaTasksPage({
               >
                 <button onClick={() => onOpen(task)} className="text-right">
                   <p className="font-bold">{task.title}</p>
-                  {task.assigneeUserId !== userId && (
+                  {view === "mine" && task.assigneeUserId !== userId && (
                     <p className="mt-1 text-xs text-blue-700">
                       لديك خطوات مسندة لك داخل هذه المهمة
                     </p>
@@ -3858,6 +3887,7 @@ function ExperimentDialog({
 
 function TaskDialog({
   canEdit,
+  userId,
   open,
   task,
   initialIdeaId,
@@ -3891,7 +3921,8 @@ function TaskDialog({
         .slice(0, 16);
       setDueDate(localValue);
     } else setDueDate("");
-    setAssigneeUserId(task?.assigneeUserId ? String(task.assigneeUserId) : "");
+    const assignee = initialTaskAssignee(task, userId);
+    setAssigneeUserId(assignee ? String(assignee) : "");
     const linked = task?.problemId
       ? ["problem", task.problemId]
       : task?.ideaId
@@ -3905,7 +3936,7 @@ function TaskDialog({
               : ["", ""];
     setLinkType(String(linked[0]));
     setLinkId(linked[1] ? String(linked[1]) : "");
-  }, [open, task, initialIdeaId]);
+  }, [open, task, initialIdeaId, userId]);
 
   const linkOptions =
     linkType === "problem"
