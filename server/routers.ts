@@ -19,6 +19,13 @@ import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
 import * as ideaLab from "./ideaLab";
 import * as commerce from "./commerce";
+import * as assistant from "./assistant";
+import {
+  assistantAction,
+  assistantHistory,
+  audioFormats,
+  MAX_AUDIO_BYTES,
+} from "../shared/assistant";
 import { boardTemplates } from "@shared/boardTemplates";
 import { commerceTaskFields, commerceResourceFields } from "../shared/commerce";
 import * as consultationService from "./consultations";
@@ -388,6 +395,94 @@ export const appRouter = router({
             message: "رابط الانضمام غير صالح أو انتهت صلاحيته",
           });
         return db.joinManagementBoard(board.id, ctx.user.id);
+      }),
+  }),
+  assistant: router({
+    settings: protectedProcedure.query(({ ctx }) =>
+      assistant.settings(ctx.user.id)
+    ),
+    saveSettings: protectedProcedure
+      .input(
+        z.object({
+          apiKey: z
+            .string()
+            .trim()
+            .regex(
+              /^gsk_[A-Za-z0-9_-]{20,250}$/,
+              "أدخل مفتاح Groq صالحًا يبدأ بـ gsk_"
+            ),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        assistant.saveSettings(ctx.user.id, input.apiKey)
+      ),
+    removeSettings: protectedProcedure.mutation(({ ctx }) =>
+      assistant.removeSettings(ctx.user.id)
+    ),
+    chat: boardProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          message: z.string().trim().min(1).max(6000),
+          history: assistantHistory.default([]),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (input.boardId !== ctx.activeBoardId)
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "تغيّرت اللوحة. افتح المساعد من اللوحة الحالية.",
+          });
+        return assistant.chat(
+          ctx.activeBoardId,
+          ctx.user.id,
+          input,
+          await db.hasBoardRole(
+            ctx.user.id,
+            ["manager", "member"],
+            ctx.activeBoardId
+          )
+        );
+      }),
+    transcribe: boardProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          audio: z
+            .string()
+            .min(16)
+            .max(Math.ceil((MAX_AUDIO_BYTES * 4) / 3) + 4),
+          format: z.enum(audioFormats),
+        })
+      )
+      .mutation(({ ctx, input }) => {
+        if (input.boardId !== ctx.activeBoardId)
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "تغيّرت اللوحة. افتح المساعد من اللوحة الحالية.",
+          });
+        return assistant.transcribe(ctx.activeBoardId, ctx.user.id, input);
+      }),
+    acceptDraft: teamMemberProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          draftId: z.string().length(32),
+          actions: z.array(assistantAction).min(1).max(8),
+        })
+      )
+      .mutation(({ ctx, input }) => {
+        if (input.boardId !== ctx.activeBoardId)
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "تغيّرت اللوحة. افتح المساعد من اللوحة الحالية.",
+          });
+        return assistant.applyDraft(
+          ctx.activeBoardId,
+          ctx.user.id,
+          input.draftId,
+          input.actions
+        );
       }),
   }),
   commerce: router({

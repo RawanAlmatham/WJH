@@ -1,4 +1,5 @@
 import { BrandLogo } from "@/components/Brand";
+import CommerceAssistant from "@/components/CommerceAssistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -296,7 +297,7 @@ export default function CommerceImport({
         </div>
       </aside>
       <div className="lg:mr-[280px]">
-        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-[#DEDFDC] px-5">
+        <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-[#DEDFDC] px-5 py-3">
           <button
             aria-label="فتح القائمة"
             className="lg:hidden"
@@ -307,6 +308,15 @@ export default function CommerceImport({
           <p className="text-sm text-[#696D75]">
             {board.name} / من اختيار المنتج إلى أول بيع
           </p>
+          <CommerceAssistant
+            key={board.id}
+            boardId={board.id}
+            boardName={board.name}
+            canEdit={canEdit}
+            sections={data?.sections ?? []}
+            members={data?.members ?? []}
+            onSaved={refresh}
+          />
           {canEdit && ["journey", "tasks"].includes(page) && (
             <Button
               disabled={!section}

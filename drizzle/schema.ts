@@ -580,6 +580,34 @@ export const userAiSettings = mysqlTable("userAiSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const userGroqSettings = mysqlTable("userGroqSettings", {
+  userId: int("userId")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  encryptedApiKey: text("encryptedApiKey").notNull(),
+  apiKeyLastFour: varchar("apiKeyLastFour", { length: 4 }).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const assistantDrafts = mysqlTable(
+  "assistantDrafts",
+  {
+    id: varchar("id", { length: 32 }).primaryKey(),
+    boardId: int("boardId")
+      .notNull()
+      .references(() => managementBoards.id, { onDelete: "cascade" }),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    actions: json("actions")
+      .$type<import("../shared/assistant").AssistantAction[]>()
+      .notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    appliedAt: timestamp("appliedAt"),
+  },
+  table => [index("assistantDrafts_owner_idx").on(table.userId, table.boardId)]
+);
+
 export const teamMembers = mysqlTable(
   "teamMembers",
   {
