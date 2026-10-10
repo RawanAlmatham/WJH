@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Layers3, Lightbulb, Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { BOARD_TEMPLATE_LABELS, boardTemplates } from "@shared/boardTemplates";
 
 export default function BoardOnboarding({
   preview: _preview = false,
@@ -15,9 +16,13 @@ export default function BoardOnboarding({
 }) {
   const { user, loading } = useAuth();
   const [name, setName] = useState("");
+  const [template, setTemplate] =
+    useState<(typeof boardTemplates)[number]>("idea_lab");
+  const [starterTasks, setStarterTasks] = useState(false);
+  const config = BOARD_TEMPLATE_LABELS[template];
   const createBoard = trpc.boards.create.useMutation({
     onSuccess: () => {
-      toast.success("تم إنشاء مختبر الأفكار");
+      toast.success("تم إنشاء اللوحة");
       window.location.assign("/");
     },
     onError: issue => toast.error(issue.message),
@@ -55,7 +60,7 @@ export default function BoardOnboarding({
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#CCD4E6] bg-white/80 px-3.5 py-2 text-xs font-semibold text-[#1E3A8A] shadow-sm">
               <Sparkles className="size-4 text-[#896400]" />
-              أول قالب مستقل في وجهة
+              قوالب وجهة
             </span>
             {user?.name && (
               <p className="mt-7 text-sm font-semibold text-[#7A2E5C]">
@@ -63,25 +68,39 @@ export default function BoardOnboarding({
               </p>
             )}
             <h1 className="mt-3 text-4xl font-bold leading-[1.25] tracking-tight sm:text-5xl">
-              حوّلوا الملاحظات
-              <span className="block text-[#1E3A8A]">
-                إلى فرص تستحق الاختبار.
-              </span>
+              اختر مساحة تناسب
+              <span className="block text-[#1E3A8A]">طموحك وطريقة عملك.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-[#62635F] sm:text-lg">
-              يجمع مختبر الأفكار المشكلات والأدلة والمقابلات والتجارب في مسار
-              واحد يساعد الفرد أو الفريق على اتخاذ قرار أوضح قبل البناء.
+              ابدأ بقالب جاهز للفرد أو الفريق، وعدّل تنظيمه ليناسب مشروعك.
             </p>
 
-            <div className="mt-8 flex items-start gap-4 rounded-2xl border border-white bg-white/75 p-5 shadow-[0_14px_40px_rgba(34,39,58,.07)] backdrop-blur">
+            <div className="mt-6 grid gap-3">
+              {boardTemplates.map(value => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={template === value}
+                  onClick={() => setTemplate(value)}
+                  className={`rounded-2xl border-2 bg-white p-5 text-right ${template === value ? "border-[#1E3A8A]" : "border-[#DEDFDC]"}`}
+                >
+                  <h2 className="font-bold">
+                    {BOARD_TEMPLATE_LABELS[value].title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-[#62635F]">
+                    {BOARD_TEMPLATE_LABELS[value].description}
+                  </p>
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 flex items-start gap-4 rounded-2xl border border-white bg-white/75 p-5 shadow-[0_14px_40px_rgba(34,39,58,.07)] backdrop-blur">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E9EDF7] text-[#1E3A8A]">
                 <Layers3 className="size-5" />
               </span>
               <div>
-                <h2 className="font-bold">مختبر الأفكار</h2>
+                <h2 className="font-bold">{config.title}</h2>
                 <p className="mt-1 text-sm leading-7 text-[#62635F]">
-                  أضيفوا المشكلة مباشرة أو ابدأوا بإشارة خام، واربطوا بها
-                  المصادر والمقابلات ثم اختبروا الحلول المقترحة.
+                  {config.highlights.join(" · ")}
                 </p>
               </div>
             </div>
@@ -93,10 +112,15 @@ export default function BoardOnboarding({
                   event.preventDefault();
                   const value = name.trim();
                   if (value.length < 2) {
-                    toast.error("اكتب اسمًا للمختبر");
+                    toast.error("اكتب اسمًا للوحة من حرفين على الأقل");
                     return;
                   }
-                  createBoard.mutate({ name: value, template: "idea_lab" });
+                  createBoard.mutate({
+                    name: value,
+                    template,
+                    starterTasks:
+                      template === "commerce_import" && starterTasks,
+                  });
                 }}
               >
                 <div className="mb-4 flex items-start gap-3">
@@ -104,22 +128,53 @@ export default function BoardOnboarding({
                     <Lightbulb className="size-5" />
                   </span>
                   <div>
-                    <h2 className="font-bold">أنشئ مختبرك الأول</h2>
+                    <h2 className="font-bold">أنشئ لوحتك</h2>
                     <p className="mt-1 text-xs leading-6 text-[#62635F]">
                       ستكون مدير المساحة ويمكنك دعوة الفريق لاحقًا.
                     </p>
                   </div>
                 </div>
                 <label className="text-xs font-semibold text-[#4E534E]">
-                  اسم المختبر أو الفريق
+                  اسم اللوحة أو المشروع
                   <Input
                     value={name}
                     onChange={event => setName(event.target.value)}
-                    placeholder="مثال: فريق الفرص الجديدة"
+                    placeholder={
+                      template === "commerce_import"
+                        ? "مثال: مشروع أجهزة الضغط الهوائي"
+                        : "مثال: فريق الفرص الجديدة"
+                    }
                     className="mt-2 h-11 bg-[#FDFCFA]"
                     maxLength={180}
                   />
                 </label>
+                {template === "commerce_import" && (
+                  <fieldset className="mt-4 text-sm">
+                    <legend className="font-semibold">بداية المشروع</legend>
+                    <label className="mt-2 flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="starter"
+                        checked={!starterTasks}
+                        onChange={() => setStarterTasks(false)}
+                      />
+                      أقسام جاهزة بدون مهام
+                    </label>
+                    <label className="mt-2 flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="starter"
+                        checked={starterTasks}
+                        onChange={() => setStarterTasks(true)}
+                      />
+                      أضف مهام مقترحة
+                    </label>
+                    <p className="mt-2 text-xs text-[#62635F]">
+                      يمكن تعديل الأقسام. المهام المقترحة تُسند لك ويمكن تعديلها
+                      أو أرشفتها.
+                    </p>
+                  </fieldset>
+                )}
                 <Button
                   type="submit"
                   disabled={createBoard.isPending}
@@ -130,7 +185,7 @@ export default function BoardOnboarding({
                   ) : (
                     <Sparkles className="size-4" />
                   )}
-                  إنشاء مختبر الأفكار
+                  إنشاء {config.title}
                 </Button>
               </form>
             )}

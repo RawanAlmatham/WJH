@@ -604,13 +604,18 @@ function normalizeBoardTemplate(
 export async function createManagementBoard(
   name: string,
   ownerUserId: number,
-  template: BoardTemplate = ""
+  template: BoardTemplate = "",
+  starterTasks = false
 ) {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
   const joinCode = nanoid(8).toUpperCase();
   const inviteToken = nanoid(32);
   const safeTemplate = templateConfig(template);
+  if (template === "commerce_import") {
+    const { createCommerceBoard } = await import("./commerce");
+    return createCommerceBoard(name, ownerUserId, starterTasks);
+  }
   const result = await db.insert(managementBoards).values({
     name,
     ownerUserId,

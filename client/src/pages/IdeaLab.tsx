@@ -447,6 +447,13 @@ export default function IdeaLab({
           </div>
         </div>
         <nav className="mt-5 flex-1 space-y-1 overflow-y-auto">
+          <a
+            href="/boards/new"
+            className="mb-3 flex items-center gap-2 rounded-xl border border-white/20 px-3 py-3 text-xs text-white/80"
+          >
+            <Plus className="size-4" />
+            لوحة جديدة / القوالب
+          </a>
           {navItems.map(item => {
             const active =
               page === item.id || (item.id === "portfolio" && page === "idea");

@@ -2,7 +2,7 @@ import type { BoardModule } from "./boardModules";
 import type { PresentationSection } from "./presentationSections";
 
 /** Published products. Each template owns its own workflow and data model. */
-export const boardTemplates = ["idea_lab"] as const;
+export const boardTemplates = ["idea_lab", "commerce_import"] as const;
 
 export type BoardTemplate = (typeof boardTemplates)[number] | string;
 
@@ -39,6 +39,34 @@ export type BoardTemplateConfig = {
 };
 
 export const BOARD_TEMPLATE_LABELS: Record<string, BoardTemplateConfig> = {
+  commerce_import: {
+    title: "تأسيس تجارة واستيراد",
+    description:
+      "من اختيار المنتج والمورد إلى أول طلبية وأول بيع، مع أقسام ومهام مرنة للفرد والفريق.",
+    accent: "#1E3A8A",
+    softAccent: "#E9EDF7",
+    highlights: [
+      "أقسام قابلة للتعديل والترتيب",
+      "مهام وإسناد ومواعيد وخطوات",
+      "أرشفة واستعادة دون فقد البيانات",
+    ],
+    modules: [],
+    sections: [],
+    starterTasks: [],
+    navigation: {
+      home: "رحلة المشروع",
+      weekly: "المتابعة",
+      plan: "الأقسام",
+      projects: "رحلة المشروع",
+      tasks: "كل المهام",
+      team: "الفريق",
+      feeds: "الملفات والروابط",
+      lessons: "الملاحظات",
+      launches: "المواعيد",
+      calendar: "التقويم",
+      reports: "الملخص",
+    },
+  },
   idea_lab: {
     title: "مختبر الأفكار",
     description:

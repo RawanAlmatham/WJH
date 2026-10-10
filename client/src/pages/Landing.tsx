@@ -66,7 +66,7 @@ export default function Landing() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#CCD4E6] bg-white/80 px-3.5 py-2 text-xs font-semibold text-[#1E3A8A] shadow-sm">
               <CheckCircle2 className="size-4 text-[#896400]" />
-              نعيد تصميم وجهة من الصفر
+              مساحات عربية للأفكار والمشاريع
             </span>
             <h1 className="mt-7 text-[2.4rem] font-bold leading-[1.25] tracking-tight sm:text-5xl lg:text-[3.7rem]">
               كل هدف له طريقته،
@@ -108,7 +108,8 @@ export default function Landing() {
       <section className="border-y border-slate-200 bg-white/70">
         <div className="mx-auto max-w-7xl px-5 py-7 text-center sm:px-8 lg:px-10">
           <p className="text-sm font-semibold text-[#444943]">
-            أزلنا القوالب السابقة، ونبني الآن كل قالب كتجربة مستقلة متكاملة.
+            اختر مختبر الأفكار للاستكشاف، أو تأسيس تجارة واستيراد لرحلة مشروعك
+            من المنتج إلى أول بيع.
           </p>
         </div>
       </section>
@@ -156,11 +157,21 @@ export default function Landing() {
       <section className="px-5 pb-20 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl rounded-3xl bg-[#1E3A8A] px-6 py-12 text-center text-white shadow-[0_22px_60px_rgba(30,58,138,.24)] sm:px-10">
           <h2 className="text-2xl font-bold sm:text-3xl">
-            نبني أول وجهة، خطوة بخطوة.
+            ابدأ وجهتك، خطوة بخطوة.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-blue-100">
-            سيُفتح إنشاء المساحات بعد اكتمال واعتماد أول قالب جديد.
+            اختر قالبك، أنشئ لوحتك، وادعُ فريقك للعمل معك.
           </p>
+          <Button
+            onClick={() =>
+              window.location.assign(
+                user ? "/boards/new" : "/login?next=%2Fboards%2Fnew"
+              )
+            }
+            className="mt-5 bg-white text-[#1E3A8A] hover:bg-blue-50"
+          >
+            اختيار قالب
+          </Button>
         </div>
       </section>
 

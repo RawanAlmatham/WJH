@@ -18,6 +18,9 @@ import { presentationSections } from "@shared/presentationSections";
 import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
 import * as ideaLab from "./ideaLab";
+import * as commerce from "./commerce";
+import { boardTemplates } from "@shared/boardTemplates";
+import { commerceTaskFields, commerceResourceFields } from "../shared/commerce";
 import * as consultationService from "./consultations";
 import { consultationFieldsSchema } from "../shared/consultations";
 import {
@@ -347,11 +350,17 @@ export const appRouter = router({
       .input(
         z.object({
           name: z.string().trim().min(2).max(180),
-          template: z.literal("idea_lab"),
+          template: z.enum(boardTemplates),
+          starterTasks: z.boolean().default(false),
         })
       )
       .mutation(({ input, ctx }) =>
-        db.createManagementBoard(input.name, ctx.user.id, input.template)
+        db.createManagementBoard(
+          input.name,
+          ctx.user.id,
+          input.template,
+          input.starterTasks
+        )
       ),
     select: protectedProcedure
       .input(z.object({ boardId: z.number().int().positive() }))
@@ -380,6 +389,67 @@ export const appRouter = router({
           });
         return db.joinManagementBoard(board.id, ctx.user.id);
       }),
+  }),
+  commerce: router({
+    overview: boardProcedure.query(({ ctx }) =>
+      commerce.overview(ctx.activeBoardId)
+    ),
+    saveSection: managerProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive().optional(),
+          name: z.string().trim().min(1).max(180),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        commerce.saveSection(ctx.activeBoardId, input)
+      ),
+    archiveSection: managerProcedure
+      .input(
+        z.object({ id: z.number().int().positive(), archived: z.boolean() })
+      )
+      .mutation(({ ctx, input }) =>
+        commerce.archiveSection(ctx.activeBoardId, input.id, input.archived)
+      ),
+    moveSection: managerProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          direction: z.enum(["up", "down"]),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        commerce.moveSection(ctx.activeBoardId, input.id, input.direction)
+      ),
+    saveTask: teamMemberProcedure
+      .input(
+        commerceTaskFields.extend({
+          id: z.number().int().positive().optional(),
+          version: z.number().int().positive().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        commerce.saveTask(ctx.activeBoardId, ctx.user.id, input)
+      ),
+    archiveTask: teamMemberProcedure
+      .input(
+        z.object({ id: z.number().int().positive(), archived: z.boolean() })
+      )
+      .mutation(({ ctx, input }) =>
+        commerce.archiveTask(ctx.activeBoardId, input.id, input.archived)
+      ),
+    saveResource: teamMemberProcedure
+      .input(commerceResourceFields)
+      .mutation(({ ctx, input }) =>
+        commerce.saveResource(ctx.activeBoardId, ctx.user.id, input)
+      ),
+    archiveResource: teamMemberProcedure
+      .input(
+        z.object({ id: z.number().int().positive(), archived: z.boolean() })
+      )
+      .mutation(({ ctx, input }) =>
+        commerce.archiveResource(ctx.activeBoardId, input.id, input.archived)
+      ),
   }),
   ideaLab: router({
     overview: boardProcedure.query(({ ctx }) =>

@@ -110,7 +110,8 @@ describe("platform administration", () => {
     expect(db.createManagementBoard).toHaveBeenCalledWith(
       "إدارة التواصل",
       2,
-      "idea_lab"
+      "idea_lab",
+      false
     );
   });
 
@@ -125,7 +126,23 @@ describe("platform administration", () => {
     expect(db.createManagementBoard).toHaveBeenCalledWith(
       "مختبر جديد",
       2,
-      "idea_lab"
+      "idea_lab",
+      false
+    );
+  });
+  it("lets any signed-in account choose the commerce template with starter tasks", async () => {
+    await appRouter
+      .createCaller(context("user"))
+      .boards.create({
+        name: "مشروع تجارة",
+        template: "commerce_import",
+        starterTasks: true,
+      });
+    expect(db.createManagementBoard).toHaveBeenCalledWith(
+      "مشروع تجارة",
+      2,
+      "commerce_import",
+      true
     );
   });
 });

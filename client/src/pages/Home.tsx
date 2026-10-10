@@ -106,6 +106,7 @@ import {
   YAxis,
 } from "recharts";
 import BoardOnboarding from "./BoardOnboarding";
+import CommerceImport from "./CommerceImport";
 import Landing from "./Landing";
 import IdeaLab from "./IdeaLab";
 
@@ -918,7 +919,9 @@ export default function Home() {
     undefined,
     {
       enabled: Boolean(
-        user && activeBoard && activeBoard.template !== "idea_lab"
+        user &&
+          activeBoard &&
+          !["idea_lab", "commerce_import"].includes(activeBoard.template)
       ),
       staleTime: 30_000,
     }
@@ -931,6 +934,7 @@ export default function Home() {
         utils.boards.mine.invalidate(),
         utils.workspace.overview.invalidate(),
         utils.ideaLab.overview.invalidate(),
+        utils.commerce.overview.invalidate(),
       ]);
       toast.success("تم الانتقال إلى اللوحة");
     },
@@ -1167,6 +1171,17 @@ export default function Home() {
   if (!user) return <Landing />;
   if (boardsLoading) return <LoadingShell />;
   if (boards && boards.length === 0) return <BoardOnboarding />;
+  if (activeBoard?.template === "commerce_import")
+    return (
+      <CommerceImport
+        key={activeBoard.id}
+        user={user}
+        board={activeBoard}
+        boards={boards ?? []}
+        switchingBoard={selectBoard.isPending}
+        onSelectBoard={boardId => selectBoard.mutate({ boardId })}
+      />
+    );
   if (activeBoard?.template === "idea_lab")
     return (
       <IdeaLab

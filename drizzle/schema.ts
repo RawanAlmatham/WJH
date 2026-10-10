@@ -388,6 +388,76 @@ export const ideaLabExperiments = mysqlTable(
   ]
 );
 
+export const commerceSections = mysqlTable(
+  "commerceSections",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 180 }).notNull(),
+    position: int("position").default(0).notNull(),
+    archived: boolean("archived").default(false).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("commerceSections_board_idx").on(table.boardId)]
+);
+
+export const commerceTasks = mysqlTable(
+  "commerceTasks",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .references(() => managementBoards.id, { onDelete: "cascade" })
+      .notNull(),
+    sectionId: int("sectionId")
+      .references(() => commerceSections.id, { onDelete: "restrict" })
+      .notNull(),
+    title: varchar("title", { length: 280 }).notNull(),
+    description: text("description"),
+    status: mysqlEnum("status", ["todo", "in_progress", "blocked", "done"])
+      .default("todo")
+      .notNull(),
+    priority: mysqlEnum("priority", ["normal", "urgent"])
+      .default("normal")
+      .notNull(),
+    assigneeUserId: int("assigneeUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    dueDate: varchar("dueDate", { length: 10 }),
+    waitingReason: text("waitingReason"),
+    checklist:
+      json("checklist").$type<import("../shared/commerce").CommerceChecklist>(),
+    archived: boolean("archived").default(false).notNull(),
+    version: int("version").default(1).notNull(),
+    createdByUserId: int("createdByUserId")
+      .references(() => users.id)
+      .notNull(),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("commerceTasks_board_idx").on(table.boardId, table.sectionId),
+    index("commerceTasks_assignee_idx").on(table.assigneeUserId),
+  ]
+);
+
+export const commerceResources = mysqlTable("commerceResources", {
+  id: int("id").autoincrement().primaryKey(),
+  boardId: int("boardId")
+    .references(() => managementBoards.id, { onDelete: "cascade" })
+    .notNull(),
+  title: varchar("title", { length: 280 }).notNull(),
+  url: text("url").notNull(),
+  notes: text("notes"),
+  archived: boolean("archived").default(false).notNull(),
+  createdByUserId: int("createdByUserId")
+    .references(() => users.id)
+    .notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const ideaLabTasks = mysqlTable(
   "ideaLabTasks",
   {
