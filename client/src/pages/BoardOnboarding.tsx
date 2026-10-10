@@ -141,7 +141,7 @@ export default function BoardOnboarding({
                     onChange={event => setName(event.target.value)}
                     placeholder={
                       template === "commerce_import"
-                        ? "مثال: مشروع أجهزة الضغط الهوائي"
+                        ? "مثال: مشروع أدوات طبخ"
                         : "مثال: فريق الفرص الجديدة"
                     }
                     className="mt-2 h-11 bg-[#FDFCFA]"
