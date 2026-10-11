@@ -130,7 +130,9 @@ export default function BoardOnboarding({
                   <div>
                     <h2 className="font-bold">أنشئ لوحتك</h2>
                     <p className="mt-1 text-xs leading-6 text-[#62635F]">
-                      ستكون مدير المساحة ويمكنك دعوة الفريق لاحقًا.
+                      {template === "personal"
+                        ? "ابدأ بقائمة فارغة وتصنيفات جاهزة قابلة للتعديل."
+                        : "ستكون مدير المساحة ويمكنك دعوة الفريق لاحقًا."}
                     </p>
                   </div>
                 </div>
@@ -140,9 +142,11 @@ export default function BoardOnboarding({
                     value={name}
                     onChange={event => setName(event.target.value)}
                     placeholder={
-                      template === "commerce_import"
-                        ? "مثال: مشروع أدوات طبخ"
-                        : "مثال: فريق الفرص الجديدة"
+                      template === "personal"
+                        ? "مثال: مساحتي الشخصية"
+                        : template === "commerce_import"
+                          ? "مثال: مشروع أدوات طبخ"
+                          : "مثال: فريق الفرص الجديدة"
                     }
                     className="mt-2 h-11 bg-[#FDFCFA]"
                     maxLength={180}

@@ -1,3 +1,4 @@
+import PersonalBoard from "./PersonalBoard";
 import { BrandLogo, BrandMark } from "@/components/Brand";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -921,7 +922,9 @@ export default function Home() {
       enabled: Boolean(
         user &&
           activeBoard &&
-          !["idea_lab", "commerce_import"].includes(activeBoard.template)
+          !["personal", "idea_lab", "commerce_import"].includes(
+            activeBoard.template
+          )
       ),
       staleTime: 30_000,
     }
@@ -935,6 +938,7 @@ export default function Home() {
         utils.workspace.overview.invalidate(),
         utils.ideaLab.overview.invalidate(),
         utils.commerce.overview.invalidate(),
+        utils.personal.overview.invalidate(),
       ]);
       toast.success("تم الانتقال إلى اللوحة");
     },
@@ -1171,6 +1175,17 @@ export default function Home() {
   if (!user) return <Landing />;
   if (boardsLoading) return <LoadingShell />;
   if (boards && boards.length === 0) return <BoardOnboarding />;
+  if (activeBoard?.template === "personal")
+    return (
+      <PersonalBoard
+        key={activeBoard.id}
+        user={user}
+        board={activeBoard}
+        boards={boards ?? []}
+        switchingBoard={selectBoard.isPending}
+        onSelectBoard={boardId => selectBoard.mutate({ boardId })}
+      />
+    );
   if (activeBoard?.template === "commerce_import")
     return (
       <CommerceImport

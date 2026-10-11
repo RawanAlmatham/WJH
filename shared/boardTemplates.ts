@@ -2,7 +2,11 @@ import type { BoardModule } from "./boardModules";
 import type { PresentationSection } from "./presentationSections";
 
 /** Published products. Each template owns its own workflow and data model. */
-export const boardTemplates = ["idea_lab", "commerce_import"] as const;
+export const boardTemplates = [
+  "personal",
+  "idea_lab",
+  "commerce_import",
+] as const;
 
 export type BoardTemplate = (typeof boardTemplates)[number] | string;
 
@@ -39,6 +43,34 @@ export type BoardTemplateConfig = {
 };
 
 export const BOARD_TEMPLATE_LABELS: Record<string, BoardTemplateConfig> = {
+  personal: {
+    title: "اللوحة الشخصية",
+    description:
+      "مهام بسيطة حسب جوانب حياتك، مع تركيز اليوم واقتراح أقرب ٣ مهام لموعدها.",
+    accent: "#1E3A8A",
+    softAccent: "#E9EDF7",
+    highlights: [
+      "تصنيفات تختارها بنفسك",
+      "موعد الإنجاز ووقت التنفيذ",
+      "أولويات يومية باختيارك",
+    ],
+    modules: [],
+    sections: [],
+    starterTasks: [],
+    navigation: {
+      home: "تركيزي اليوم",
+      weekly: "الأسبوع",
+      plan: "جوانب حياتي",
+      projects: "المشاريع",
+      tasks: "كل مهامي",
+      team: "الفريق",
+      feeds: "المصادر",
+      lessons: "الملاحظات",
+      launches: "المواعيد",
+      calendar: "التقويم",
+      reports: "الملخص",
+    },
+  },
   commerce_import: {
     title: "تأسيس تجارة واستيراد",
     description:

@@ -1137,3 +1137,41 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type OAuthClient = typeof oauthClients.$inferSelect;
 export type OAuthToken = typeof oauthTokens.$inferSelect;
+
+export const personalLifeCategories = mysqlTable(
+  "personalLifeCategories",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .notNull()
+      .references(() => managementBoards.id),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id),
+    name: varchar("name", { length: 100 }).notNull(),
+  },
+  t => [index("personalCategories_owner_idx").on(t.boardId, t.userId)]
+);
+export const personalLifeTasks = mysqlTable(
+  "personalLifeTasks",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .notNull()
+      .references(() => managementBoards.id),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id),
+    categoryId: int("categoryId").references(() => personalLifeCategories.id),
+    title: varchar("title", { length: 280 }).notNull(),
+    dueDate: varchar("dueDate", { length: 10 }),
+    executionDate: varchar("executionDate", { length: 10 }),
+    executionTime: varchar("executionTime", { length: 5 }),
+    focusDate: varchar("focusDate", { length: 10 }),
+    done: boolean("done").default(false).notNull(),
+    version: int("version").default(1).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => [index("personalTasks_owner_idx").on(t.boardId, t.userId)]
+);

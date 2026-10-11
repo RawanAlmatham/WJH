@@ -19,6 +19,8 @@ import { notificationTypes } from "@shared/notificationTypes";
 import * as notificationService from "./notifications";
 import * as ideaLab from "./ideaLab";
 import * as commerce from "./commerce";
+import * as personal from "./personal";
+import { personalTaskFields } from "../shared/personal";
 import * as assistant from "./assistant";
 import {
   assistantAction,
@@ -484,6 +486,45 @@ export const appRouter = router({
           input.actions
         );
       }),
+  }),
+  personal: router({
+    overview: boardProcedure.query(({ ctx }) =>
+      personal.overview(ctx.activeBoardId, ctx.user.id)
+    ),
+    saveCategory: teamMemberProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive().optional(),
+          name: z.string().trim().min(1).max(100),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        personal.saveCategory(ctx.activeBoardId, ctx.user.id, input)
+      ),
+    saveTask: teamMemberProcedure
+      .input(
+        personalTaskFields.safeExtend({
+          id: z.number().int().positive().optional(),
+          version: z.number().int().positive().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        personal.saveTask(ctx.activeBoardId, ctx.user.id, input)
+      ),
+    setState: teamMemberProcedure
+      .input(
+        z
+          .object({
+            id: z.number().int().positive(),
+            version: z.number().int().positive(),
+            done: z.boolean().optional(),
+            focus: z.boolean().optional(),
+          })
+          .refine(v => v.done !== undefined || v.focus !== undefined)
+      )
+      .mutation(({ ctx, input }) =>
+        personal.setState(ctx.activeBoardId, ctx.user.id, input)
+      ),
   }),
   commerce: router({
     overview: boardProcedure.query(({ ctx }) =>
