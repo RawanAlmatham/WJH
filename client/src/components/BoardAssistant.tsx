@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import {
   Loader2,
   Mic,
@@ -20,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/useMobile";
 import { personalToday as contextToday } from "@shared/personal";
 import { MAX_AUDIO_BYTES, type AssistantAction } from "@shared/assistant";
 
@@ -39,6 +41,7 @@ export default function BoardAssistant({
   onSaved,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [config, setConfig] = useState(false);
   const [key, setKey] = useState("");
   const [text, setText] = useState("");
@@ -284,33 +287,39 @@ export default function BoardAssistant({
   }
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        variant="outline"
-        className="gap-2 border-[#7A2E5C]/20 text-[#7A2E5C]"
-      >
-        <Sparkles className="size-4" />
-        مساعد وجهة
-      </Button>
-      <Dialog
+      <Sheet
         open={open}
+        modal={isMobile}
         onOpenChange={value => {
           if (!busy) setOpen(value);
         }}
       >
-        <DialogContent
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            className="gap-2 border-[#7A2E5C]/20 text-[#7A2E5C]"
+          >
+            <Sparkles className="size-4" />
+            مساعد وجهة
+          </Button>
+        </SheetTrigger>
+        <SheetContent
+          side="left"
           dir="rtl"
-          className="flex max-h-[92dvh] w-[calc(100%-1rem)] flex-col overflow-hidden bg-[#F5F2EE] p-4 sm:max-w-2xl sm:p-6"
+          onInteractOutside={event => {
+            if (!isMobile) event.preventDefault();
+          }}
+          className="h-dvh w-full overflow-hidden bg-[#F5F2EE] p-4 sm:max-w-none md:w-[440px] md:p-6"
         >
-          <DialogHeader className="shrink-0 pr-6 text-right">
-            <DialogTitle className="flex items-center gap-2 text-[#14285F]">
+          <SheetHeader className="shrink-0 p-0 pr-6 text-right">
+            <SheetTitle className="flex items-center gap-2 text-[#14285F]">
               <Sparkles className="size-5" />
               مساعد وجهة
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {boardName} · اكتب أو سجّل، وراجع الاقتراح قبل الحفظ.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <div className="flex shrink-0 items-center justify-between gap-2 border-b pb-3 text-xs">
             <span>
               {settings.data?.configured
@@ -758,8 +767,8 @@ export default function BoardAssistant({
               باعتمادك.
             </p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
