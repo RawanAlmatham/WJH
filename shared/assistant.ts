@@ -1,7 +1,22 @@
 import { z } from "zod";
 import { commerceTaskFields } from "./commerce";
+import { personalDate } from "./personal";
 
 export const assistantAction = commerceTaskFields.extend({
+  sectionId: z.number().int().positive().nullable(),
+  priority: z
+    .enum(["normal", "urgent", "low", "medium", "high"])
+    .default("normal"),
+  status: z
+    .enum(["todo", "in_progress", "blocked", "done", "in_review", "overdue"])
+    .default("todo"),
+  executionDate: personalDate.nullable().default(null),
+  executionTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .nullable()
+    .default(null),
+  focusDate: personalDate.nullable().default(null),
   taskId: z.number().int().positive().nullable(),
   version: z.number().int().positive().nullable(),
 });

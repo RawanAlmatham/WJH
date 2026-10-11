@@ -22,6 +22,7 @@ import * as commerce from "./commerce";
 import * as personal from "./personal";
 import { personalTaskFields } from "../shared/personal";
 import * as assistant from "./assistant";
+import { boardContext } from "./assistantBoard";
 import {
   assistantAction,
   assistantHistory,
@@ -400,6 +401,21 @@ export const appRouter = router({
       }),
   }),
   assistant: router({
+    context: boardProcedure
+      .input(z.object({ boardId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        if (input.boardId !== ctx.activeBoardId)
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "افتح المساعد من اللوحة الحالية",
+          });
+        const {
+          tasks: _tasks,
+          extra: _extra,
+          ...metadata
+        } = await boardContext(ctx.activeBoardId, ctx.user.id);
+        return metadata;
+      }),
     settings: protectedProcedure.query(({ ctx }) =>
       assistant.settings(ctx.user.id)
     ),

@@ -20,26 +20,22 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { personalToday as contextToday } from "@shared/personal";
 import { MAX_AUDIO_BYTES, type AssistantAction } from "@shared/assistant";
-import { commerceStatusLabels } from "@shared/commerce";
 
 type Props = {
   boardId: number;
   boardName: string;
   canEdit: boolean;
-  sections: { id: number; name: string; archived: boolean }[];
-  members: { userId: number | null; name: string }[];
   onSaved: () => Promise<void>;
 };
 const selectClass = "w-full rounded-lg border bg-white p-2 text-sm";
 type Message = { role: "user" | "assistant"; content: string };
 
-export default function CommerceAssistant({
+export default function BoardAssistant({
   boardId,
   boardName,
   canEdit,
-  sections,
-  members,
   onSaved,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -63,6 +59,14 @@ export default function CommerceAssistant({
   openRef.current = open;
   const mounted = useRef(true);
   const utils = trpc.useUtils();
+  const context = trpc.assistant.context.useQuery(
+    { boardId },
+    { enabled: open }
+  );
+  const sections = context.data?.sections ?? [];
+  const members = context.data?.members ?? [];
+  const isPersonal = context.data?.personal ?? false;
+  const isCommerce = context.data?.template === "commerce_import";
   const settings = trpc.assistant.settings.useQuery(undefined, {
     enabled: open,
   });
@@ -93,12 +97,13 @@ export default function CommerceAssistant({
         ...m,
         { role: "assistant", content: "تم حفظ المهام في اللوحة." },
       ]);
-      await onSaved();
+      await Promise.all([onSaved(), utils.assistant.context.invalidate()]);
       toast.success("تم حفظ المهام");
     },
     onError,
   });
   const busy =
+    context.isLoading ||
     processingAudio ||
     chat.isPending ||
     transcribe.isPending ||
@@ -237,7 +242,15 @@ export default function CommerceAssistant({
   }
   async function send() {
     const message = text.trim();
-    if (!message || busy || recording || startingRecording) return;
+    if (
+      !message ||
+      busy ||
+      recording ||
+      startingRecording ||
+      !context.data ||
+      context.error
+    )
+      return;
     try {
       const result = await chat.mutateAsync({
         boardId,
@@ -376,13 +389,10 @@ export default function CommerceAssistant({
             {!messages.length && !draft && (
               <div className="rounded-xl bg-white p-4 text-sm leading-7">
                 <p className="font-bold text-[#14285F]">كيف أساعدك؟</p>
-                <p>
-                  «أضيفي مهمة مقارنة عروض أدوات الطبخ في قسم الموردين، موعدها
-                  الخميس»
-                </p>
+                <p>«أضيفي مهمة تجهيز خطة الأسبوع، موعدها الخميس»</p>
                 <p>أو: «وش مهامي اليوم؟» و«لخّصي تقدم المشروع».</p>
                 <p className="mt-2 text-xs text-slate-500">
-                  أدعم حاليًا مهام قالب التجارة. أي إضافة أو تعديل ينتظر
+                  أفهم مهام وحقول اللوحة الحالية. أي إضافة أو تعديل ينتظر
                   اعتمادك.
                 </p>
               </div>
@@ -438,14 +448,21 @@ export default function CommerceAssistant({
                     </label>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <label className="text-xs">
-                        القسم
+                        {context.data?.sectionLabel ?? "القسم"}
                         <select
                           className={selectClass}
-                          value={a.sectionId}
+                          value={a.sectionId ?? ""}
                           onChange={e =>
-                            edit(i, { sectionId: Number(e.target.value) })
+                            edit(i, {
+                              sectionId: e.target.value
+                                ? Number(e.target.value)
+                                : null,
+                            })
                           }
                         >
+                          {context.data?.nullableSection && (
+                            <option value="">بدون ارتباط</option>
+                          )}
                           {sections
                             .filter(s => !s.archived)
                             .map(s => (
@@ -455,29 +472,31 @@ export default function CommerceAssistant({
                             ))}
                         </select>
                       </label>
-                      <label className="text-xs">
-                        المسؤول
-                        <select
-                          className={selectClass}
-                          value={a.assigneeUserId ?? ""}
-                          onChange={e =>
-                            edit(i, {
-                              assigneeUserId: e.target.value
-                                ? Number(e.target.value)
-                                : null,
-                            })
-                          }
-                        >
-                          <option value="">غير مسندة</option>
-                          {members
-                            .filter(m => m.userId)
-                            .map(m => (
-                              <option key={m.userId} value={m.userId!}>
-                                {m.name}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
+                      {!isPersonal && (
+                        <label className="text-xs">
+                          المسؤول
+                          <select
+                            className={selectClass}
+                            value={a.assigneeUserId ?? ""}
+                            onChange={e =>
+                              edit(i, {
+                                assigneeUserId: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
+                              })
+                            }
+                          >
+                            <option value="">غير مسندة</option>
+                            {members
+                              .filter(m => m.userId)
+                              .map(m => (
+                                <option key={m.userId} value={m.userId!}>
+                                  {m.name}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                      )}
                       <label className="text-xs">
                         الموعد
                         <Input
@@ -500,7 +519,7 @@ export default function CommerceAssistant({
                             })
                           }
                         >
-                          {Object.entries(commerceStatusLabels).map(
+                          {Object.entries(context.data?.statusLabels ?? {}).map(
                             ([value, name]) => (
                               <option key={value} value={value}>
                                 {name}
@@ -510,76 +529,141 @@ export default function CommerceAssistant({
                         </select>
                       </label>
                     </div>
-                    <label className="block text-xs">
-                      التفاصيل
-                      <Textarea
-                        className="mt-1"
-                        rows={2}
-                        value={a.description}
-                        maxLength={20000}
-                        onChange={e => edit(i, { description: e.target.value })}
-                      />
-                    </label>
-                    <label className="block text-xs">
-                      الأولوية
-                      <select
-                        className={selectClass}
-                        value={a.priority}
-                        onChange={e =>
-                          edit(i, {
-                            priority: e.target
-                              .value as AssistantAction["priority"],
-                          })
-                        }
-                      >
-                        <option value="normal">عادية</option>
-                        <option value="urgent">عاجلة</option>
-                      </select>
-                    </label>
-                    {(a.status === "blocked" || a.waitingReason) && (
+                    {!isPersonal && (
                       <label className="block text-xs">
-                        سبب الانتظار
-                        <Input
-                          value={a.waitingReason}
-                          maxLength={1000}
+                        التفاصيل
+                        <Textarea
+                          className="mt-1"
+                          rows={2}
+                          value={a.description}
+                          maxLength={20000}
                           onChange={e =>
-                            edit(i, { waitingReason: e.target.value })
+                            edit(i, { description: e.target.value })
                           }
                         />
                       </label>
                     )}
-                    {a.checklist.map((c, j) => (
-                      <div key={j} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          aria-label={`إنجاز الخطوة ${j + 1}`}
-                          checked={c.done}
+                    {!isPersonal && (
+                      <label className="block text-xs">
+                        الأولوية
+                        <select
+                          className={selectClass}
+                          value={a.priority}
                           onChange={e =>
                             edit(i, {
-                              checklist: a.checklist.map((item, index) =>
-                                index === j
-                                  ? { ...item, done: e.target.checked }
-                                  : item
-                              ),
+                              priority: e.target
+                                .value as AssistantAction["priority"],
                             })
                           }
-                        />
-                        <Input
-                          aria-label={`الخطوة ${j + 1}`}
-                          value={c.text}
-                          maxLength={500}
-                          onChange={e =>
-                            edit(i, {
-                              checklist: a.checklist.map((item, index) =>
-                                index === j
-                                  ? { ...item, text: e.target.value }
-                                  : item
-                              ),
-                            })
-                          }
-                        />
+                        >
+                          {Object.entries(
+                            context.data?.priorityLabels ?? {}
+                          ).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {isPersonal && (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="text-xs">
+                          يوم التنفيذ
+                          <Input
+                            type="date"
+                            value={a.executionDate ?? ""}
+                            onChange={e =>
+                              edit(i, {
+                                executionDate: e.target.value || null,
+                                ...(!e.target.value
+                                  ? { executionTime: null }
+                                  : {}),
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="text-xs">
+                          وقت التنفيذ
+                          <Input
+                            type="time"
+                            disabled={!a.executionDate}
+                            value={a.executionTime ?? ""}
+                            onChange={e =>
+                              edit(i, { executionTime: e.target.value || null })
+                            }
+                          />
+                        </label>
+                        <label className="flex items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={a.focusDate === contextToday()}
+                            onChange={e =>
+                              edit(i, {
+                                focusDate: e.target.checked
+                                  ? contextToday()
+                                  : null,
+                              })
+                            }
+                          />
+                          ضمن تركيزي اليوم
+                        </label>
                       </div>
-                    ))}
+                    )}
+                    {context.data &&
+                      !isPersonal &&
+                      !isCommerce &&
+                      context.data.template !== "idea_lab" && (
+                        <p className="text-xs text-slate-500">
+                          تغيير المسؤول يستبدل قائمة المسؤولين في المهمة.
+                        </p>
+                      )}
+                    {isCommerce &&
+                      (a.status === "blocked" || a.waitingReason) && (
+                        <label className="block text-xs">
+                          سبب الانتظار
+                          <Input
+                            value={a.waitingReason}
+                            maxLength={1000}
+                            onChange={e =>
+                              edit(i, { waitingReason: e.target.value })
+                            }
+                          />
+                        </label>
+                      )}
+                    {isCommerce &&
+                      a.checklist.map((c, j) => (
+                        <div key={j} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            aria-label={`إنجاز الخطوة ${j + 1}`}
+                            checked={c.done}
+                            onChange={e =>
+                              edit(i, {
+                                checklist: a.checklist.map((item, index) =>
+                                  index === j
+                                    ? { ...item, done: e.target.checked }
+                                    : item
+                                ),
+                              })
+                            }
+                          />
+                          <Input
+                            aria-label={`الخطوة ${j + 1}`}
+                            value={c.text}
+                            maxLength={500}
+                            onChange={e =>
+                              edit(i, {
+                                checklist: a.checklist.map((item, index) =>
+                                  index === j
+                                    ? { ...item, text: e.target.value }
+                                    : item
+                                ),
+                              })
+                            }
+                          />
+                        </div>
+                      ))}
                   </fieldset>
                 ))}
                 {canEdit && (
@@ -602,6 +686,11 @@ export default function CommerceAssistant({
               </div>
             )}
           </div>
+          {context.error && (
+            <p role="alert" className="text-sm text-red-700">
+              {context.error.message}
+            </p>
+          )}
           <div className="shrink-0 space-y-2 border-t pt-3">
             {recording && (
               <div
@@ -640,7 +729,9 @@ export default function CommerceAssistant({
                   recording ||
                   startingRecording ||
                   !text.trim() ||
-                  !settings.data?.configured
+                  !settings.data?.configured ||
+                  !context.data ||
+                  !!context.error
                 }
                 onClick={send}
               >

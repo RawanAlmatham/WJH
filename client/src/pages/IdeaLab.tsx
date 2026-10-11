@@ -1,3 +1,4 @@
+import BoardAssistant from "@/components/BoardAssistant";
 import { BrandLogo, BrandMark } from "@/components/Brand";
 import { IdeaConsultations } from "@/components/IdeaConsultations";
 import { Button } from "@/components/ui/button";
@@ -513,6 +514,13 @@ export default function IdeaLab({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <BoardAssistant
+              key={board.id}
+              boardId={board.id}
+              boardName={board.name}
+              canEdit={canEdit}
+              onSaved={refresh}
+            />
             {canEdit && (
               <Button
                 onClick={() => {

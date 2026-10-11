@@ -1,3 +1,4 @@
+import BoardAssistant from "@/components/BoardAssistant";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
@@ -228,6 +229,13 @@ export default function PersonalBoard({
               رتّب مهامك، واختر ما يستحق تركيزك اليوم.
             </p>
           </div>
+          <BoardAssistant
+            key={board.id}
+            boardId={board.id}
+            boardName={board.name}
+            canEdit={canEdit}
+            onSaved={refresh}
+          />
           <Button
             disabled={!canEdit}
             onClick={() => open("new")}

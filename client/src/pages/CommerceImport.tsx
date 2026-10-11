@@ -1,5 +1,5 @@
 import { BrandLogo } from "@/components/Brand";
-import CommerceAssistant from "@/components/CommerceAssistant";
+import BoardAssistant from "@/components/BoardAssistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -308,13 +308,11 @@ export default function CommerceImport({
           <p className="text-sm text-[#696D75]">
             {board.name} / من اختيار المنتج إلى أول بيع
           </p>
-          <CommerceAssistant
+          <BoardAssistant
             key={board.id}
             boardId={board.id}
             boardName={board.name}
             canEdit={canEdit}
-            sections={data?.sections ?? []}
-            members={data?.members ?? []}
             onSaved={refresh}
           />
           {canEdit && ["journey", "tasks"].includes(page) && (

@@ -1,3 +1,4 @@
+import BoardAssistant from "@/components/BoardAssistant";
 import PersonalBoard from "./PersonalBoard";
 import { BrandLogo, BrandMark } from "@/components/Brand";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -1325,6 +1326,17 @@ export default function Home() {
             <p className="mt-1 text-sm text-[#4E534E]">{headerDateText()}</p>
           </div>
           <div className="mr-auto flex items-center gap-2">
+            {activeBoard && (
+              <BoardAssistant
+                key={activeBoard.id}
+                boardId={activeBoard.id}
+                boardName={activeBoard.name}
+                canEdit={boardRole !== "viewer"}
+                onSaved={async () => {
+                  await utils.workspace.overview.invalidate();
+                }}
+              />
+            )}
             <NotificationCenter
               onOpenLink={link => {
                 const target = new URL(link, window.location.origin);
