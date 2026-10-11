@@ -232,6 +232,13 @@
       "when": 1791727742383,
       "tag": "0032_lazy_shocker",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1791731669489,
+      "tag": "0033_sharp_pepper_potts",
+      "breakpoints": true
     }
   ]
 }

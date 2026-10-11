@@ -157,3 +157,7 @@ git switch -c feature/short-description
 
 قبل رفع الفرع شغّل `pnpm verify`. تفاصيل دورة العمل ومراجعة التغييرات موجودة
 في `CONTRIBUTING.md`.
+
+## تطبيق Expo
+
+مشروع الجوال الجديد في `mobile-expo/`، مع تحديث القوالب من الموقع وEAS Update للتطبيق. التشغيل: `pnpm expo:start`. تفاصيل البناء والتحديث في [mobile-expo/README.md](mobile-expo/README.md). تبقى ملفات Capacitor القديمة مستقلة.

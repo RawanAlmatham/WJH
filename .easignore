@@ -1,0 +1,16 @@
+# Upload only the Expo application from this repository.
+/*
+!/mobile-expo
+!/mobile-expo/**
+/mobile-expo/node_modules/
+/mobile-expo/.expo/
+/mobile-expo/dist/
+/mobile-expo/ios/
+/mobile-expo/android/
+/mobile-expo/.env*
+/mobile-expo/*.jks
+/mobile-expo/*.p8
+/mobile-expo/*.p12
+/mobile-expo/*.key
+/mobile-expo/*.mobileprovision
+/mobile-expo/*.pem

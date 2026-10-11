@@ -1175,3 +1175,16 @@ export const personalLifeTasks = mysqlTable(
   },
   t => [index("personalTasks_owner_idx").on(t.boardId, t.userId)]
 );
+
+export const mobileLoginTickets = mysqlTable(
+  "mobileLoginTickets",
+  {
+    codeHash: varchar("codeHash", { length: 64 }).primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id),
+    challenge: varchar("challenge", { length: 64 }).notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+  },
+  t => [index("mobileLoginTickets_expiry_idx").on(t.expiresAt)]
+);

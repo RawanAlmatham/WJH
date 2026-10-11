@@ -15,7 +15,11 @@
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "mobile:sync": "pnpm build && cap sync",
     "mobile:ios": "pnpm mobile:sync && cap open ios",
-    "mobile:android": "pnpm mobile:sync && cap open android"
+    "mobile:android": "pnpm mobile:sync && cap open android",
+    "expo:start": "npm --prefix mobile-expo start",
+    "expo:check": "npm --prefix mobile-expo run check && npm --prefix mobile-expo run lint",
+    "expo:android": "npm --prefix mobile-expo run android",
+    "expo:ios": "npm --prefix mobile-expo run ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
