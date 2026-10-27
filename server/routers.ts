@@ -20,6 +20,8 @@ import * as notificationService from "./notifications";
 import * as ideaLab from "./ideaLab";
 import * as commerce from "./commerce";
 import * as personal from "./personal";
+import * as business from "./business";
+import { businessSave } from "../shared/business";
 import { personalTaskFields } from "../shared/personal";
 import * as assistant from "./assistant";
 import { boardContext } from "./assistantBoard";
@@ -502,6 +504,56 @@ export const appRouter = router({
           input.actions
         );
       }),
+  }),
+  business: router({
+    overview: boardProcedure
+      .input(z.object({ boardId: z.number().int().positive() }))
+      .query(({ ctx, input }) => business.overview(input.boardId, ctx.user.id)),
+    save: protectedProcedure
+      .input(businessSave)
+      .mutation(({ ctx, input }) =>
+        business.save(input.boardId, ctx.user.id, input)
+      ),
+    action: protectedProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          id: z.number().int().positive(),
+          version: z.number().int().positive(),
+          action: z.enum([
+            "archive",
+            "restore",
+            "convert",
+            "settle",
+            "reimburse",
+          ]),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        business.action(input.boardId, ctx.user.id, input)
+      ),
+    upload: protectedProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          name: z.string().min(1).max(240),
+          mime: z.string().max(120),
+          body: z.string().min(4).max(13981016),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        business.upload(input.boardId, ctx.user.id, input)
+      ),
+    download: protectedProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          id: z.number().int().positive(),
+        })
+      )
+      .query(({ ctx, input }) =>
+        business.download(input.boardId, ctx.user.id, input.id)
+      ),
   }),
   personal: router({
     overview: boardProcedure.query(({ ctx }) =>

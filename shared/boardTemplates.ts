@@ -6,6 +6,7 @@ export const boardTemplates = [
   "personal",
   "idea_lab",
   "commerce_import",
+  "business",
 ] as const;
 
 export type BoardTemplate = (typeof boardTemplates)[number] | string;
@@ -43,6 +44,34 @@ export type BoardTemplateConfig = {
 };
 
 export const BOARD_TEMPLATE_LABELS: Record<string, BoardTemplateConfig> = {
+  business: {
+    title: "إدارة الأعمال",
+    description:
+      "مساحة بسيطة تجمع المال والمنتجات والموردين والوثائق والمهام وبنك الأفكار.",
+    accent: "#205844",
+    softAccent: "#EAF1E9",
+    highlights: [
+      "مساهمات ومصروفات والتزامات",
+      "منتجات وموردون وطلبات شراء",
+      "أفكار تتحول إلى مشروعات",
+    ],
+    modules: [],
+    sections: [],
+    starterTasks: [],
+    navigation: {
+      home: "نظرة عامة",
+      weekly: "المتابعة",
+      plan: "التأسيس والوثائق",
+      projects: "المنتجات والمشروعات",
+      tasks: "المهام العامة",
+      team: "الفريق",
+      feeds: "الموردون والمشتريات",
+      lessons: "بنك الأفكار",
+      launches: "المواعيد",
+      calendar: "التقويم",
+      reports: "المال",
+    },
+  },
   personal: {
     title: "اللوحة الشخصية",
     description:

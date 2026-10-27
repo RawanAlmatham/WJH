@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import * as dbModule from "./db";
 import * as personal from "./personal";
+import * as business from "./business";
+import type { BusinessRecord } from "../shared/business";
 import * as commerce from "./commerce";
 import * as ideas from "./ideaLab";
 import {
@@ -106,6 +108,24 @@ export function workAction(row: typeof workTasks.$inferSelect) {
     dueDate: day(row.dueDate),
   });
 }
+export function businessAction(row: BusinessRecord) {
+  return basic({
+    taskId: row.id,
+    version: row.version,
+    title: row.data.title,
+    sectionId: row.data.projectId,
+    description: row.data.notes,
+    assigneeUserId: row.data.assigneeUserId,
+    dueDate: row.data.dueDate,
+    priority: row.data.priority,
+    status:
+      row.data.status === "مكتملة"
+        ? "done"
+        : row.data.status === "قيد التنفيذ"
+          ? "in_progress"
+          : "todo",
+  });
+}
 export async function boardKind(boardId: number) {
   const db = (await dbModule.getDb())!;
   if (!db)
@@ -166,6 +186,40 @@ export async function boardContext(
     priorityLabels: priorities as Record<string, string>,
     extra: {} as unknown,
   };
+  if (template === "business") {
+    const data = await business.overview(boardId, userId);
+    const rows = data.records.filter(r => !r.archived);
+    return {
+      ...common,
+      nullableSection: true,
+      sectionLabel: "المشروع",
+      sections: rows
+        .filter(r => r.kind === "project")
+        .map(r => ({ id: r.id, name: r.data.title, archived: false })),
+      members: data.members
+        .filter(m => m.role !== "viewer")
+        .map(m => ({ userId: m.userId, name: m.name ?? "عضو" })),
+      tasks: rows.filter(r => r.kind === "task").map(businessAction),
+      statusLabels: {
+        todo: "قادمة",
+        in_progress: "قيد التنفيذ",
+        done: "مكتملة",
+      },
+      priorityLabels: { normal: "عادية", urgent: "عالية" },
+      extra: {
+        projects: rows
+          .filter(r => r.kind === "project")
+          .map(r => ({
+            id: r.id,
+            title: r.data.title,
+            status: r.data.status,
+            nextStep: r.data.nextStep,
+          })),
+        scope:
+          "يدعم المساعد إضافة وتعديل المهام فقط. تُدار الأموال والوثائق والموردون من نماذج القالب.",
+      },
+    };
+  }
   if (template === "commerce_import") {
     const data = await commerce.overview(boardId);
     return {

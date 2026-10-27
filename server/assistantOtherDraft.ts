@@ -5,11 +5,13 @@ import {
   boardContext,
   validateBoardActions,
   personalAction,
+  businessAction,
   ideaAction,
   workAction,
   taskDate,
 } from "./assistantBoard";
 import {
+  businessRecords,
   assistantDrafts,
   boardMemberships,
   managementBoards,
@@ -24,6 +26,8 @@ import {
   deliverables,
   users,
 } from "../drizzle/schema";
+import { businessData, businessSave } from "../shared/business";
+import { saveBusinessRecord } from "./business";
 import type { AssistantAction } from "../shared/assistant";
 
 export async function applyOtherDraft(
@@ -87,7 +91,54 @@ export async function applyOtherDraft(
         code: "FORBIDDEN",
         message: "ليس لديك صلاحية تعديل اللوحة",
       });
-    if (context.personal) {
+    if (context.template === "business") {
+      const rows = await tx
+        .select()
+        .from(businessRecords)
+        .where(
+          and(
+            eq(businessRecords.boardId, boardId),
+            eq(businessRecords.archived, false)
+          )
+        )
+        .for("update");
+      validateBoardActions(actions, {
+        ...context,
+        sections: rows
+          .filter(r => r.kind === "project")
+          .map(r => ({ id: r.id, name: r.data.title, archived: false })),
+        tasks: rows.filter(r => r.kind === "task").map(businessAction),
+        members: context.members.filter(m =>
+          memberships.some(b => b.userId === m.userId && b.role !== "viewer")
+        ),
+      });
+      for (const a of actions) {
+        const current = rows.find(r => r.id === a.taskId);
+        const data = businessData.parse({
+          ...current?.data,
+          title: a.title,
+          projectId: a.sectionId,
+          notes: a.description,
+          assigneeUserId: a.assigneeUserId,
+          dueDate: a.dueDate,
+          priority: a.priority,
+          status:
+            a.status === "done"
+              ? "مكتملة"
+              : a.status === "in_progress"
+                ? "قيد التنفيذ"
+                : "قادمة",
+        });
+        const input = businessSave.parse({
+          boardId,
+          kind: "task",
+          id: a.taskId ?? undefined,
+          version: a.version ?? undefined,
+          data,
+        });
+        await saveBusinessRecord(tx, boardId, input);
+      }
+    } else if (context.personal) {
       const categories = await tx
         .select()
         .from(personalLifeCategories)

@@ -1,5 +1,6 @@
 import {
   boolean,
+  longtext,
   foreignKey,
   index,
   int,
@@ -1187,4 +1188,41 @@ export const mobileLoginTickets = mysqlTable(
     expiresAt: timestamp("expiresAt").notNull(),
   },
   t => [index("mobileLoginTickets_expiry_idx").on(t.expiresAt)]
+);
+
+export const businessRecords = mysqlTable(
+  "businessRecords",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .notNull()
+      .references(() => managementBoards.id),
+    kind: varchar("kind", { length: 24 })
+      .$type<import("../shared/business").BusinessKind>()
+      .notNull(),
+    data: json("data")
+      .$type<import("../shared/business").BusinessData>()
+      .notNull(),
+    version: int("version").default(1).notNull(),
+    archived: boolean("archived").default(false).notNull(),
+    convertedProjectId: int("convertedProjectId"),
+    nextOccurrenceId: int("nextOccurrenceId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  t => [index("businessRecords_board_idx").on(t.boardId, t.kind)]
+);
+export const businessFiles = mysqlTable(
+  "businessFiles",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    boardId: int("boardId")
+      .notNull()
+      .references(() => managementBoards.id),
+    name: varchar("name", { length: 240 }).notNull(),
+    mime: varchar("mime", { length: 120 }).notNull(),
+    body: longtext("body").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  t => [index("businessFiles_board_idx").on(t.boardId)]
 );

@@ -1,0 +1,1 @@
+ALTER TABLE `businessRecords` ADD `nextOccurrenceId` int;

@@ -109,6 +109,7 @@ import {
 } from "recharts";
 import BoardOnboarding from "./BoardOnboarding";
 import CommerceImport from "./CommerceImport";
+import BusinessBoard from "./BusinessBoard";
 import Landing from "./Landing";
 import IdeaLab from "./IdeaLab";
 
@@ -923,7 +924,7 @@ export default function Home() {
       enabled: Boolean(
         user &&
           activeBoard &&
-          !["personal", "idea_lab", "commerce_import"].includes(
+          !["personal", "idea_lab", "commerce_import", "business"].includes(
             activeBoard.template
           )
       ),
@@ -940,6 +941,7 @@ export default function Home() {
         utils.ideaLab.overview.invalidate(),
         utils.commerce.overview.invalidate(),
         utils.personal.overview.invalidate(),
+        utils.business.overview.invalidate(),
       ]);
       toast.success("تم الانتقال إلى اللوحة");
     },
@@ -1179,6 +1181,17 @@ export default function Home() {
   if (activeBoard?.template === "personal")
     return (
       <PersonalBoard
+        key={activeBoard.id}
+        user={user}
+        board={activeBoard}
+        boards={boards ?? []}
+        switchingBoard={selectBoard.isPending}
+        onSelectBoard={boardId => selectBoard.mutate({ boardId })}
+      />
+    );
+  if (activeBoard?.template === "business")
+    return (
+      <BusinessBoard
         key={activeBoard.id}
         user={user}
         board={activeBoard}
