@@ -10,6 +10,7 @@ import InviteAccess from "./pages/InviteAccess";
 import BoardJoin from "./pages/BoardJoin";
 import Login from "./pages/Login";
 import ManagerInviteAccess from "./pages/ManagerInviteAccess";
+import BoardsManagement from "./pages/BoardsManagement";
 import BoardOnboarding from "./pages/BoardOnboarding";
 import AdminDashboard from "./pages/AdminDashboard";
 import { Privacy, Support } from "./pages/PublicInfo";
@@ -24,6 +25,7 @@ function Router() {
       <Route path={"/join/:token"} component={BoardJoin} />
       <Route path={"/login"} component={Login} />
       <Route path={"/manager-invite/:token"} component={ManagerInviteAccess} />
+      <Route path={"/boards"} component={BoardsManagement} />
       <Route path={"/boards/new"}>{() => <BoardOnboarding />}</Route>
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/privacy"} component={Privacy} />

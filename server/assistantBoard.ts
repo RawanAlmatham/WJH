@@ -137,7 +137,7 @@ export async function boardKind(boardId: number) {
     .select()
     .from(managementBoards)
     .where(eq(managementBoards.id, boardId));
-  if (!board)
+  if (!board || board.deletedAt)
     throw new TRPCError({ code: "NOT_FOUND", message: "اللوحة غير متاحة" });
   return { db, template: board.template, name: board.name };
 }

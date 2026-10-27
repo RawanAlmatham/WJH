@@ -1,3 +1,4 @@
+import BoardManagementLink from "@/components/BoardManagementLink";
 import BoardAssistant from "@/components/BoardAssistant";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/Brand";
@@ -201,6 +202,7 @@ export default function PersonalBoard({
         >
           ＋ لوحة جديدة
         </a>
+        <BoardManagementLink />
         <div className="mt-12 border-t pt-4 text-sm">
           {user.name}
           <p className="mt-1 text-xs text-[#77786F]">لكل طموح، وجهة.</p>

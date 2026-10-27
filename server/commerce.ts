@@ -30,7 +30,7 @@ export async function requireCommerceBoard(boardId: number) {
     .select()
     .from(managementBoards)
     .where(eq(managementBoards.id, boardId));
-  if (board?.template !== "commerce_import")
+  if (board?.deletedAt || board?.template !== "commerce_import")
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "هذه اللوحة ليست من قالب تأسيس تجارة واستيراد",

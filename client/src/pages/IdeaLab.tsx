@@ -1,3 +1,4 @@
+import BoardManagementLink from "@/components/BoardManagementLink";
 import BoardAssistant from "@/components/BoardAssistant";
 import { BrandLogo, BrandMark } from "@/components/Brand";
 import { IdeaConsultations } from "@/components/IdeaConsultations";
@@ -477,6 +478,7 @@ export default function IdeaLab({
             );
           })}
         </nav>
+        <BoardManagementLink dark />
         <div className="border-t border-white/10 pt-4">
           <div className="flex items-center gap-3 px-2">
             <span className="flex size-9 items-center justify-center rounded-full bg-[#F6B801] text-xs font-extrabold text-[#14285F]">

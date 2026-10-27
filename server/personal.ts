@@ -19,7 +19,7 @@ async function database(boardId: number) {
     .select()
     .from(managementBoards)
     .where(eq(managementBoards.id, boardId));
-  if (board?.template !== "personal")
+  if (board?.deletedAt || board?.template !== "personal")
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "هذه ليست لوحة شخصية",

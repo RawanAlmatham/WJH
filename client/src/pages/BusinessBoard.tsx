@@ -1,3 +1,4 @@
+import BoardManagementLink from "@/components/BoardManagementLink";
 import { useState, type ReactNode } from "react";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -744,6 +745,7 @@ export default function BusinessBoard({
           <a className="block text-sm text-[#205844]" href="/boards/new">
             ＋ لوحة جديدة
           </a>
+          <BoardManagementLink />
           <button
             className="block text-xs text-[#819078]"
             onClick={() => void logout().catch(onError)}

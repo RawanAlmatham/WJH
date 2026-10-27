@@ -96,6 +96,7 @@ export const managementBoards = mysqlTable("managementBoards", {
   presentationSections: json("presentationSections").$type<
     PresentationSection[]
   >(),
+  deletedAt: timestamp("deletedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

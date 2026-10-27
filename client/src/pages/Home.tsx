@@ -1,3 +1,4 @@
+import BoardManagementLink from "@/components/BoardManagementLink";
 import BoardAssistant from "@/components/BoardAssistant";
 import PersonalBoard from "./PersonalBoard";
 import { BrandLogo, BrandMark } from "@/components/Brand";
@@ -1716,6 +1717,7 @@ function Sidebar({
               <Settings className="size-[18px]" />
               الإعدادات
             </button>
+            <BoardManagementLink />
             <div className="mt-5 flex items-center gap-2 px-3">
               <Avatar
                 initials={userInitials}

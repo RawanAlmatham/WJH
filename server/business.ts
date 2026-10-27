@@ -41,7 +41,8 @@ export async function checkBusinessAccess(
     .select()
     .from(managementBoards)
     .where(eq(managementBoards.id, boardId));
-  if (board?.template !== "business") fail("هذه ليست لوحة إدارة الأعمال");
+  if (board?.deletedAt || board?.template !== "business")
+    fail("هذه ليست لوحة إدارة الأعمال");
   const members = await db
     .select()
     .from(boardMemberships)

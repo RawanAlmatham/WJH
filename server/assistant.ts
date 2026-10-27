@@ -13,6 +13,7 @@ import { commerceTaskFields } from "../shared/commerce";
 import { overview, requireCommerceBoard } from "./commerce";
 import { encryptPersonalApiKey, decryptPersonalApiKey } from "./aiProvider";
 import {
+  managementBoards,
   assistantDrafts,
   userGroqSettings,
   boardMemberships,
@@ -394,6 +395,13 @@ export async function applyDraft(
         code: "BAD_REQUEST",
         message: "تغيّرت هوية الاقتراح. اطلب اقتراحًا جديدًا.",
       });
+    const [board] = await tx
+      .select()
+      .from(managementBoards)
+      .where(eq(managementBoards.id, boardId))
+      .for("update");
+    if (!board || board.deletedAt)
+      throw new TRPCError({ code: "FORBIDDEN", message: "اللوحة غير متاحة" });
     const sections = await tx
       .select()
       .from(commerceSections)

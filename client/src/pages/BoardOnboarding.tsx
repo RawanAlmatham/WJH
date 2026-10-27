@@ -1,3 +1,4 @@
+import BoardManagementLink from "@/components/BoardManagementLink";
 import { BrandJourney, BrandLogo } from "@/components/Brand";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
@@ -48,6 +49,7 @@ export default function BoardOnboarding({
       <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
         <header className="flex items-center justify-between gap-4">
           <BrandLogo tagline />
+          {user && <BoardManagementLink />}
           <a
             href="/welcome"
             className="text-sm font-semibold text-[#1E3A8A] transition hover:opacity-75"

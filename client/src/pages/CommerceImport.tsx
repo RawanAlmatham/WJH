@@ -1,3 +1,4 @@
+import BoardManagementLink from "@/components/BoardManagementLink";
 import { BrandLogo } from "@/components/Brand";
 import BoardAssistant from "@/components/BoardAssistant";
 import { Button } from "@/components/ui/button";
@@ -289,6 +290,7 @@ export default function CommerceImport({
             لوحة جديدة / القوالب
           </a>
         </nav>
+        <BoardManagementLink dark />
         <div className="mt-4 border-t border-white/10 pt-4">
           <p className="text-sm font-bold">{user.name || "مستخدم وجهة"}</p>
           <p className="mt-1 text-xs text-white/55">

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   annualGoals,
@@ -298,32 +298,8 @@ export type BoardRole = "manager" | "member" | "viewer";
 export type ProjectAccess = "all" | "selected";
 
 export async function getActiveBoardId(userId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const account = await db
-    .select({ activeBoardId: users.activeBoardId })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  if (account[0]?.activeBoardId) {
-    const activeMembership = await db
-      .select({ id: boardMemberships.id })
-      .from(boardMemberships)
-      .where(
-        and(
-          eq(boardMemberships.userId, userId),
-          eq(boardMemberships.boardId, account[0].activeBoardId)
-        )
-      )
-      .limit(1);
-    if (activeMembership[0]) return account[0].activeBoardId;
-  }
-  const firstMembership = await db
-    .select({ boardId: boardMemberships.boardId })
-    .from(boardMemberships)
-    .where(eq(boardMemberships.userId, userId))
-    .limit(1);
-  return firstMembership[0]?.boardId ?? null;
+  const boards = await listUserBoards(userId);
+  return boards.find(b => b.isActive)?.id ?? boards[0]?.id ?? null;
 }
 
 export async function hasBoardRole(
@@ -339,9 +315,14 @@ export async function hasBoardRole(
   const memberships = await db
     .select({ role: boardMemberships.role })
     .from(boardMemberships)
+    .innerJoin(
+      managementBoards,
+      eq(managementBoards.id, boardMemberships.boardId)
+    )
     .where(
       and(
         eq(boardMemberships.userId, userId),
+        isNull(managementBoards.deletedAt),
         eq(boardMemberships.boardId, activeBoardId)
       )
     );
@@ -359,6 +340,10 @@ export async function getUserProjectAccess(userId: number, boardId: number) {
       allowedProjectIds: teamMembers.allowedProjectIds,
     })
     .from(boardMemberships)
+    .innerJoin(
+      managementBoards,
+      eq(managementBoards.id, boardMemberships.boardId)
+    )
     .innerJoin(users, eq(boardMemberships.userId, users.id))
     .leftJoin(
       teamMembers,
@@ -371,6 +356,7 @@ export async function getUserProjectAccess(userId: number, boardId: number) {
     .where(
       and(
         eq(boardMemberships.userId, userId),
+        isNull(managementBoards.deletedAt),
         eq(boardMemberships.boardId, boardId)
       )
     )
@@ -572,7 +558,12 @@ export async function listUserBoards(userId: number) {
         managementBoards,
         eq(boardMemberships.boardId, managementBoards.id)
       )
-      .where(eq(boardMemberships.userId, userId)),
+      .where(
+        and(
+          eq(boardMemberships.userId, userId),
+          isNull(managementBoards.deletedAt)
+        )
+      ),
   ]);
   const activeBoardId = account[0]?.activeBoardId ?? memberships[0]?.id ?? null;
   return memberships.map(board => ({
@@ -1088,9 +1079,14 @@ export async function selectManagementBoard(userId: number, boardId: number) {
   const membership = await db
     .select({ id: boardMemberships.id })
     .from(boardMemberships)
+    .innerJoin(
+      managementBoards,
+      eq(managementBoards.id, boardMemberships.boardId)
+    )
     .where(
       and(
         eq(boardMemberships.userId, userId),
+        isNull(managementBoards.deletedAt),
         eq(boardMemberships.boardId, boardId)
       )
     )
@@ -1109,7 +1105,12 @@ export async function getBoardByJoinCode(joinCode: string) {
   const rows = await db
     .select()
     .from(managementBoards)
-    .where(eq(managementBoards.joinCode, joinCode.toUpperCase()))
+    .where(
+      and(
+        eq(managementBoards.joinCode, joinCode.toUpperCase()),
+        isNull(managementBoards.deletedAt)
+      )
+    )
     .limit(1);
   return rows[0] ?? null;
 }
@@ -1120,7 +1121,12 @@ export async function getBoardByInviteToken(inviteToken: string) {
   const rows = await db
     .select()
     .from(managementBoards)
-    .where(eq(managementBoards.inviteToken, inviteToken))
+    .where(
+      and(
+        eq(managementBoards.inviteToken, inviteToken),
+        isNull(managementBoards.deletedAt)
+      )
+    )
     .limit(1);
   return rows[0] ?? null;
 }
@@ -1132,19 +1138,33 @@ export async function joinManagementBoard(
 ) {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حاليًا");
-  const membership = await db
-    .select()
-    .from(boardMemberships)
-    .where(eq(boardMemberships.boardId, boardId));
-  const existing = membership.find(item => item.userId === userId);
-  if (!existing)
-    await db.insert(boardMemberships).values({ boardId, userId, role });
-  await db
-    .update(users)
-    .set({ activeBoardId: boardId })
-    .where(eq(users.id, userId));
+  const result = await db.transaction(async tx => {
+    const [board] = await tx
+      .select()
+      .from(managementBoards)
+      .where(eq(managementBoards.id, boardId))
+      .for("update");
+    if (!board || board.deletedAt) throw new Error("اللوحة غير متاحة أو حُذفت");
+    const membership = await tx
+      .select()
+      .from(boardMemberships)
+      .where(
+        and(
+          eq(boardMemberships.boardId, boardId),
+          eq(boardMemberships.userId, userId)
+        )
+      );
+    const existing = membership[0];
+    if (!existing)
+      await tx.insert(boardMemberships).values({ boardId, userId, role });
+    await tx
+      .update(users)
+      .set({ activeBoardId: boardId })
+      .where(eq(users.id, userId));
+    return { boardId, membershipRole: existing?.role ?? role };
+  });
   await ensureTeamMemberForUser(userId, boardId);
-  return { boardId, membershipRole: existing?.role ?? role };
+  return result;
 }
 
 function initialsFor(name: string) {

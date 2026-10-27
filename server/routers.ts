@@ -10,6 +10,7 @@ import {
   router,
 } from "./_core/trpc";
 import * as db from "./db";
+import * as boardLifecycle from "./boardLifecycle";
 import { createSessionToken } from "./_core/auth";
 import { ENV } from "./_core/env";
 import { hashPassword, verifyPassword } from "./_core/password";
@@ -357,6 +358,30 @@ export const appRouter = router({
       ),
   }),
   boards: router({
+    management: protectedProcedure.query(({ ctx }) =>
+      boardLifecycle.list(ctx.user.id)
+    ),
+    leave: protectedProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          successorUserId: z.number().int().positive().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) => boardLifecycle.leave(ctx.user.id, input)),
+    delete: protectedProcedure
+      .input(
+        z.object({
+          boardId: z.number().int().positive(),
+          confirmName: z.string().min(1).max(180),
+        })
+      )
+      .mutation(({ ctx, input }) => boardLifecycle.trash(ctx.user.id, input)),
+    restore: protectedProcedure
+      .input(z.object({ boardId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) =>
+        boardLifecycle.restore(ctx.user.id, input.boardId)
+      ),
     mine: protectedProcedure.query(({ ctx }) => db.listUserBoards(ctx.user.id)),
     create: protectedProcedure
       .input(

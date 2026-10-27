@@ -78,7 +78,7 @@ export async function applyOtherDraft(
       .from(managementBoards)
       .where(eq(managementBoards.id, boardId))
       .for("update");
-    if (board.template !== context.template)
+    if (board.deletedAt || board.template !== context.template)
       throw new TRPCError({ code: "CONFLICT", message: "تغير قالب اللوحة" });
     const memberships = await tx
       .select()
